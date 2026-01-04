@@ -6,10 +6,10 @@ import soundfile as sf
 from pathlib import Path
 from loguru import logger
 
-# Configuración de logs para ver progreso en tiempo real en Kaggle
+# Configuración de logs inmediata
 logger.remove()
 logger.add(sys.stdout, colorize=True,
-           format="<green>{time:HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{message}</cyan>", level="INFO")
+           format="<green>{time:HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{message}</cyan>")
 
 PROJECT_ROOT = Path(__file__).resolve().parent
 os.environ["EINX_FILTER_TRACEBACK"] = "false"
@@ -22,12 +22,11 @@ from fish_speech.utils.schema import ServeTTSRequest, ServeReferenceAudio
 
 class FishSpanishInference:
     def __init__(self):
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.device = "cuda"
         self.checkpoint_dir = PROJECT_ROOT / "checkpoints" / "openaudio-s1-mini"
         self.precision = torch.half
 
-        logger.info(
-            f"🚀 HARDWARE: {self.device.upper()} | GPU: {torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'N/A'}")
+        logger.info(f"🚀 INICIANDO EN: {self.device.upper()} | GPU: {torch.cuda.get_device_name(0)}")
         self.engine = self._load_models()
 
     def _load_models(self):
@@ -49,8 +48,7 @@ class FishSpanishInference:
             compile=True
         )
 
-    def generate(self, text: str, ref_audio_path: str, output_name: str = "clonacion_final_es.wav"):
-        # CARGAMOS EL AUDIO COMPLETO (Sin recortes para Kaggle)
+    def generate(self, text: str, ref_audio_path: str):
         with open(ref_audio_path, "rb") as f:
             ref_audio_bytes = f.read()
 
@@ -62,40 +60,35 @@ class FishSpanishInference:
             format="wav"
         )
 
-        logger.info(f"🎙️ Iniciando síntesis con referencia completa...")
+        logger.info("🎙️ Sintetizando...")
+        # El motor devuelve un generador, lo convertimos a lista
         results = list(self.engine.inference(request))
 
-        # --- FIX CRÍTICO DE LA TUPLA ---
+        # EXTRACCIÓN FORZADA DE BYTES
         audio_parts = []
         for res in results:
-            # Si el motor devuelve (audio_bytes, metadata)
             if isinstance(res, tuple):
+                # Caso detectado en tus logs: (bytes, metadata)
                 audio_parts.append(res[0])
-            # Si devuelve un objeto con atributo audio (versiones anteriores)
-            elif hasattr(res, 'audio') and res.audio:
+            elif hasattr(res, 'audio'):
+                # Caso objeto: res.audio
                 audio_parts.append(res.audio)
-            # Si ya son bytes
-            elif isinstance(res, (bytes, bytearray)):
+            else:
+                # Caso bytes puros
                 audio_parts.append(res)
 
-        if not audio_parts:
-            logger.error("❌ No se recibieron datos de audio del motor.")
-            return
-
+        # Unión final de bytes
         audio_data = b"".join(audio_parts)
         audio_np = np.frombuffer(audio_data, dtype=np.int16)
 
-        final_output = PROJECT_ROOT / output_name
-        sf.write(str(final_output), audio_np, 44100)
-        logger.success(f"✅ ¡LOGRADO! Archivo creado en: {final_output}")
+        output_path = PROJECT_ROOT / "clonacion_final_es.wav"
+        sf.write(str(output_path), audio_np, 44100)
+        logger.success(f"✅ ¡LOGRADO! Archivo: {output_path}")
 
 
 if __name__ == "__main__":
     tts = FishSpanishInference()
-
-    MI_TEXTO = "La mente es la causa de todo, produce la realidad del individuo con total claridad."
-
-    # Asegúrate de que este archivo exista en la misma carpeta que el script
-    RUTA_REF = str(PROJECT_ROOT / "voice_to_clone.wav")
-
-    tts.generate(MI_TEXTO, RUTA_REF)
+    TEXTO = "La mente es la causa de todo, produce la realidad del individuo con total claridad."
+    # Ruta absoluta al archivo que ya confirmamos que mide 16.09s
+    REFERENCIA = "/kaggle/working/fish-speech/voice_to_clone.wav"
+    tts.generate(TEXTO, REFERENCIA)
