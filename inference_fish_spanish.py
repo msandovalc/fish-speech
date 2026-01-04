@@ -64,18 +64,8 @@ class FishSpanishInference:
         )
 
     def generate(self, text: str, ref_audio_path: str, output_name: str = "clonacion_final_es.wav"):
-        # OPTIMIZACIÓN: Cargar y recortar audio de referencia a 7 segundos
-        # Esto bajará el uso de VRAM de 5.84GB a ~4GB
-        audio, sr = sf.read(ref_audio_path)
-        if len(audio) > sr * 7:
-            logger.info("✂️ Recortando referencia de 16s a 7s para velocidad máxima...")
-            audio = audio[:sr * 7]
-
-        # Guardar recorte temporal
-        tmp_ref = "tmp_ref.wav"
-        sf.write(tmp_ref, audio, sr)
-
-        with open(tmp_ref, "rb") as f:
+        # Ya no recortamos el audio, lo cargamos completo
+        with open(ref_audio_path, "rb") as f:
             ref_audio_bytes = f.read()
 
         request = ServeTTSRequest(
@@ -86,29 +76,33 @@ class FishSpanishInference:
             format="wav"
         )
 
-        logger.info(f"🎙️ Sintetizando...")
+        logger.info(f"🎙️ Sintetizando con referencia completa ({ref_audio_path})...")
         results = list(self.engine.inference(request))
 
+        # --- AQUÍ ESTÁ EL ARREGLO ---
         audio_parts = []
         for res in results:
-            # FIX DEFINITIVO: Fish Speech suele devolver (bytes, metadata)
+            # Si el motor devuelve una tupla (audio, metadata)
             if isinstance(res, tuple):
-                # Tomamos solo el primer elemento de la tupla (los bytes)
                 audio_parts.append(res[0])
-            elif hasattr(res, 'audio'):
+                # Si devuelve un objeto con atributo audio
+            elif hasattr(res, 'audio') and res.audio:
                 audio_parts.append(res.audio)
-            else:
+            # Si ya son bytes puros
+            elif isinstance(res, (bytes, bytearray)):
                 audio_parts.append(res)
 
-        # Ahora el join no fallará
+        if not audio_parts:
+            logger.error("❌ No se generó ningún fragmento de audio.")
+            return
+
         audio_data = b"".join(audio_parts)
         audio_np = np.frombuffer(audio_data, dtype=np.int16)
 
+        # Guardar resultado
         final_output = PROJECT_ROOT / output_name
         sf.write(str(final_output), audio_np, 44100)
-        logger.success(f"✅ ¡LOGRADO! Audio guardado en: {final_output}")
-
-        if os.path.exists(tmp_ref): os.remove(tmp_ref)
+        logger.success(f"✅ ¡ÉXITO! Audio guardado en: {final_output}")
 
 
 if __name__ == "__main__":
