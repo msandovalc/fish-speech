@@ -26,7 +26,7 @@ from fish_speech.utils.schema import ServeTTSRequest, ServeReferenceAudio
 VOICE_PRESETS = {
     "MARLENE": {
         "temp": 0.78,
-        "top_p": 0.83,
+        "top_p": 0.89,
         "chunk": 517,
         "penalty": 1.12,
         "ref_path": "/kaggle/working/fish-speech/ElevenLabs_2026-01-04T18_49_10_Marlene.mp3",
@@ -34,7 +34,7 @@ VOICE_PRESETS = {
     },
     "ALEJANDRO": {
         "temp": 0.81,
-        "top_p": 0.85,
+        "top_p": 0.90,
         "chunk": 607,
         "penalty": 1.12,
         "ref_path": "/kaggle/working/fish-speech/ElevenLabs_2026-01-04T19_56_14_Alejandro.mp3",
@@ -111,7 +111,7 @@ class FishProductionLab:
                 logger.error(f"❌ Error produciendo a {name}: {e}")
 
     def run_hyper_search(self, text, prompt_text, ref_path, num_tests=15):
-        logger.trace(f"🧬 [PASO 1] Codificando ADN Vocal de FINA_08...")
+        logger.trace(f"🧬 [PASO 1] Codificando ADN Vocal...")
         with open(ref_path, "rb") as f:
             audio_bytes = f.read()
 
@@ -122,17 +122,16 @@ class FishProductionLab:
         folder = PROJECT_ROOT / f"hyper_paunel_{timestamp}"
         folder.mkdir(parents=True, exist_ok=True)
 
-        # RANGOS DE PRECISIÓN (Basados en FINA_08: T=0.77, P=0.83, C=413)
         t_min, t_max = 0.77, 0.86  # Subimos para más expresión
-        p_min, p_max = 0.83, 0.88  # Subimos para más agudeza/brillo
+        p_min, p_max = 0.88, 0.94  # Subimos para más agudeza/brillo
 
         for i in range(num_tests):
             progress = i / (num_tests - 1) if num_tests > 1 else 0
             curr_t = round(t_min + (0.09 * progress), 2)
             curr_p = round(p_min + (0.05 * progress), 2)
             # Chunks largos para máxima fluidez
-            curr_chunk = int(500 + (250 * progress))
-            curr_pen = 1.12  # Penalización baja para que la voz sea más natural
+            curr_chunk = int(700 + (300 * progress))
+            curr_pen = round(1.05 + (0.05 * progress), 2)
 
             logger.trace("-" * 50)
             logger.trace(f"🌀 [HYPER {i + 1}/{num_tests}] | T={curr_t} | P={curr_p} | Chunk={curr_chunk}")
