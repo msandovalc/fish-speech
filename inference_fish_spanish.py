@@ -32,12 +32,44 @@ VOICE_PRESETS = {
         "ref_path": "/kaggle/working/fish-speech/ElevenLabs_2026-01-04T18_49_10_Marlene.mp3",
         "prompt": "La mente lo es todo. La causa mental. La causa de todo -absolutamente todo- es mental, es decir, la mente es la que produce o causa todo en la vida del individuo. Cuando reconozcamos, entendamos y aceptemos esta verdad, habremos dado un paso muy importante en el progreso del desarrollo. Si todo es mental, este es un universo mental, donde todo funciona por medios mentales. Nosotros somos seres mentales, mentalidades buenas, perfectas y eternas. La mente sólo tiene una actividad, pensar. El pensamiento es todo lo de la mente lo único que somos y tenemos es pensamiento, por ello, el pensamiento es lo más importante de todo."
     },
+    "Cristina": {
+        "temp": 0.82,
+        "top_p": 0.91,
+        "chunk": 807,
+        "penalty": 1.07,
+        "ref_path": "/kaggle/input/fish-input-files/voice_elevenlabs_cristina_campos_v3.wav",
+        "prompt": "La mente lo es todo. La causa mental. La causa de todo -absolutamente todo- es mental, es decir, la mente es la que produce o causa todo en la vida del individuo. Cuando reconozcamos, entendamos y aceptemos esta verdad, habremos dado un paso muy importante en el progreso del desarrollo. Si todo es mental, este es un universo mental, donde todo funciona por medios mentales. Nosotros somos seres mentales, mentalidades buenas, perfectas y eternas. La mente sólo tiene una actividad, pensar. El pensamiento es todo lo de la mente lo único que somos y tenemos es pensamiento, por ello, el pensamiento es lo más importante de todo."
+    },
+    "ROSA": {
+        "temp": 0.82,
+        "top_p": 0.91,
+        "chunk": 807,
+        "penalty": 1.07,
+        "ref_path": "/kaggle/input/fish-input-files/voice_elevenlabs_rosa_estela_v4.wav",
+        "prompt": "La mente lo es todo. La causa mental. La causa de todo -absolutamente todo- es mental, es decir, la mente es la que produce o causa todo en la vida del individuo. Cuando reconozcamos, entendamos y aceptemos esta verdad, habremos dado un paso muy importante en el progreso del desarrollo. Si todo es mental, este es un universo mental, donde todo funciona por medios mentales. Nosotros somos seres mentales, mentalidades buenas, perfectas y eternas. La mente sólo tiene una actividad, pensar. El pensamiento es todo lo de la mente lo único que somos y tenemos es pensamiento, por ello, el pensamiento es lo más importante de todo."
+    },
     "ALEJANDRO": {
         "temp": 0.84,
         "top_p": 0.91,
         "chunk": 785,
         "penalty": 1.07,
         "ref_path": "/kaggle/working/fish-speech/ElevenLabs_2026-01-04T19_56_14_Alejandro.mp3",
+        "prompt": "La mente lo es todo. La causa mental. La causa de todo -absolutamente todo- es mental, es decir, la mente es la que produce o causa todo en la vida del individuo. Cuando reconozcamos, entendamos y aceptemos esta verdad, habremos dado un paso muy importante en el progreso del desarrollo. Si todo es mental, este es un universo mental, donde todo funciona por medios mentales. Nosotros somos seres mentales, mentalidades buenas, perfectas y eternas. La mente sólo tiene una actividad, pensar. El pensamiento es todo lo de la mente lo único que somos y tenemos es pensamiento, por ello, el pensamiento es lo más importante de todo."
+    },
+    "ALEJANDRO_BALLESTEROS": {
+        "temp": 0.84,
+        "top_p": 0.91,
+        "chunk": 785,
+        "penalty": 1.07,
+        "ref_path": "/kaggle/input/fish-input-files/voice_elevenlabs_alejandro_ballesteros_v3.wav",
+        "prompt": "La mente lo es todo. La causa mental. La causa de todo -absolutamente todo- es mental, es decir, la mente es la que produce o causa todo en la vida del individuo. Cuando reconozcamos, entendamos y aceptemos esta verdad, habremos dado un paso muy importante en el progreso del desarrollo. Si todo es mental, este es un universo mental, donde todo funciona por medios mentales. Nosotros somos seres mentales, mentalidades buenas, perfectas y eternas. La mente sólo tiene una actividad, pensar. El pensamiento es todo lo de la mente lo único que somos y tenemos es pensamiento, por ello, el pensamiento es lo más importante de todo."
+    },
+    "ENRIQUE": {
+        "temp": 0.84,
+        "top_p": 0.91,
+        "chunk": 785,
+        "penalty": 1.07,
+        "ref_path": "/kaggle/input/fish-input-files/voice_elevenlabs_enrique_m_nieto_v3.wav",
         "prompt": "La mente lo es todo. La causa mental. La causa de todo -absolutamente todo- es mental, es decir, la mente es la que produce o causa todo en la vida del individuo. Cuando reconozcamos, entendamos y aceptemos esta verdad, habremos dado un paso muy importante en el progreso del desarrollo. Si todo es mental, este es un universo mental, donde todo funciona por medios mentales. Nosotros somos seres mentales, mentalidades buenas, perfectas y eternas. La mente sólo tiene una actividad, pensar. El pensamiento es todo lo de la mente lo único que somos y tenemos es pensamiento, por ello, el pensamiento es lo más importante de todo."
     }
 }
