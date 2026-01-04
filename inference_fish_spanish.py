@@ -180,7 +180,7 @@ class FishTotalLab:
                     text=text_to_speak,
                     references=[
                         ServeReferenceAudio(audio=audio_bytes, tokens=vq_tokens.tolist(), text=params['prompt'])],
-                    max_new_tokens=1024,
+                    max_new_tokens=2048,
                     chunk_length=params['chunk'],
                     top_p=params['top_p'],
                     temperature=params['temp'],
