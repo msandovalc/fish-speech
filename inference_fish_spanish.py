@@ -64,11 +64,18 @@ class FishSpanishInference:
         )
 
     def generate(self, text: str, ref_audio_path: str, output_name: str = "clonacion_final_es.wav"):
-        if not Path(ref_audio_path).exists():
-            logger.error(f"❌ Audio de referencia no encontrado: {ref_audio_path}")
-            return
+        # OPTIMIZACIÓN: Cargar y recortar audio de referencia a 7 segundos
+        # Esto bajará el uso de VRAM de 5.84GB a ~4GB
+        audio, sr = sf.read(ref_audio_path)
+        if len(audio) > sr * 7:
+            logger.info("✂️ Recortando referencia de 16s a 7s para velocidad máxima...")
+            audio = audio[:sr * 7]
 
-        with open(ref_audio_path, "rb") as f:
+        # Guardar recorte temporal
+        tmp_ref = "tmp_ref.wav"
+        sf.write(tmp_ref, audio, sr)
+
+        with open(tmp_ref, "rb") as f:
             ref_audio_bytes = f.read()
 
         request = ServeTTSRequest(
@@ -79,24 +86,30 @@ class FishSpanishInference:
             format="wav"
         )
 
-        logger.info(f"🎙️ Iniciando síntesis de texto...")
+        logger.info(f"🎙️ Sintetizando...")
         results = list(self.engine.inference(request))
 
         audio_parts = []
         for res in results:
+            # FIX DEFINITIVO: Fish Speech suele devolver (bytes, metadata)
             if isinstance(res, tuple):
+                # Tomamos solo el primer elemento de la tupla (los bytes)
                 audio_parts.append(res[0])
             elif hasattr(res, 'audio'):
                 audio_parts.append(res.audio)
             else:
                 audio_parts.append(res)
 
+        # Ahora el join no fallará
         audio_data = b"".join(audio_parts)
         audio_np = np.frombuffer(audio_data, dtype=np.int16)
 
         final_output = PROJECT_ROOT / output_name
         sf.write(str(final_output), audio_np, 44100)
         logger.success(f"✅ ¡LOGRADO! Audio guardado en: {final_output}")
+
+        if os.path.exists(tmp_ref): os.remove(tmp_ref)
+
 
 if __name__ == "__main__":
     tts = FishSpanishInference()
