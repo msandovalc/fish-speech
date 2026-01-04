@@ -30,7 +30,13 @@ VOICE_PRESETS = {
         "chunk": 807,
         "penalty": 1.07,
         "ref_path": "/kaggle/working/fish-speech/ElevenLabs_2026-01-04T18_49_10_Marlene.mp3",
-        "prompt": "La mente lo es todo. La causa mental. La causa de todo -absolutamente todo- es mental, es decir, la mente es la que produce o causa todo en la vida del individuo. Cuando reconozcamos, entendamos y aceptemos esta verdad, habremos dado un paso muy importante en el progreso del desarrollo. Si todo es mental, este es un universo mental, donde todo funciona por medios mentales. Nosotros somos seres mentales, mentalidades buenas, perfectas y eternas. La mente sólo tiene una actividad, pensar. El pensamiento es todo lo de la mente lo único que somos y tenemos es pensamiento, por ello, el pensamiento es lo más importante de todo."
+        "prompt": "La mente lo es todo. La causa mental. La causa de todo -absolutamente todo- es mental, es decir, "
+                  "la mente es la que produce o causa todo en la vida del individuo. Cuando reconozcamos, entendamos "
+                  "y aceptemos esta verdad, habremos dado un paso muy importante en el progreso del desarrollo. Si "
+                  "todo es mental, este es un universo mental, donde todo funciona por medios mentales. Nosotros "
+                  "somos seres mentales, mentalidades buenas, perfectas y eternas. La mente sólo tiene una actividad, "
+                  "pensar. El pensamiento es todo lo de la mente lo único que somos y tenemos es pensamiento, "
+                  "por ello, el pensamiento es lo más importante de todo."
     },
     "Cristina": {
         "temp": 0.82,
@@ -38,7 +44,21 @@ VOICE_PRESETS = {
         "chunk": 807,
         "penalty": 1.07,
         "ref_path": "/kaggle/input/fish-input-files/voice_elevenlabs_cristina_campos_v3.wav",
-        "prompt": "La mente lo es todo. La causa mental. La causa de todo -absolutamente todo- es mental, es decir, la mente es la que produce o causa todo en la vida del individuo. Cuando reconozcamos, entendamos y aceptemos esta verdad, habremos dado un paso muy importante en el progreso del desarrollo. Si todo es mental, este es un universo mental, donde todo funciona por medios mentales. Nosotros somos seres mentales, mentalidades buenas, perfectas y eternas. La mente sólo tiene una actividad, pensar. El pensamiento es todo lo de la mente lo único que somos y tenemos es pensamiento, por ello, el pensamiento es lo más importante de todo."
+        "prompt": """El agua, la confianza y el miedo. Una lección poderosa y reveladora sobre la verdadera 
+        protección y el poder de la preparación. Considera la profunda enseñanza que subyace a la instrucción sobre 
+        el miedo al agua. Inbuir en la mente de un niño pequeño un temor paralizante hacia la profundidad, 
+        creyendo erróneamente que así se le protege de un posible ahogamiento, puede paradójicamente paralizarlo por 
+        completo en un momento de peligro real, impidiéndole reaccionar de manera efectiva para salvar su propia 
+        vida. En contraste, enseñar al niño un amor genuino por el agua como una parte esencial y maravillosa de la 
+        naturaleza, inculcarle un respeto saludable por su poder y, lo que es crucial, dotarlo de la habilidad vital 
+        de nadar con confianza, empodera al niño de una manera transformadora. Esta analogía poderosa se extiende a 
+        innumerables otros temores que, con las mejores intenciones pero con resultados a menudo limitantes, 
+        se nos transmiten desde la infancia. ¿Cuáles son esas aguas profundas metafóricas que has estado evitando en 
+        tu vida por un temor arraigado, impidiéndote explorar nuevas oportunidades y experiencias enriquecedoras? 
+        Comparte tu profunda reflexión en los comentarios. Dale like a este video si crees firmemente en el poder de 
+        la preparación activa y la confianza cultivada como la verdadera protección contra los desafíos de la vida, 
+        en lugar de la evitación basada en el miedo, y sígueme para explorar juntos más analogías reveladoras que 
+        iluminan la naturaleza del temor y el camino hacia la liberación."""
     },
     "ROSA": {
         "temp": 0.82,
@@ -46,7 +66,21 @@ VOICE_PRESETS = {
         "chunk": 807,
         "penalty": 1.07,
         "ref_path": "/kaggle/input/fish-input-files/voice_elevenlabs_rosa_estela_v4.wav",
-        "prompt": "La mente lo es todo. La causa mental. La causa de todo -absolutamente todo- es mental, es decir, la mente es la que produce o causa todo en la vida del individuo. Cuando reconozcamos, entendamos y aceptemos esta verdad, habremos dado un paso muy importante en el progreso del desarrollo. Si todo es mental, este es un universo mental, donde todo funciona por medios mentales. Nosotros somos seres mentales, mentalidades buenas, perfectas y eternas. La mente sólo tiene una actividad, pensar. El pensamiento es todo lo de la mente lo único que somos y tenemos es pensamiento, por ello, el pensamiento es lo más importante de todo."
+        "prompt": """El agua, la confianza y el miedo. Una lección poderosa y reveladora sobre la verdadera 
+        protección y el poder de la preparación. Considera la profunda enseñanza que subyace a la instrucción sobre 
+        el miedo al agua. Inbuir en la mente de un niño pequeño un temor paralizante hacia la profundidad, 
+        creyendo erróneamente que así se le protege de un posible ahogamiento, puede paradójicamente paralizarlo por 
+        completo en un momento de peligro real, impidiéndole reaccionar de manera efectiva para salvar su propia 
+        vida. En contraste, enseñar al niño un amor genuino por el agua como una parte esencial y maravillosa de la 
+        naturaleza, inculcarle un respeto saludable por su poder y, lo que es crucial, dotarlo de la habilidad vital 
+        de nadar con confianza, empodera al niño de una manera transformadora. Esta analogía poderosa se extiende a 
+        innumerables otros temores que, con las mejores intenciones pero con resultados a menudo limitantes, 
+        se nos transmiten desde la infancia. ¿Cuáles son esas aguas profundas metafóricas que has estado evitando en 
+        tu vida por un temor arraigado, impidiéndote explorar nuevas oportunidades y experiencias enriquecedoras? 
+        Comparte tu profunda reflexión en los comentarios. Dale like a este video si crees firmemente en el poder de 
+        la preparación activa y la confianza cultivada como la verdadera protección contra los desafíos de la vida, 
+        en lugar de la evitación basada en el miedo, y sígueme para explorar juntos más analogías reveladoras que 
+        iluminan la naturaleza del temor y el camino hacia la liberación."""
     },
     "ALEJANDRO": {
         "temp": 0.84,
@@ -54,7 +88,13 @@ VOICE_PRESETS = {
         "chunk": 785,
         "penalty": 1.07,
         "ref_path": "/kaggle/working/fish-speech/ElevenLabs_2026-01-04T19_56_14_Alejandro.mp3",
-        "prompt": "La mente lo es todo. La causa mental. La causa de todo -absolutamente todo- es mental, es decir, la mente es la que produce o causa todo en la vida del individuo. Cuando reconozcamos, entendamos y aceptemos esta verdad, habremos dado un paso muy importante en el progreso del desarrollo. Si todo es mental, este es un universo mental, donde todo funciona por medios mentales. Nosotros somos seres mentales, mentalidades buenas, perfectas y eternas. La mente sólo tiene una actividad, pensar. El pensamiento es todo lo de la mente lo único que somos y tenemos es pensamiento, por ello, el pensamiento es lo más importante de todo."
+        "prompt": "La mente lo es todo. La causa mental. La causa de todo -absolutamente todo- es mental, es decir, "
+                  "la mente es la que produce o causa todo en la vida del individuo. Cuando reconozcamos, entendamos "
+                  "y aceptemos esta verdad, habremos dado un paso muy importante en el progreso del desarrollo. Si "
+                  "todo es mental, este es un universo mental, donde todo funciona por medios mentales. Nosotros "
+                  "somos seres mentales, mentalidades buenas, perfectas y eternas. La mente sólo tiene una actividad, "
+                  "pensar. El pensamiento es todo lo de la mente lo único que somos y tenemos es pensamiento, "
+                  "por ello, el pensamiento es lo más importante de todo."
     },
     "ALEJANDRO_BALLESTEROS": {
         "temp": 0.84,
@@ -62,7 +102,21 @@ VOICE_PRESETS = {
         "chunk": 785,
         "penalty": 1.07,
         "ref_path": "/kaggle/input/fish-input-files/voice_elevenlabs_alejandro_ballesteros_v3.wav",
-        "prompt": "La mente lo es todo. La causa mental. La causa de todo -absolutamente todo- es mental, es decir, la mente es la que produce o causa todo en la vida del individuo. Cuando reconozcamos, entendamos y aceptemos esta verdad, habremos dado un paso muy importante en el progreso del desarrollo. Si todo es mental, este es un universo mental, donde todo funciona por medios mentales. Nosotros somos seres mentales, mentalidades buenas, perfectas y eternas. La mente sólo tiene una actividad, pensar. El pensamiento es todo lo de la mente lo único que somos y tenemos es pensamiento, por ello, el pensamiento es lo más importante de todo."
+        "prompt": """El agua, la confianza y el miedo. Una lección poderosa y reveladora sobre la verdadera 
+        protección y el poder de la preparación. Considera la profunda enseñanza que subyace a la instrucción sobre 
+        el miedo al agua. Inbuir en la mente de un niño pequeño un temor paralizante hacia la profundidad, 
+        creyendo erróneamente que así se le protege de un posible ahogamiento, puede paradójicamente paralizarlo por 
+        completo en un momento de peligro real, impidiéndole reaccionar de manera efectiva para salvar su propia 
+        vida. En contraste, enseñar al niño un amor genuino por el agua como una parte esencial y maravillosa de la 
+        naturaleza, inculcarle un respeto saludable por su poder y, lo que es crucial, dotarlo de la habilidad vital 
+        de nadar con confianza, empodera al niño de una manera transformadora. Esta analogía poderosa se extiende a 
+        innumerables otros temores que, con las mejores intenciones pero con resultados a menudo limitantes, 
+        se nos transmiten desde la infancia. ¿Cuáles son esas aguas profundas metafóricas que has estado evitando en 
+        tu vida por un temor arraigado, impidiéndote explorar nuevas oportunidades y experiencias enriquecedoras? 
+        Comparte tu profunda reflexión en los comentarios. Dale like a este video si crees firmemente en el poder de 
+        la preparación activa y la confianza cultivada como la verdadera protección contra los desafíos de la vida, 
+        en lugar de la evitación basada en el miedo, y sígueme para explorar juntos más analogías reveladoras que 
+        iluminan la naturaleza del temor y el camino hacia la liberación."""
     },
     "ENRIQUE": {
         "temp": 0.84,
@@ -70,7 +124,21 @@ VOICE_PRESETS = {
         "chunk": 785,
         "penalty": 1.07,
         "ref_path": "/kaggle/input/fish-input-files/voice_elevenlabs_enrique_m_nieto_v3.wav",
-        "prompt": "La mente lo es todo. La causa mental. La causa de todo -absolutamente todo- es mental, es decir, la mente es la que produce o causa todo en la vida del individuo. Cuando reconozcamos, entendamos y aceptemos esta verdad, habremos dado un paso muy importante en el progreso del desarrollo. Si todo es mental, este es un universo mental, donde todo funciona por medios mentales. Nosotros somos seres mentales, mentalidades buenas, perfectas y eternas. La mente sólo tiene una actividad, pensar. El pensamiento es todo lo de la mente lo único que somos y tenemos es pensamiento, por ello, el pensamiento es lo más importante de todo."
+        "prompt": """El agua, la confianza y el miedo. Una lección poderosa y reveladora sobre la verdadera 
+        protección y el poder de la preparación. Considera la profunda enseñanza que subyace a la instrucción sobre 
+        el miedo al agua. Inbuir en la mente de un niño pequeño un temor paralizante hacia la profundidad, 
+        creyendo erróneamente que así se le protege de un posible ahogamiento, puede paradójicamente paralizarlo por 
+        completo en un momento de peligro real, impidiéndole reaccionar de manera efectiva para salvar su propia 
+        vida. En contraste, enseñar al niño un amor genuino por el agua como una parte esencial y maravillosa de la 
+        naturaleza, inculcarle un respeto saludable por su poder y, lo que es crucial, dotarlo de la habilidad vital 
+        de nadar con confianza, empodera al niño de una manera transformadora. Esta analogía poderosa se extiende a 
+        innumerables otros temores que, con las mejores intenciones pero con resultados a menudo limitantes, 
+        se nos transmiten desde la infancia. ¿Cuáles son esas aguas profundas metafóricas que has estado evitando en 
+        tu vida por un temor arraigado, impidiéndote explorar nuevas oportunidades y experiencias enriquecedoras? 
+        Comparte tu profunda reflexión en los comentarios. Dale like a este video si crees firmemente en el poder de 
+        la preparación activa y la confianza cultivada como la verdadera protección contra los desafíos de la vida, 
+        en lugar de la evitación basada en el miedo, y sígueme para explorar juntos más analogías reveladoras que 
+        iluminan la naturaleza del temor y el camino hacia la liberación."""
     }
 }
 
