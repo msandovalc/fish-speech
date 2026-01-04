@@ -125,4 +125,4 @@ if __name__ == "__main__":
    
     """
 
-    lab.run_hyper_search(TEXTO, PROMPT, "/kaggle/working/fish-speech/ElevenLabs_2026-01-04T18_49_10_Marlene.mp3")
+    lab.run_hyper_search(TEXTO, PROMPT, "/kaggle/working/fish-speech/ElevenLabs_2026-01-04T19_56_14_Alejandro.mp3")
