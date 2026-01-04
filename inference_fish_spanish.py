@@ -111,8 +111,18 @@ if __name__ == "__main__":
     # TEXTO CON MÁXIMA EXPRESIÓN (Puntuación clave)
     TEXTO = "¡Atención! La mente es la causa de todo... ¿Lo entiendes? ¡Produce la realidad del individuo con total, total claridad!"
 
-    PROMPT = ("Agradezco que cada vez trabajo menos y gano más, estoy tan feliz y agradecida "
-              "ahora que el dinero viene a mi en cantidades cada vez mayores de diversar "
-              "fuentes de forma continua y correcta, soy abundante.")
+    PROMPT = """
+    La mente lo es todo. 
 
-    lab.run_hyper_search(TEXTO, PROMPT, "/kaggle/working/fish-speech/voice_to_clone.wav")
+    La causa mental.
+    
+    La causa de todo -absolutamente todo- es mental, es decir,  la mente es la que produce o causa todo en la vida del individuo.  
+    Cuando reconozcamos, entendamos y aceptemos esta verdad,  habremos dado un paso muy importante en el progreso del desarrollo. 
+    
+    Si todo es mental, este es un universo mental, donde todo funciona por  medios mentales. Nosotros somos seres mentales, mentalidades buenas,  perfectas y eternas. 
+    
+    La mente sólo tiene una actividad, pensar. El pensamiento es todo lo  de la mente lo único que somos y tenemos es pensamiento, por ello, el  pensamiento es lo más importante de todo.
+   
+    """
+
+    lab.run_hyper_search(TEXTO, PROMPT, "/kaggle/working/fish-speech/ElevenLabs_2026-01-04T18_49_10_Marlene - Melodic, Pleasant and Bright_pvc_sp100_s50_sb75_se0_b_m2")
