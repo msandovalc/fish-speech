@@ -6,7 +6,7 @@ import soundfile as sf
 from pathlib import Path
 from loguru import logger
 
-# --- CONFIGURACIÓN DE LOGS NIVEL TRACE (NO SE QUITA NADA) ---
+# --- MANTENEMOS LOGS TRACE ---
 logger.remove()
 logger.add(
     sys.stdout,
@@ -30,7 +30,7 @@ class FishSpanishInference:
         self.checkpoint_dir = PROJECT_ROOT / "checkpoints" / "openaudio-s1-mini"
         self.precision = torch.half
 
-        logger.info(f"🚀 HARDWARE: Tesla T4 | GPU: {torch.cuda.get_device_name(0)}")
+        logger.info(f"🚀 HARDWARE: Tesla T4 | Optimizando para Fidelidad de Voz")
         self.engine = self._load_models()
 
     def _load_models(self):
@@ -53,82 +53,67 @@ class FishSpanishInference:
         )
 
     def generate(self, text: str, ref_audio_path: str):
-        logger.info(f"📝 Texto: {text}")
-        logger.info(f"🎤 Referencia: {ref_audio_path}")
+        logger.info(f"🎤 Usando referencia de {ref_audio_path}")
 
         with open(ref_audio_path, "rb") as f:
             ref_audio_bytes = f.read()
 
+        # --- AJUSTES DE CALIDAD Y SIMILITUD ---
+        # Temperature: 0.7 (Equilibrio entre estabilidad y emoción)
+        # Top_p: 0.8 (Filtra opciones poco probables que causan mala pronunciación)
+        # Repetition Penalty: 1.2 (Evita que la voz se vuelva robótica o tartamuda)
         request = ServeTTSRequest(
             text=text,
             references=[ServeReferenceAudio(audio=ref_audio_bytes, text="")],
             max_new_tokens=1024,
-            chunk_length=200,
+            chunk_length=300,  # Aumentado de 200 a 300 para mejor prosodia (ritmo)
+            top_p=0.8,
+            temperature=0.7,
+            repetition_penalty=1.2,
             format="wav"
         )
 
-        logger.info("🎙️ Iniciando Inferencia...")
+        logger.info("🎙️ Iniciando Inferencia de alta fidelidad...")
         results = self.engine.inference(request)
 
         audio_chunks = []
-        sr = 44100  # Valor por defecto inicial
+        sr = 44100
 
         for i, res in enumerate(results):
-            logger.trace(f"📦 [Chunk {i}] --- INICIO DE TRACE ---")
-            logger.trace(f"   ∟ Tipo base recibido: {type(res)}")
+            logger.trace(f"📦 [Chunk {i}] Inspeccionando...")
 
-            # 1. Extraer del objeto de inferencia
             chunk = res.audio if hasattr(res, 'audio') else res
-            logger.trace(f"   ∟ Contenido de .audio/res: {type(chunk)}")
 
-            # 2. Navegar la Tupla (SampleRate, Data)
             if isinstance(chunk, tuple):
-                logger.trace(f"   ∟ [Tupla Detectada] Longitud: {len(chunk)}")
-                for idx, item in enumerate(chunk):
-                    logger.trace(f"      ∟ Índice [{idx}]: {type(item)}")
+                for item in chunk:
                     if isinstance(item, int):
                         sr = item
-                        logger.debug(f"      🎯 Sample Rate extraído: {sr}")
                     elif isinstance(item, np.ndarray):
                         audio_chunks.append(item)
-                        logger.trace(f"      ✅ Array de audio encontrado (Shape: {item.shape})")
-
-            # 3. Si viene el Array directo
             elif isinstance(chunk, np.ndarray):
                 audio_chunks.append(chunk)
-                logger.trace(f"   ∟ Array directo encontrado (Shape: {chunk.shape})")
 
         if not audio_chunks:
-            logger.critical("💀 ERROR: No se capturó ningún array de audio.")
+            logger.critical("💀 ERROR: No se generó audio.")
             return
 
-        # --- UNIÓN Y DIAGNÓSTICO DE SEÑAL ---
-        logger.info(f"🧩 Uniendo {len(audio_chunks)} fragmentos...")
-
-        # Concatenamos de forma nativa en Numpy
         final_audio = np.concatenate(audio_chunks)
 
-        # LOGS DE TRACE PARA DIAGNÓSTICO DE "SILENCIO"
-        logger.trace(f"📊 --- ESTADÍSTICAS DE AUDIO ---")
-        logger.trace(f"   ∟ Tipo de dato (Dtype): {final_audio.dtype}")
-        logger.trace(f"   ∟ Forma (Shape): {final_audio.shape}")
-        logger.trace(f"   ∟ Valor Máximo: {np.max(final_audio)}")
-        logger.trace(f"   ∟ Valor Mínimo: {np.min(final_audio)}")
-        logger.trace(f"   ∟ Media (Amplitude): {np.mean(np.abs(final_audio))}")
-
-        if np.max(np.abs(final_audio)) < 1e-5:
-            logger.warning("⚠️ ALERTA: El audio parece estar casi en silencio absoluto.")
+        # Logs de diagnóstico de señal
+        logger.trace(f"📊 --- TRACE DE SEÑAL ---")
+        logger.trace(f"   ∟ Max Amplitud: {np.max(np.abs(final_audio))}")
+        logger.trace(f"   ∟ Dtype: {final_audio.dtype}")
 
         output_path = PROJECT_ROOT / "clonacion_final_es.wav"
-
-        # Soundfile maneja el dtype automáticamente al escribir
         sf.write(str(output_path), final_audio, sr)
-
-        logger.success(f"🎊 ¡LOGRADO! Archivo guardado con éxito: {output_path}")
+        logger.success(f"🎊 ¡LOGRADO! Archivo optimizado: {output_path}")
 
 
 if __name__ == "__main__":
     tts = FishSpanishInference()
-    TEXTO = "La mente es la causa de todo, produce la realidad del individuo con total claridad."
+
+    # TEXTO CON PUNTUACIÓN (Ayuda a la entonación)
+    MI_TEXTO = "La mente es la causa de todo; produce la realidad del individuo con total claridad. ¡Cree en tu poder!"
+
     REFERENCIA = "/kaggle/working/fish-speech/voice_to_clone.wav"
-    tts.generate(TEXTO, REFERENCIA)
+    tts.generate(MI_TEXTO, REFERENCIA)
