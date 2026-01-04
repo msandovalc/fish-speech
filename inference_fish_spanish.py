@@ -179,7 +179,11 @@ class FishTotalLab:
                 req = ServeTTSRequest(
                     text=text_to_speak,
                     references=[
-                        ServeReferenceAudio(audio=audio_bytes, tokens=vq_tokens.tolist(), text=params['prompt'])],
+                        ServeReferenceAudio(
+                            audio=audio_bytes,
+                            tokens=vq_tokens.tolist(),
+                            text=params['prompt']
+                        )],
                     max_new_tokens=2048,
                     chunk_length=params['chunk'],
                     top_p=params['top_p'],
