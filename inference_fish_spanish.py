@@ -9,6 +9,10 @@ from pathlib import Path
 from loguru import logger
 from datetime import datetime
 
+# --- LIMPIEZA DE SYS.PATH (PARA EVITAR DUPLICADOS EN KAGGLE) ---
+sys.path = [p for p in list(dict.fromkeys(sys.path)) if "fish-speech" not in p]
+sys.path.insert(1, "/kaggle/working/fish-speech")
+
 # --- CONFIGURACIÓN DE LOGS MEGA TRACE ---
 logger.remove()
 logger.add(sys.stdout, colorize=True, level="TRACE",
@@ -29,7 +33,7 @@ class FishOfficialStepLab:
         self.checkpoint_dir = PROJECT_ROOT / "checkpoints" / "openaudio-s1-mini"
         self.precision = torch.half
 
-        logger.info("🚀 CARGANDO MOTORES (12GB VRAM)")
+        logger.info("🚀 CARGANDO MOTORES (TESLA T4 - 12GB VRAM RECOMENDADOS)")
         self.engine = self._load_models()
 
     def _load_models(self):
@@ -47,21 +51,28 @@ class FishOfficialStepLab:
             precision=self.precision, compile=True
         )
 
-    def run_official_workflow(self, text, prompt_text, ref_path, num_tests=30):
+    def run_official_workflow(self, text, prompt_text, ref_path, num_tests=50):
         # --- PASO 1: Get VQ tokens from reference audio ---
         logger.trace(f"🧬 [PASO 1] Codificando referencia: {ref_path}")
         with open(ref_path, "rb") as f:
             audio_bytes = f.read()
 
-        # Esto genera el equivalente al 'fake.npy' en memoria
-        vq_tokens = self.engine.encode_reference(audio_bytes)
-        logger.debug(f"✅ VQ Tokens listos (Shape: {vq_tokens.shape})")
+        # FIX DEFINITIVO: Se agrega 'enable_reference_audio=True'
+        try:
+            vq_tokens = self.engine.encode_reference(
+                audio=audio_bytes,
+                enable_reference_audio=True
+            )
+            logger.debug(f"✅ VQ Tokens listos (Shape: {vq_tokens.shape})")
+        except Exception as e:
+            logger.critical(f"💥 Error en el Paso 1: {e}")
+            return
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         folder = PROJECT_ROOT / f"pruebas_oficiales_{timestamp}"
         folder.mkdir(parents=True, exist_ok=True)
 
-        logger.info(f"🧪 Iniciando 50 variantes en: {folder}")
+        logger.info(f"🧪 Generando 50 variantes en: {folder}")
 
         for i in range(1, num_tests + 1):
             t = round(random.uniform(0.3, 1.0), 2)
@@ -70,14 +81,13 @@ class FishOfficialStepLab:
             chunk = random.choice([250, 400, 600])
 
             name = f"V{i:02d}_T{t}_P{p}_Pen{penalty}_C{chunk}"
-            logger.trace(f"🌀 [PASO 2 y 3] Generando variante {i}/50: {name}")
+            logger.trace(f"🌀 [PASO 2 y 3] Variante {i}/50: {name}")
 
-            # Implementación del Paso 2 y 3 oficiales
             req = ServeTTSRequest(
                 text=text,
                 references=[ServeReferenceAudio(
-                    tokens=vq_tokens.tolist(),  # 'fake.npy' inyectado
-                    text=prompt_text  # 'Your reference text'
+                    tokens=vq_tokens.tolist(),
+                    text=prompt_text
                 )],
                 max_new_tokens=1024,
                 chunk_length=chunk,
@@ -91,7 +101,6 @@ class FishOfficialStepLab:
                 results = self.engine.inference(req)
                 audio_parts = []
                 for res in results:
-                    # Extracción profunda de audio (Fix para evitar TypeError)
                     chunk_data = res.audio if hasattr(res, 'audio') else res
                     if isinstance(chunk_data, tuple):
                         for item in chunk_data:
@@ -107,10 +116,10 @@ class FishOfficialStepLab:
             except Exception as e:
                 logger.error(f"❌ Error en variante {i}: {e}")
 
-        # Empaquetado ZIP final
+        # Empaquetado ZIP
         zip_path = PROJECT_ROOT / f"resultados_clonacion_{timestamp}"
         shutil.make_archive(str(zip_path), 'zip', folder)
-        logger.success(f"🏁 PROCESO FINALIZADO. Descarga el ZIP: {zip_path}.zip")
+        logger.success(f"🏁 PROCESO FINALIZADO. ZIP: {zip_path}.zip")
 
 
 if __name__ == "__main__":
@@ -121,7 +130,6 @@ if __name__ == "__main__":
     # EL TEXTO EXACTO DE TU AUDIO DE REFERENCIA
     TEXTO_DE_REFERENCIA = "Agradezco que cada vez trabajo menos y gano más, estoy tan feliz y agradecida."
 
-    # RUTA DE TU AUDIO
     AUDIO_REF = "/kaggle/working/fish-speech/voice_to_clone.wav"
 
     lab.run_official_workflow(TEXTO_A_GENERAR, TEXTO_DE_REFERENCIA, AUDIO_REF)
