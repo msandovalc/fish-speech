@@ -1,23 +1,37 @@
 import os
 import sys
 import torch
-import shutil
-import random
 import numpy as np
 import soundfile as sf
 from pathlib import Path
 from loguru import logger
-from datetime import datetime
-
-# --- LIMPIEZA DE SYS.PATH (PARA EVITAR DUPLICADOS EN KAGGLE) ---
-sys.path = [p for p in list(dict.fromkeys(sys.path)) if "fish-speech" not in p]
-sys.path.insert(1, "/kaggle/working/fish-speech")
 
 # --- CONFIGURACIÓN DE LOGS MEGA TRACE ---
 logger.remove()
 logger.add(sys.stdout, colorize=True, level="TRACE",
            format="<green>{time:HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{message}</cyan>")
 
+# --- AUDITORÍA DE HARDWARE (TRACE CRÍTICO) ---
+try:
+    import torchaudio
+
+    cuda_available = torch.cuda.is_available()
+    # Verificamos si torchaudio puede ver la GPU
+    ta_backends = torchaudio.list_audio_backends()
+
+    logger.trace(f"🎸 [TRACE] Torchaudio Version: {torchaudio.__version__}")
+    logger.trace(f"🎮 [TRACE] CUDA en PyTorch: {cuda_available}")
+    logger.trace(f"🔊 [TRACE] Backends de Audio: {ta_backends}")
+
+    if cuda_available and torch.version.cuda:
+        logger.success(f"🚀 TODO SINCRONIZADO: CUDA {torch.version.cuda} detectado.")
+    else:
+        logger.warning("⚠️ Torchaudio detectado pero CUDA parece no estar activo en este entorno.")
+except ImportError:
+    logger.critical("❌ [TRACE] Torchaudio no encontrado en el entorno de Poetry.")
+    sys.exit(1)
+
+# --- RESTO DEL SCRIPT OFICIAL 3 PASOS ---
 PROJECT_ROOT = Path("/kaggle/working/fish-speech")
 os.environ["EINX_FILTER_TRACEBACK"] = "false"
 
@@ -27,13 +41,11 @@ from fish_speech.models.text2semantic.inference import launch_thread_safe_queue
 from fish_speech.utils.schema import ServeTTSRequest, ServeReferenceAudio
 
 
-class FishOfficialStepLab:
+class FishCudaLab:
     def __init__(self):
         self.device = "cuda"
         self.checkpoint_dir = PROJECT_ROOT / "checkpoints" / "openaudio-s1-mini"
         self.precision = torch.half
-
-        logger.info("🚀 CARGANDO MOTORES (TESLA T4 - 12GB VRAM RECOMENDADOS)")
         self.engine = self._load_models()
 
     def _load_models(self):
@@ -51,85 +63,50 @@ class FishOfficialStepLab:
             precision=self.precision, compile=True
         )
 
-    def run_official_workflow(self, text, prompt_text, ref_path, num_tests=50):
-        # --- PASO 1: Get VQ tokens from reference audio ---
-        logger.trace(f"🧬 [PASO 1] Codificando referencia: {ref_path}")
+    def run_official_step_by_step(self, text, prompt_text, ref_path):
+        # PASO 1: Codificación con referencia habilitada
+        logger.trace("🧬 [PASO 1] Extrayendo VQ Tokens con aceleración CUDA...")
         with open(ref_path, "rb") as f:
             audio_bytes = f.read()
 
-        # FIX DEFINITIVO: Se agrega 'enable_reference_audio=True'
-        try:
-            vq_tokens = self.engine.encode_reference(
-                audio=audio_bytes,
-                enable_reference_audio=True
-            )
-            logger.debug(f"✅ VQ Tokens listos (Shape: {vq_tokens.shape})")
-        except Exception as e:
-            logger.critical(f"💥 Error en el Paso 1: {e}")
-            return
+        vq_tokens = self.engine.encode_reference(
+            audio=audio_bytes,
+            enable_reference_audio=True
+        )
 
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        folder = PROJECT_ROOT / f"pruebas_oficiales_{timestamp}"
-        folder.mkdir(parents=True, exist_ok=True)
+        # PASO 2 y 3: Generación
+        logger.info("🎙️ Generando audio clonado...")
+        req = ServeTTSRequest(
+            text=text,
+            references=[ServeReferenceAudio(tokens=vq_tokens.tolist(), text=prompt_text)],
+            max_new_tokens=1024,
+            chunk_length=500,
+            top_p=0.8,
+            temperature=0.7,
+            format="wav"
+        )
 
-        logger.info(f"🧪 Generando 50 variantes en: {folder}")
+        results = self.engine.inference(req)
+        audio_parts = []
+        for res in results:
+            chunk = res.audio if hasattr(res, 'audio') else res
+            if isinstance(chunk, tuple):
+                for item in chunk:
+                    if isinstance(item, np.ndarray): audio_parts.append(item)
+            elif isinstance(chunk, np.ndarray):
+                audio_parts.append(chunk)
 
-        for i in range(1, num_tests + 1):
-            t = round(random.uniform(0.3, 1.0), 2)
-            p = round(random.uniform(0.6, 0.95), 2)
-            penalty = round(random.uniform(1.1, 1.4), 2)
-            chunk = random.choice([250, 400, 600])
-
-            name = f"V{i:02d}_T{t}_P{p}_Pen{penalty}_C{chunk}"
-            logger.trace(f"🌀 [PASO 2 y 3] Variante {i}/50: {name}")
-
-            req = ServeTTSRequest(
-                text=text,
-                references=[ServeReferenceAudio(
-                    tokens=vq_tokens.tolist(),
-                    text=prompt_text
-                )],
-                max_new_tokens=1024,
-                chunk_length=chunk,
-                top_p=p,
-                temperature=t,
-                repetition_penalty=penalty,
-                format="wav"
-            )
-
-            try:
-                results = self.engine.inference(req)
-                audio_parts = []
-                for res in results:
-                    chunk_data = res.audio if hasattr(res, 'audio') else res
-                    if isinstance(chunk_data, tuple):
-                        for item in chunk_data:
-                            if isinstance(item, np.ndarray): audio_parts.append(item)
-                    elif isinstance(chunk_data, np.ndarray):
-                        audio_parts.append(chunk_data)
-
-                if audio_parts:
-                    final_audio = np.concatenate(audio_parts)
-                    sf.write(str(folder / f"{name}.wav"), final_audio, 44100)
-                    logger.debug(f"💾 Guardado: {name}.wav")
-
-            except Exception as e:
-                logger.error(f"❌ Error en variante {i}: {e}")
-
-        # Empaquetado ZIP
-        zip_path = PROJECT_ROOT / f"resultados_clonacion_{timestamp}"
-        shutil.make_archive(str(zip_path), 'zip', folder)
-        logger.success(f"🏁 PROCESO FINALIZADO. ZIP: {zip_path}.zip")
+        if audio_parts:
+            final_audio = np.concatenate(audio_parts)
+            output_path = PROJECT_ROOT / "clonacion_final_cuda.wav"
+            sf.write(str(output_path), final_audio, 44100)
+            logger.success(f"✅ ¡ÉXITO! Audio generado en GPU: {output_path}")
 
 
 if __name__ == "__main__":
-    lab = FishOfficialStepLab()
-
-    TEXTO_A_GENERAR = "La mente es la causa de todo; produce la realidad del individuo, ¡con total claridad!"
-
-    # EL TEXTO EXACTO DE TU AUDIO DE REFERENCIA
-    TEXTO_DE_REFERENCIA = "Agradezco que cada vez trabajo menos y gano más, estoy tan feliz y agradecida."
-
-    AUDIO_REF = "/kaggle/working/fish-speech/voice_to_clone.wav"
-
-    lab.run_official_workflow(TEXTO_A_GENERAR, TEXTO_DE_REFERENCIA, AUDIO_REF)
+    lab = FishCudaLab()
+    lab.run_official_step_by_step(
+        text="La mente es la causa de todo; produce la realidad del individuo, ¡con total claridad!",
+        prompt_text="Agradezco que cada vez trabajo menos y gano más, estoy tan feliz y agradecida.",
+        ref_path="/kaggle/working/fish-speech/voice_to_clone.wav"
+    )
