@@ -9,18 +9,7 @@ from pathlib import Path
 from loguru import logger
 from datetime import datetime
 
-# --- CONFIGURACIÓN DE PRESETS GLOBALES ---
-# Aquí guardamos lo que ya funciona
-VOICE_PRESETS = {
-    "MARLENE": {
-        "temp": 0.78,
-        "top_p": 0.83,
-        "chunk": 517,
-        "penalty": 1.12
-    }
-}
-
-# --- CONFIGURACIÓN DE LOGS TRACE ---
+# --- CONFIGURACIÓN DE LOGS TRACE (MÁXIMA VISIBILIDAD) ---
 logger.remove()
 logger.add(sys.stdout, colorize=True, level="TRACE",
            format="<green>{time:HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{message}</cyan>")
@@ -33,13 +22,33 @@ from fish_speech.models.dac.inference import load_model as load_decoder_model
 from fish_speech.models.text2semantic.inference import launch_thread_safe_queue
 from fish_speech.utils.schema import ServeTTSRequest, ServeReferenceAudio
 
+# --- LISTA GLOBAL DE PRESETS GANADORES ---
+VOICE_PRESETS = {
+    "MARLENE": {
+        "temp": 0.78,
+        "top_p": 0.83,
+        "chunk": 517,
+        "penalty": 1.12,
+        "ref_path": "/kaggle/working/fish-speech/ElevenLabs_2026-01-04T18_49_10_Marlene.mp3",
+        "prompt": "La mente lo es todo. La causa mental. La causa de todo -absolutamente todo- es mental, es decir, la mente es la que produce o causa todo en la vida del individuo. Cuando reconozcamos, entendamos y aceptemos esta verdad, habremos dado un paso muy importante en el progreso del desarrollo. Si todo es mental, este es un universo mental, donde todo funciona por medios mentales. Nosotros somos seres mentales, mentalidades buenas, perfectas y eternas. La mente sólo tiene una actividad, pensar. El pensamiento es todo lo de la mente lo único que somos y tenemos es pensamiento, por ello, el pensamiento es lo más importante de todo."
+    },
+    "ALEJANDRO": {
+        "temp": 0.81,
+        "top_p": 0.85,
+        "chunk": 607,
+        "penalty": 1.12,
+        "ref_path": "/kaggle/working/fish-speech/ElevenLabs_2026-01-04T19_56_14_Alejandro.mp3",
+        "prompt": "La mente lo es todo. La causa mental. La causa de todo -absolutamente todo- es mental, es decir, la mente es la que produce o causa todo en la vida del individuo. Cuando reconozcamos, entendamos y aceptemos esta verdad, habremos dado un paso muy importante en el progreso del desarrollo. Si todo es mental, este es un universo mental, donde todo funciona por medios mentales. Nosotros somos seres mentales, mentalidades buenas, perfectas y eternas. La mente sólo tiene una actividad, pensar. El pensamiento es todo lo de la mente lo único que somos y tenemos es pensamiento, por ello, el pensamiento es lo más importante de todo."
+    }
+}
 
-class FishVoiceLab:
+
+class FishProductionLab:
     def __init__(self):
         self.device = "cuda"
         self.checkpoint_dir = PROJECT_ROOT / "checkpoints" / "openaudio-s1-mini"
         self.precision = torch.half
-        logger.info("🚀 LABORATORIO DE VOCES INICIADO - MODO BARRIDO GRAVE")
+        logger.info("🎯 MODO PRODUCCIÓN Y EXPERIMENTACIÓN ACTIVO")
         self.engine = self._load_models()
 
     def _load_models(self):
@@ -50,47 +59,33 @@ class FishVoiceLab:
         return TTSInferenceEngine(llama_queue=llama_queue, decoder_model=decoder_model, precision=self.precision,
                                   compile=False)
 
-    def run_hyper_search_male(self, text, prompt_text, ref_path, num_tests=15):
-        logger.trace(f"🧬 [PASO 1] Extrayendo ADN Vocal (Hombre): {ref_path}")
-        with open(ref_path, "rb") as f:
-            audio_bytes = f.read()
-
-        with torch.inference_mode():
-            # Argumento posicional
-            vq_tokens = self.engine.encode_reference(audio_bytes, enable_reference_audio=True)
+    # --- FUNCIÓN NUEVA: PRODUCCIÓN DE AUDIOS FINALES ---
+    def generate_production_batch(self, text_to_speak):
+        logger.info(f"🎙️ Iniciando lote de producción para {len(VOICE_PRESETS)} voces.")
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        folder = PROJECT_ROOT / f"search_male_{timestamp}"
-        folder.mkdir(parents=True, exist_ok=True)
+        out_folder = PROJECT_ROOT / f"produccion_{timestamp}"
+        out_folder.mkdir(parents=True, exist_ok=True)
 
-        # --- RANGOS PARA VOZ GRAVE (MÁS BAJOS PARA EVITAR DISTORSIÓN) ---
-        t_start, t_end = 0.50, 0.75  # Voces graves prefieren T baja para estabilidad
-        p_start, p_end = 0.82, 0.95  # P alta para claridad en la resonancia de pecho
+        for name, params in VOICE_PRESETS.items():
+            logger.trace(f"🚀 Procesando voz: {name} | T={params['temp']} | P={params['top_p']}")
 
-        for i in range(num_tests):
-            progress = i / (num_tests - 1) if num_tests > 1 else 0
-            curr_t = round(t_start + ((t_end - t_start) * progress), 2)
-            curr_p = round(p_start + ((p_end - p_start) * progress), 2)
-            curr_chunk = int(450 + (300 * progress))  # Chunks largos para fluidez narrativa
-            curr_pen = round(1.15 + (0.2 * progress), 2)  # Penalización incremental
+            # Paso 1: Codificación
+            with open(params['ref_path'], "rb") as f:
+                audio_bytes = f.read()
 
-            logger.trace("-" * 50)
-            logger.trace(f"🌀 [CICLO {i + 1}/{num_tests}] | T={curr_t} | P={curr_p} | Pen={curr_pen}")
+            with torch.inference_mode():
+                vq_tokens = self.engine.encode_reference(audio_bytes, enable_reference_audio=True)
 
-            name = f"ALEJANDRO_{i + 1:02d}_T{curr_t}_P{curr_p}_C{curr_chunk}"
-
+            # Pasos 2 y 3: Inferencia
             req = ServeTTSRequest(
-                text=text,
-                references=[ServeReferenceAudio(
-                    audio=audio_bytes,
-                    tokens=vq_tokens.tolist(),
-                    text=prompt_text
-                )],
+                text=text_to_speak,
+                references=[ServeReferenceAudio(audio=audio_bytes, tokens=vq_tokens.tolist(), text=params['prompt'])],
                 max_new_tokens=1024,
-                chunk_length=curr_chunk,
-                top_p=curr_p,
-                temperature=curr_t,
-                repetition_penalty=curr_pen,
+                chunk_length=params['chunk'],
+                top_p=params['top_p'],
+                temperature=params['temp'],
+                repetition_penalty=params['penalty'],
                 format="wav"
             )
 
@@ -105,7 +100,69 @@ class FishVoiceLab:
                         audio_parts.append(chunk)
 
                 if audio_parts:
-                    sf.write(str(folder / f"{name}.wav"), np.concatenate(audio_parts), 44100)
+                    final_path = out_folder / f"PRODUCCION_{name}_{timestamp}.wav"
+                    sf.write(str(final_path), np.concatenate(audio_parts), 44100)
+                    logger.success(f"✅ Audio de {name} generado en: {final_path}")
+
+                torch.cuda.empty_cache()
+                gc.collect()
+
+            except Exception as e:
+                logger.error(f"❌ Error produciendo a {name}: {e}")
+
+    def run_hyper_search(self, text, prompt_text, ref_path, num_tests=15):
+        logger.trace(f"🧬 [PASO 1] Codificando ADN Vocal de FINA_08...")
+        with open(ref_path, "rb") as f:
+            audio_bytes = f.read()
+
+        with torch.inference_mode():
+            vq_tokens = self.engine.encode_reference(audio_bytes, enable_reference_audio=True)
+
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        folder = PROJECT_ROOT / f"hyper_paunel_{timestamp}"
+        folder.mkdir(parents=True, exist_ok=True)
+
+        # RANGOS DE PRECISIÓN (Basados en FINA_08: T=0.77, P=0.83, C=413)
+        t_min, t_max = 0.77, 0.86  # Subimos para más expresión
+        p_min, p_max = 0.83, 0.88  # Subimos para más agudeza/brillo
+
+        for i in range(num_tests):
+            progress = i / (num_tests - 1) if num_tests > 1 else 0
+            curr_t = round(t_min + (0.09 * progress), 2)
+            curr_p = round(p_min + (0.05 * progress), 2)
+            # Chunks largos para máxima fluidez
+            curr_chunk = int(500 + (250 * progress))
+            curr_pen = 1.12  # Penalización baja para que la voz sea más natural
+
+            logger.trace("-" * 50)
+            logger.trace(f"🌀 [HYPER {i + 1}/{num_tests}] | T={curr_t} | P={curr_p} | Chunk={curr_chunk}")
+
+            name = f"PAUNEL_FINAL_{i + 1:02d}_T{curr_t}_P{curr_p}_C{curr_chunk}"
+
+            req = ServeTTSRequest(
+                text=text,
+                references=[ServeReferenceAudio(audio=audio_bytes, tokens=vq_tokens.tolist(), text=prompt_text)],
+                max_new_tokens=1024,
+                chunk_length=curr_chunk,
+                top_p=curr_p,
+                temperature=curr_t,
+                repetition_penalty=curr_pen,
+                format="wav"
+            )
+
+            try:
+                results = self.engine.inference(req)
+                audio_parts = [res.audio if hasattr(res, 'audio') else res for res in results]
+                # Limpieza de fragmentos
+                clean_parts = []
+                for p in audio_parts:
+                    if isinstance(p, tuple):
+                        clean_parts.extend([x for x in p if isinstance(x, np.ndarray)])
+                    elif isinstance(p, np.ndarray):
+                        clean_parts.append(p)
+
+                if clean_parts:
+                    sf.write(str(folder / f"{name}.wav"), np.concatenate(clean_parts), 44100)
                     logger.debug(f"💾 Guardado: {name}.wav")
 
                 if (i + 1) % 5 == 0:
@@ -113,19 +170,20 @@ class FishVoiceLab:
                     gc.collect()
 
             except Exception as e:
-                logger.error(f"❌ Error en variante {i + 1}: {e}")
+                logger.error(f"❌ Error: {e}")
 
-        shutil.make_archive(str(PROJECT_ROOT / f"alejandro_pack_{timestamp}"), 'zip', folder)
-        logger.success(f"🏁 BARRIDO COMPLETADO. ZIP en: {folder}.zip")
-
+        shutil.make_archive(str(PROJECT_ROOT / f"paunel_final_pack_{timestamp}"), 'zip', folder)
+        logger.success(f"🏁 ¡BATERÍA HYPER TERMINADA en:! paunel_final_pack_{timestamp}")
 
 if __name__ == "__main__":
-    lab = FishVoiceLab()
+    lab = FishProductionLab()
 
-    # TEXTO DE PRUEBA (Mantenemos la puntuación para ver expresión)
-    TEXTO = "¡Atención! La mente es la causa de todo... ¿Lo entiendes? ¡Produce la realidad del individuo con total, total claridad!"
+    TEXTO_PARA_PRODUCIR = """
+    
+    El gran secreto, muy sencillo y claro, por lo demás, para llegar al entendimiento y aplicación de la verdad es, mantener nuestro pensamiento en el bien,  
+    en forma continua, que causará, invariablemente, y en forma automática, todo lo bueno, las metas realmente importantes de la vida, buena salud, buen abastecimiento, buenas finanzas o fortuna y felicidad. 
+    
+    """
 
-    # PROMPT DE ALEJANDRO (Asegúrate de que el audio diga exactamente esto)
-    PROMPT = """La mente lo es todo. La causa mental. La causa de todo -absolutamente todo- es mental, es decir, la mente es la que produce o causa todo en la vida del individuo. Cuando reconozcamos, entendamos y aceptemos esta verdad, habremos dado un paso muy importante en el progreso del desarrollo. Si todo es mental, este es un universo mental, donde todo funciona por medios mentales. Nosotros somos seres mentales, mentalidades buenas, perfectas y eternas. La mente sólo tiene una actividad, pensar. El pensamiento es todo lo de la mente lo único que somos y tenemos es pensamiento, por ello, el pensamiento es lo más importante de todo."""
-
-    lab.run_hyper_search_male(TEXTO, PROMPT, "/kaggle/working/fish-speech/ElevenLabs_2026-01-04T19_56_14_Alejandro.mp3")
+    # Ejecutar el ciclo de producción para Marlene y Alejandro
+    lab.generate_production_batch(TEXTO_PARA_PRODUCIR)
