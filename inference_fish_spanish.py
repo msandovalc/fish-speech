@@ -6,7 +6,7 @@ import soundfile as sf
 from pathlib import Path
 from loguru import logger
 
-# --- CONFIGURACIÓN DE LOGS TOTAL ---
+# --- CONFIGURACIÓN DE LOGS NIVEL TRACE (NO SE QUITA NADA) ---
 logger.remove()
 logger.add(
     sys.stdout,
@@ -30,18 +30,16 @@ class FishSpanishInference:
         self.checkpoint_dir = PROJECT_ROOT / "checkpoints" / "openaudio-s1-mini"
         self.precision = torch.half
 
-        logger.info(f"🚀 HARDWARE: Tesla T4 | VRAM: {torch.cuda.get_device_properties(0).total_memory / 1e9:.2f} GB")
+        logger.info(f"🚀 HARDWARE: Tesla T4 | GPU: {torch.cuda.get_device_name(0)}")
         self.engine = self._load_models()
 
     def _load_models(self):
-        logger.debug("🛰️ Cargando Llama Queue...")
         llama_queue = launch_thread_safe_queue(
             checkpoint_path=self.checkpoint_dir,
             device=self.device,
             precision=self.precision,
             compile=True
         )
-        logger.debug("🔊 Cargando Decoder VQ-GAN...")
         decoder_model = load_decoder_model(
             config_name="modded_dac_vq",
             checkpoint_path=self.checkpoint_dir / "codec.pth",
@@ -72,62 +70,61 @@ class FishSpanishInference:
         logger.info("🎙️ Iniciando Inferencia...")
         results = self.engine.inference(request)
 
-        audio_parts = []
+        audio_chunks = []
+        sr = 44100  # Valor por defecto inicial
 
         for i, res in enumerate(results):
-            logger.trace(f"📦 [Chunk {i}] --- INICIO DE INSPECCIÓN ---")
+            logger.trace(f"📦 [Chunk {i}] --- INICIO DE TRACE ---")
+            logger.trace(f"   ∟ Tipo base recibido: {type(res)}")
 
-            # Función interna de rescate con TRACE aumentado
-            def extract_recursive(item, level=1):
-                logger.trace(f"   ∟ [L{level}] Tipo: {type(item)}")
+            # 1. Extraer del objeto de inferencia
+            chunk = res.audio if hasattr(res, 'audio') else res
+            logger.trace(f"   ∟ Contenido de .audio/res: {type(chunk)}")
 
-                # Éxito: Encontramos los bytes
-                if isinstance(item, (bytes, bytearray)):
-                    logger.debug(f"      ✅ Bytes encontrados! ({len(item)} bytes)")
-                    return item
+            # 2. Navegar la Tupla (SampleRate, Data)
+            if isinstance(chunk, tuple):
+                logger.trace(f"   ∟ [Tupla Detectada] Longitud: {len(chunk)}")
+                for idx, item in enumerate(chunk):
+                    logger.trace(f"      ∟ Índice [{idx}]: {type(item)}")
+                    if isinstance(item, int):
+                        sr = item
+                        logger.debug(f"      🎯 Sample Rate extraído: {sr}")
+                    elif isinstance(item, np.ndarray):
+                        audio_chunks.append(item)
+                        logger.trace(f"      ✅ Array de audio encontrado (Shape: {item.shape})")
 
-                # Caso: Tupla (Aquí estaba el fallo, ahora revisamos todos los elementos)
-                if isinstance(item, tuple):
-                    logger.trace(f"      📂 Tupla de {len(item)} elementos. Buscando bytes dentro...")
-                    for idx, sub_item in enumerate(item):
-                        logger.trace(f"         ∟ Probando índice [{idx}] (Tipo: {type(sub_item)})")
-                        found = extract_recursive(sub_item, level + 1)
-                        if found: return found
+            # 3. Si viene el Array directo
+            elif isinstance(chunk, np.ndarray):
+                audio_chunks.append(chunk)
+                logger.trace(f"   ∟ Array directo encontrado (Shape: {chunk.shape})")
 
-                # Caso: Objeto con atributo .audio
-                if hasattr(item, 'audio'):
-                    logger.trace(f"      🔎 Atributo '.audio' detectado.")
-                    return extract_recursive(item.audio, level + 1)
-
-                # Caso: El item es un numpy array (a veces viene así en lugar de bytes)
-                if isinstance(item, np.ndarray):
-                    logger.debug(f"      ⚠️ Detectado Numpy Array. Convirtiendo a bytes...")
-                    return item.tobytes()
-
-                return None
-
-            chunk_bytes = extract_recursive(res)
-
-            if chunk_bytes:
-                audio_parts.append(chunk_bytes)
-            else:
-                logger.error(f"❌ [Chunk {i}] No se pudo extraer nada útil.")
-
-        if not audio_parts:
-            logger.critical("💀 ERROR: Secuencia vacía.")
+        if not audio_chunks:
+            logger.critical("💀 ERROR: No se capturó ningún array de audio.")
             return
 
-        logger.info(f"🧩 Uniendo {len(audio_parts)} fragmentos...")
-        try:
-            audio_data = b"".join(audio_parts)
-            # Intentamos detectar si el buffer es int16 o float32
-            audio_np = np.frombuffer(audio_data, dtype=np.int16)
+        # --- UNIÓN Y DIAGNÓSTICO DE SEÑAL ---
+        logger.info(f"🧩 Uniendo {len(audio_chunks)} fragmentos...")
 
-            output_path = PROJECT_ROOT / "clonacion_final_es.wav"
-            sf.write(str(output_path), audio_np, 44100)
-            logger.success(f"🎊 ¡ÉXITO! Guardado en: {output_path}")
-        except Exception as e:
-            logger.exception(f"💥 Error en fase final: {e}")
+        # Concatenamos de forma nativa en Numpy
+        final_audio = np.concatenate(audio_chunks)
+
+        # LOGS DE TRACE PARA DIAGNÓSTICO DE "SILENCIO"
+        logger.trace(f"📊 --- ESTADÍSTICAS DE AUDIO ---")
+        logger.trace(f"   ∟ Tipo de dato (Dtype): {final_audio.dtype}")
+        logger.trace(f"   ∟ Forma (Shape): {final_audio.shape}")
+        logger.trace(f"   ∟ Valor Máximo: {np.max(final_audio)}")
+        logger.trace(f"   ∟ Valor Mínimo: {np.min(final_audio)}")
+        logger.trace(f"   ∟ Media (Amplitude): {np.mean(np.abs(final_audio))}")
+
+        if np.max(np.abs(final_audio)) < 1e-5:
+            logger.warning("⚠️ ALERTA: El audio parece estar casi en silencio absoluto.")
+
+        output_path = PROJECT_ROOT / "clonacion_final_es.wav"
+
+        # Soundfile maneja el dtype automáticamente al escribir
+        sf.write(str(output_path), final_audio, sr)
+
+        logger.success(f"🎊 ¡LOGRADO! Archivo guardado con éxito: {output_path}")
 
 
 if __name__ == "__main__":
