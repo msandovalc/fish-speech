@@ -8,7 +8,6 @@ from loguru import logger
 
 # --- CONFIGURACIÓN DE LOGS NIVEL TRACE ---
 logger.remove()
-# Mostramos hasta nivel TRACE para ver la estructura de los datos
 logger.add(
     sys.stdout,
     colorize=True,
@@ -31,7 +30,8 @@ class FishSpanishInference:
         self.checkpoint_dir = PROJECT_ROOT / "checkpoints" / "openaudio-s1-mini"
         self.precision = torch.half
 
-        logger.info(f"🚀 HARDWARE: {self.device.upper()} | GPU: {torch.cuda.get_device_name(0)}")
+        logger.info(
+            f"🚀 HARDWARE: Tesla T4 (Kaggle) | VRAM: {torch.cuda.get_device_properties(0).total_memory / 1e9:.2f} GB")
         self.engine = self._load_models()
 
     def _load_models(self):
@@ -75,35 +75,44 @@ class FishSpanishInference:
 
         audio_parts = []
 
-        # --- BUCLE DE INSPECCIÓN TRACE ---
         for i, res in enumerate(results):
-            logger.trace(f"📦 [Chunk {i}] Tipo recibido: {type(res)}")
+            logger.trace(f"📦 [Chunk {i}] Iniciando inspección profunda...")
 
-            # Inspección profunda si es tupla
-            if isinstance(res, tuple):
-                logger.trace(f"📂 [Chunk {i}] Es Tupla. Longitud: {len(res)}")
-                for idx, item in enumerate(res):
-                    logger.trace(f"   ∟ Elemento [{idx}]: {type(item)}")
-                    if isinstance(item, (bytes, bytearray)):
-                        logger.trace(f"     ∟ Tamaño: {len(item)} bytes")
-
-            # Procesamiento con desempaquetado automático
             chunk = res
-            while isinstance(chunk, tuple) and len(chunk) > 0:
-                chunk = chunk[0]
+            depth = 0
 
-            if hasattr(chunk, 'audio'):
-                logger.trace(f"🔎 Atributo '.audio' detectado en {type(chunk)}")
-                chunk = chunk.audio
+            # Bucle de extracción recursivo con logging TRACE
+            while True:
+                depth += 1
+                logger.trace(f"   ∟ [Nivel {depth}] Tipo actual: {type(chunk)}")
 
-            if isinstance(chunk, (bytes, bytearray)):
-                audio_parts.append(chunk)
-                logger.debug(f"✅ [Chunk {i}] Bytes extraídos: {len(chunk)} bytes")
-            else:
-                logger.error(f"❌ [Chunk {i}] No se pudieron extraer bytes. Tipo final: {type(chunk)}")
+                # CASO A: Encontramos los bytes (Éxito)
+                if isinstance(chunk, (bytes, bytearray)):
+                    logger.debug(f"✅ [Chunk {i}] Bytes extraídos en Nivel {depth} ({len(chunk)} bytes)")
+                    audio_parts.append(chunk)
+                    break
+
+                # CASO B: Es una tupla (Típico de InferenceResult.audio o retorno directo)
+                elif isinstance(chunk, tuple):
+                    logger.trace(f"     ∟ Detectada Tupla (len={len(chunk)}). Extrayendo índice [0]...")
+                    if len(chunk) > 0:
+                        chunk = chunk[0]
+                    else:
+                        logger.error(f"     ∟ Tupla vacía en Chunk {i}")
+                        break
+
+                # CASO C: Es un objeto con atributo .audio
+                elif hasattr(chunk, 'audio'):
+                    logger.trace(f"     ∟ Atributo '.audio' detectado. Bajando un nivel...")
+                    chunk = chunk.audio
+
+                # CASO D: Tipo desconocido
+                else:
+                    logger.error(f"❌ [Chunk {i}] Tipo no manejable en Nivel {depth}: {type(chunk)}")
+                    break
 
         if not audio_parts:
-            logger.critical("💀 ERROR: La lista de audio está vacía.")
+            logger.critical("💀 ERROR: La lista de audio está vacía. No hay nada que unir.")
             return
 
         logger.info(f"🧩 Uniendo {len(audio_parts)} fragmentos de audio...")
@@ -115,11 +124,12 @@ class FishSpanishInference:
             sf.write(str(output_path), audio_np, 44100)
             logger.success(f"🎊 ¡LOGRADO! Archivo guardado: {output_path}")
         except Exception as e:
-            logger.exception(f"💥 Error durante la unión de bytes: {e}")
+            logger.exception(f"💥 Error fatal al concatenar bytes: {e}")
 
 
 if __name__ == "__main__":
     tts = FishSpanishInference()
     TEXTO = "La mente es la causa de todo, produce la realidad del individuo con total claridad."
+    # Aseguramos ruta absoluta en Kaggle
     REFERENCIA = "/kaggle/working/fish-speech/voice_to_clone.wav"
     tts.generate(TEXTO, REFERENCIA)
