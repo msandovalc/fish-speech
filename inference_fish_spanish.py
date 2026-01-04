@@ -6,7 +6,7 @@ import soundfile as sf
 from pathlib import Path
 from loguru import logger
 
-# --- CONFIGURACIÓN DE LOGS NIVEL TRACE ---
+# --- CONFIGURACIÓN DE LOGS TOTAL ---
 logger.remove()
 logger.add(
     sys.stdout,
@@ -30,8 +30,7 @@ class FishSpanishInference:
         self.checkpoint_dir = PROJECT_ROOT / "checkpoints" / "openaudio-s1-mini"
         self.precision = torch.half
 
-        logger.info(
-            f"🚀 HARDWARE: Tesla T4 (Kaggle) | VRAM: {torch.cuda.get_device_properties(0).total_memory / 1e9:.2f} GB")
+        logger.info(f"🚀 HARDWARE: Tesla T4 | VRAM: {torch.cuda.get_device_properties(0).total_memory / 1e9:.2f} GB")
         self.engine = self._load_models()
 
     def _load_models(self):
@@ -76,60 +75,63 @@ class FishSpanishInference:
         audio_parts = []
 
         for i, res in enumerate(results):
-            logger.trace(f"📦 [Chunk {i}] Iniciando inspección profunda...")
+            logger.trace(f"📦 [Chunk {i}] --- INICIO DE INSPECCIÓN ---")
 
-            chunk = res
-            depth = 0
+            # Función interna de rescate con TRACE aumentado
+            def extract_recursive(item, level=1):
+                logger.trace(f"   ∟ [L{level}] Tipo: {type(item)}")
 
-            # Bucle de extracción recursivo con logging TRACE
-            while True:
-                depth += 1
-                logger.trace(f"   ∟ [Nivel {depth}] Tipo actual: {type(chunk)}")
+                # Éxito: Encontramos los bytes
+                if isinstance(item, (bytes, bytearray)):
+                    logger.debug(f"      ✅ Bytes encontrados! ({len(item)} bytes)")
+                    return item
 
-                # CASO A: Encontramos los bytes (Éxito)
-                if isinstance(chunk, (bytes, bytearray)):
-                    logger.debug(f"✅ [Chunk {i}] Bytes extraídos en Nivel {depth} ({len(chunk)} bytes)")
-                    audio_parts.append(chunk)
-                    break
+                # Caso: Tupla (Aquí estaba el fallo, ahora revisamos todos los elementos)
+                if isinstance(item, tuple):
+                    logger.trace(f"      📂 Tupla de {len(item)} elementos. Buscando bytes dentro...")
+                    for idx, sub_item in enumerate(item):
+                        logger.trace(f"         ∟ Probando índice [{idx}] (Tipo: {type(sub_item)})")
+                        found = extract_recursive(sub_item, level + 1)
+                        if found: return found
 
-                # CASO B: Es una tupla (Típico de InferenceResult.audio o retorno directo)
-                elif isinstance(chunk, tuple):
-                    logger.trace(f"     ∟ Detectada Tupla (len={len(chunk)}). Extrayendo índice [0]...")
-                    if len(chunk) > 0:
-                        chunk = chunk[0]
-                    else:
-                        logger.error(f"     ∟ Tupla vacía en Chunk {i}")
-                        break
+                # Caso: Objeto con atributo .audio
+                if hasattr(item, 'audio'):
+                    logger.trace(f"      🔎 Atributo '.audio' detectado.")
+                    return extract_recursive(item.audio, level + 1)
 
-                # CASO C: Es un objeto con atributo .audio
-                elif hasattr(chunk, 'audio'):
-                    logger.trace(f"     ∟ Atributo '.audio' detectado. Bajando un nivel...")
-                    chunk = chunk.audio
+                # Caso: El item es un numpy array (a veces viene así en lugar de bytes)
+                if isinstance(item, np.ndarray):
+                    logger.debug(f"      ⚠️ Detectado Numpy Array. Convirtiendo a bytes...")
+                    return item.tobytes()
 
-                # CASO D: Tipo desconocido
-                else:
-                    logger.error(f"❌ [Chunk {i}] Tipo no manejable en Nivel {depth}: {type(chunk)}")
-                    break
+                return None
+
+            chunk_bytes = extract_recursive(res)
+
+            if chunk_bytes:
+                audio_parts.append(chunk_bytes)
+            else:
+                logger.error(f"❌ [Chunk {i}] No se pudo extraer nada útil.")
 
         if not audio_parts:
-            logger.critical("💀 ERROR: La lista de audio está vacía. No hay nada que unir.")
+            logger.critical("💀 ERROR: Secuencia vacía.")
             return
 
-        logger.info(f"🧩 Uniendo {len(audio_parts)} fragmentos de audio...")
+        logger.info(f"🧩 Uniendo {len(audio_parts)} fragmentos...")
         try:
             audio_data = b"".join(audio_parts)
+            # Intentamos detectar si el buffer es int16 o float32
             audio_np = np.frombuffer(audio_data, dtype=np.int16)
 
             output_path = PROJECT_ROOT / "clonacion_final_es.wav"
             sf.write(str(output_path), audio_np, 44100)
-            logger.success(f"🎊 ¡LOGRADO! Archivo guardado: {output_path}")
+            logger.success(f"🎊 ¡ÉXITO! Guardado en: {output_path}")
         except Exception as e:
-            logger.exception(f"💥 Error fatal al concatenar bytes: {e}")
+            logger.exception(f"💥 Error en fase final: {e}")
 
 
 if __name__ == "__main__":
     tts = FishSpanishInference()
     TEXTO = "La mente es la causa de todo, produce la realidad del individuo con total claridad."
-    # Aseguramos ruta absoluta en Kaggle
     REFERENCIA = "/kaggle/working/fish-speech/voice_to_clone.wav"
     tts.generate(TEXTO, REFERENCIA)
