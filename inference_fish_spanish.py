@@ -11,7 +11,7 @@ from loguru import logger
 from datetime import datetime
 from scipy.spatial.distance import cosine
 
-# --- MANTENEMOS Y AUMENTAMOS LOGS TRACE ---
+# --- MANTENEMOS Y AUMENTAMOS LOGS TRACE (PROHIBIDO QUITAR) ---
 logger.remove()
 logger.add(
     sys.stdout,
@@ -31,22 +31,30 @@ from fish_speech.utils.schema import ServeTTSRequest, ServeReferenceAudio
 
 class FishAuditLab:
     def __init__(self):
-        self.device = "cuda"
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.checkpoint_dir = PROJECT_ROOT / "checkpoints" / "openaudio-s1-mini"
         self.precision = torch.half
 
-        logger.info("🚀 INICIANDO LABORATORIO AUDITADO EN TESLA T4...")
+        logger.info(f"🚀 INICIALIZANDO LABORATORIO | DISPOSITIVO: {self.device}")
         self.engine = self._load_models()
 
-        # Cargamos el Auditor de Identidad (ECAPA-TDNN)
-        from speechbrain.inference.speaker import EncoderClassifier
-        logger.info("🕵️ Cargando Biometría de Voz (SpeechBrain)...")
-        self.auditor = EncoderClassifier.from_hparams(
-            source="speechbrain/spkrec-ecapa-tdnn",
-            run_opts={"device": self.device}
-        )
+        # --- TRACE CARGA AUDITOR ---
+        try:
+            from speechbrain.inference.speaker import EncoderClassifier
+            logger.trace("🕵️ [TRACE] Intentando instanciar EncoderClassifier de SpeechBrain...")
+            # El error ocurría aquí por hf_hub_download
+            self.auditor = EncoderClassifier.from_hparams(
+                source="speechbrain/spkrec-ecapa-tdnn",
+                run_opts={"device": self.device}
+            )
+            logger.success("🧬 Auditor biométrico cargado correctamente.")
+        except Exception as e:
+            logger.error(f"❌ Error al cargar el Auditor: {e}")
+            logger.warning("⚠️ Se continuará sin auditoría de identidad, solo generación.")
+            self.auditor = None
 
     def _load_models(self):
+        logger.trace(f"📡 [TRACE] Cargando pesos desde: {self.checkpoint_dir}")
         llama_queue = launch_thread_safe_queue(checkpoint_path=self.checkpoint_dir, device=self.device,
                                                precision=self.precision, compile=True)
         decoder_model = load_decoder_model(config_name="modded_dac_vq",
@@ -55,7 +63,9 @@ class FishAuditLab:
                                   compile=True)
 
     def get_voice_dna(self, audio_path):
-        """Extrae la identidad vocal para comparación."""
+        if self.auditor is None: return None
+
+        logger.trace(f"🧬 [TRACE] Extrayendo ADN vocal de: {Path(audio_path).name}")
         signal, fs = librosa.load(audio_path, sr=16000)
         with torch.no_grad():
             emb = self.auditor.encode_batch(torch.tensor(signal).unsqueeze(0).to(self.device))
@@ -66,25 +76,25 @@ class FishAuditLab:
         folder = PROJECT_ROOT / f"mega_test_{timestamp}"
         folder.mkdir(parents=True, exist_ok=True)
 
+        # Referencia
+        logger.trace(f"🎤 [TRACE] Leyendo referencia: {ref_path}")
         with open(ref_path, "rb") as f:
             ref_bytes = f.read()
 
-        logger.trace(f"🧬 Generando ADN de referencia para: {Path(ref_path).name}")
         ref_dna = self.get_voice_dna(ref_path)
 
-        # 1. BATERÍA DE 50 PRUEBAS
         results_data = []
-        logger.info(f"🧪 Iniciando 50 variantes. Rango de Temp corregido (0.1 - 1.0)")
+        logger.info("🧪 Iniciando batería de 50 variantes (Temp máx: 1.0)...")
 
         for i in range(1, 51):
-            # CORRECCIÓN DE ERROR: Temperatura máx 1.0
+            # Parámetros aleatorios dentro de límites de Pydantic
             t = round(random.uniform(0.3, 1.0), 2)
             p = round(random.uniform(0.6, 0.9), 2)
-            penalty = round(random.uniform(1.1, 1.5), 2)
-            chunk = random.choice([250, 350, 500])
+            penalty = round(random.uniform(1.1, 1.4), 2)
+            chunk = random.choice([200, 300, 450])
 
             name = f"V{i:02d}_T{t}_P{p}_Pen{penalty}_C{chunk}"
-            logger.trace(f"🌀 [Variante {i}/50] Generando con T={t}, P={p}, Pen={penalty}")
+            logger.trace(f"🌀 [Variante {i}/50] Generando: {name}")
 
             req = ServeTTSRequest(
                 text=text,
@@ -98,43 +108,42 @@ class FishAuditLab:
             )
 
             results = self.engine.inference(req)
-            chunks = []
-            sr = 44100
+            audio_chunks = []
             for res in results:
+                # Extracción nativa Numpy (Fix de audio anterior)
                 item = res.audio if hasattr(res, 'audio') else res
                 if isinstance(item, tuple):
                     for sub in item:
-                        if isinstance(sub, int):
-                            sr = sub
-                        elif isinstance(sub, np.ndarray):
-                            chunks.append(sub)
+                        if isinstance(sub, np.ndarray): audio_chunks.append(sub)
                 elif isinstance(item, np.ndarray):
-                    chunks.append(item)
+                    audio_chunks.append(item)
 
-            if chunks:
-                audio_np = np.concatenate(chunks)
+            if audio_chunks:
+                final_audio = np.concatenate(audio_chunks)
                 path = folder / f"{name}.wav"
-                sf.write(str(path), audio_np, sr)
+                sf.write(str(path), final_audio, 44100)
 
-                # 2. AUDITORÍA INMEDIATA
-                gen_dna = self.get_voice_dna(str(path))
-                similarity = 1 - cosine(ref_dna, gen_dna)
+                # Auditoría
+                similarity = 0
+                if ref_dna is not None:
+                    gen_dna = self.get_voice_dna(str(path))
+                    similarity = 1 - cosine(ref_dna, gen_dna)
+                    logger.debug(f"📊 [Variante {i}] Identidad: {similarity:.2%}")
+
                 results_data.append({"name": name, "sim": similarity, "path": path})
-
-                logger.debug(f"📊 [Chunk {i}] Match de Identidad: {similarity:.2%}")
             else:
                 logger.error(f"❌ Falló variante {i}")
 
-        # 3. RESUMEN Y EMPAQUETADO
-        results_data.sort(key=lambda x: x['sim'], reverse=True)
+        # Ranking y ZIP
+        if results_data:
+            results_data.sort(key=lambda x: x['sim'], reverse=True)
+            logger.info("--- 🏆 TOP 5 VARIANTES DETECTADAS ---")
+            for idx, res in enumerate(results_data[:5]):
+                logger.success(f"{idx + 1}. {res['name']} -> MATCH: {res['sim']:.2%}")
 
-        logger.info("--- 🏆 TOP 5 VARIANTES QUE MÁS SE PARECEN A TU VOZ ---")
-        for idx, res in enumerate(results_data[:5]):
-            logger.success(f"{idx + 1}. {res['name']} -> MATCH: {res['sim']:.2%}")
-
-        zip_path = PROJECT_ROOT / f"audit_results_{timestamp}"
-        shutil.make_archive(str(zip_path), 'zip', folder)
-        logger.success(f"🏁 Todo listo. ZIP generado: {zip_path}.zip")
+            zip_out = PROJECT_ROOT / f"audit_results_{timestamp}"
+            shutil.make_archive(str(zip_out), 'zip', folder)
+            logger.success(f"🏁 Batería completa. ZIP: {zip_out}.zip")
 
 
 if __name__ == "__main__":
