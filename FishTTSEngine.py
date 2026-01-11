@@ -276,30 +276,21 @@ if __name__ == "__main__":
 
     # Example: A long text that would normally crash or cut
     LONG_CHAPTER = """
-    Pensamiento causal 
+    ¡Pensamiento causal! ... 
 
-    La mente causa mediante el pensamiento, lo bueno y lo malo para el propio individuo y este es responsable por 
-    ello. Pensar es causar, pensamos en todo momento y causamos siempre. De manera que, cuando sostenemos El 
-    pensamiento del bien
-    
-    pensamientos que llegan a una conclusión, automáticamente manifestamos los efectos correspondientes en nuestro 
-    cuerpo, o experiencias por es esto, deberíamos tener solo pensamientos de bien, para experimentar o manifestar 
-    precisamente lo bueno.
-    
-    El gran secreto, muy sencillo y claro, por lo demás, para llegar al entendimiento y aplicación de la verdad es, 
-    mantener nuestro pensamiento en el bien, en forma continua, que causará, invariablemente, y en forma automática, 
-    todo lo bueno, las metas realmente importantes de la vida, buena salud, buen abastecimiento, buenas finanzas o 
-    fortuna y felicidad.
-    
-    No olvidar el hecho siempre en operación, que indica que en la exacta proporción en que mantenemos un 
-    pensamiento, así se manifiesta o realiza en nuestra experiencia. De manera que, habrá que aumentar la proporción 
-    de buenos pensamientos para obtener la misma alta propor- ción de resultados buenos.
-    
-    A veces pensamos que nuestro pensamiento no causa, quizá porque queremos que no produzca algo en el momento dado 
-    y hasta podemos creer que así es. La realidad es que causamos siempre, porque nunca dejamos de pensar; la única 
-    posibilidad de no causar con nuestro pensamiento es cuando tenemos pensamientos superficiales y pasajeros, 
-    que de ninguna manera llegan a una convicción o conclusión, de otra forma siempre es- taremos causando algo; de 
-    aquí que deberíamos vigilar constantemente nuestro pensar y evitar el pensamiento erróneo.
+    La mente causa, a través del pensamiento... absolutamente todo. Lo bueno... y lo malo para el propio individuo. Y este... es el único responsable por ello. 
+
+    Pensar... es causar. Pensamos en todo momento... y por lo tanto, causamos siempre. De manera que, cuando sostenemos pensamientos que llegan a una convicción... automáticamente... manifestamos los efectos correspondientes en nuestro cuerpo, o en nuestras experiencias. 
+
+    Es por esto que deberíamos tener ¡solo pensamientos de bien!, para experimentar, o manifestar, precisamente lo bueno.
+
+    El gran secreto... muy sencillo y claro, por lo demás... para llegar al entendimiento y aplicación de la verdad es: mantener nuestro pensamiento en el bien... en forma continua. Esto causará, invariablemente, y en forma automática, todo lo bueno: las metas realmente importantes de la vida... buena salud... abundancia... y felicidad.
+
+    No debemos olvidar el hecho, siempre en operación, que indica lo siguiente: en la exacta proporción en que mantenemos un pensamiento... así se manifiesta en nuestra experiencia. De manera que... habrá que aumentar la proporción de buenos pensamientos, para obtener la misma alta proporción de resultados buenos.
+
+    A veces pensamos que nuestro pensamiento no causa... quizá porque queremos que no produzca algo en el momento dado, y hasta podemos creer que así es. Pero la realidad... es que causamos siempre. Porque nunca... dejamos de pensar. 
+
+    La única posibilidad de no causar con nuestro pensamiento es cuando tenemos ideas superficiales... pasajeras... que de ninguna manera llegan a una conclusión. De otra forma... siempre estaremos causando algo. De aquí que... deberíamos vigilar constantemente nuestro pensar... y evitar, a toda costa, el pensamiento erróneo.
     """
 
     # Run production for Marlene
