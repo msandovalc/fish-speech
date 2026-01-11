@@ -28,24 +28,24 @@ PROJECT_ROOT = Path(__file__).resolve().parent
 
 # --- LISTA GLOBAL DE PRESETS (ACTUALIZADA CON GANADORES) ---
 VOICE_PRESETS = {
-    "MARLENE": {
-        "temp": 0.82,
-        "top_p": 0.91,
-        "chunk": 807,
-        "penalty": 1.07,
-        "ref_path": f"{PROJECT_ROOT}/voices/ElevenLabs_Marlene_optimized.mp3",
-        "prompt": "La mente lo es todo. La causa mental. La causa de todo -absolutamente todo- es mental, es decir, "
-                  "la mente es la que produce o causa todo en la vida del individuo."
-    },
-    "MARGARITA": {
-        "temp": 0.82,
-        "top_p": 0.91,
-        "chunk": 807,
-        "penalty": 1.07,
-        "ref_path": f"{PROJECT_ROOT}/voices/Margarita_Navarrete_optimized.wav",
-        "prompt": """Mira te comparto, hicimos tres cuartos más y no suelta todavía el sistema y otros detallitos, 
-        pero mira lo que te quiero comentar es que sé que suena raro, sé que se requiere"""
-    },
+    # "MARLENE": {
+    #     "temp": 0.82,
+    #     "top_p": 0.91,
+    #     "chunk": 807,
+    #     "penalty": 1.07,
+    #     "ref_path": f"{PROJECT_ROOT}/voices/ElevenLabs_Marlene_optimized.mp3",
+    #     "prompt": "La mente lo es todo. La causa mental. La causa de todo -absolutamente todo- es mental, es decir, "
+    #               "la mente es la que produce o causa todo en la vida del individuo."
+    # },
+    # "MARGARITA": {
+    #     "temp": 0.82,
+    #     "top_p": 0.91,
+    #     "chunk": 807,
+    #     "penalty": 1.07,
+    #     "ref_path": f"{PROJECT_ROOT}/voices/Margarita_Navarrete_optimized.wav",
+    #     "prompt": """Mira te comparto, hicimos tres cuartos más y no suelta todavía el sistema y otros detallitos,
+    #     pero mira lo que te quiero comentar es que sé que suena raro, sé que se requiere"""
+    # },
     "Camila": {
         "temp": 0.82,
         "top_p": 0.91,
@@ -54,52 +54,52 @@ VOICE_PRESETS = {
         "ref_path": f"{PROJECT_ROOT}/voices/Camila_Sodi_optimized.mp3",
         "prompt": "Todos venimos de un mismo campo fuente, de una misma gran energía, de un mismo Dios, de un mismo "
                   "universo, como le quieras llamar."
-    },
-    "Cristina": {
-        "temp": 0.82,
-        "top_p": 0.91,
-        "chunk": 807,
-        "penalty": 1.07,
-        "ref_path": f"{PROJECT_ROOT}/voices/Elevenlabs_Cristina_Campos_optimized.wav",
-        "prompt": """El agua, la confianza y el miedo. Una lección poderosa y reveladora sobre la verdadera 
-        protección y el poder de la preparación. Considera la profunda enseñanza que subyace a la instrucción"""
-    },
-    "ROSA": {
-        "temp": 0.82,
-        "top_p": 0.91,
-        "chunk": 807,
-        "penalty": 1.07,
-        "ref_path": f"{PROJECT_ROOT}/voices/Elevenlabs_Rosa_Estela_optimized.wav",
-        "prompt": """El agua, la confianza y el miedo. Una lección poderosa y reveladora sobre la verdadera 
-        protección y el poder de la preparación. Considera la profunda enseñanza que subyace a la instrucción"""
-    },
-    "ALEJANDRO": {
-        "temp": 0.84,
-        "top_p": 0.91,
-        "chunk": 785,
-        "penalty": 1.07,
-        "ref_path": f"{PROJECT_ROOT}/voices/ElevenLabs_Alejandro_optimized.mp3",
-        "prompt": "La mente lo es todo. La causa mental. La causa de todo -absolutamente todo- es mental, es decir, "
-                  "la mente es la que produce o causa todo en la vida del individuo."
-    },
-    "ALEJANDRO_BALLESTEROS": {
-        "temp": 0.84,
-        "top_p": 0.91,
-        "chunk": 785,
-        "penalty": 1.07,
-        "ref_path": f"{PROJECT_ROOT}/voices/Elevenlabs_Alejandro_Ballesteros_optimized.wav",
-        "prompt": """El agua, la confianza y el miedo. Una lección poderosa y reveladora sobre la verdadera 
-        protección y el poder de la preparación. Considera la profunda enseñanza que subyace a la instrucción"""
-    },
-    "ENRIQUE": {
-        "temp": 0.84,
-        "top_p": 0.91,
-        "chunk": 785,
-        "penalty": 1.07,
-        "ref_path": f"{PROJECT_ROOT}/voices/Elevenlabs_Enrique_Nieto_optimized.wav",
-        "prompt": """El agua, la confianza y el miedo. Una lección poderosa y reveladora sobre la verdadera 
-        protección y el poder de la preparación. Considera la profunda enseñanza que subyace a la instrucción"""
     }
+    # "Cristina": {
+    #     "temp": 0.82,
+    #     "top_p": 0.91,
+    #     "chunk": 807,
+    #     "penalty": 1.07,
+    #     "ref_path": f"{PROJECT_ROOT}/voices/Elevenlabs_Cristina_Campos_optimized.wav",
+    #     "prompt": """El agua, la confianza y el miedo. Una lección poderosa y reveladora sobre la verdadera
+    #     protección y el poder de la preparación. Considera la profunda enseñanza que subyace a la instrucción"""
+    # },
+    # "ROSA": {
+    #     "temp": 0.82,
+    #     "top_p": 0.91,
+    #     "chunk": 807,
+    #     "penalty": 1.07,
+    #     "ref_path": f"{PROJECT_ROOT}/voices/Elevenlabs_Rosa_Estela_optimized.wav",
+    #     "prompt": """El agua, la confianza y el miedo. Una lección poderosa y reveladora sobre la verdadera
+    #     protección y el poder de la preparación. Considera la profunda enseñanza que subyace a la instrucción"""
+    # },
+    # "ALEJANDRO": {
+    #     "temp": 0.84,
+    #     "top_p": 0.91,
+    #     "chunk": 785,
+    #     "penalty": 1.07,
+    #     "ref_path": f"{PROJECT_ROOT}/voices/ElevenLabs_Alejandro_optimized.mp3",
+    #     "prompt": "La mente lo es todo. La causa mental. La causa de todo -absolutamente todo- es mental, es decir, "
+    #               "la mente es la que produce o causa todo en la vida del individuo."
+    # },
+    # "ALEJANDRO_BALLESTEROS": {
+    #     "temp": 0.84,
+    #     "top_p": 0.91,
+    #     "chunk": 785,
+    #     "penalty": 1.07,
+    #     "ref_path": f"{PROJECT_ROOT}/voices/Elevenlabs_Alejandro_Ballesteros_optimized.wav",
+    #     "prompt": """El agua, la confianza y el miedo. Una lección poderosa y reveladora sobre la verdadera
+    #     protección y el poder de la preparación. Considera la profunda enseñanza que subyace a la instrucción"""
+    # },
+    # "ENRIQUE": {
+    #     "temp": 0.84,
+    #     "top_p": 0.91,
+    #     "chunk": 785,
+    #     "penalty": 1.07,
+    #     "ref_path": f"{PROJECT_ROOT}/voices/Elevenlabs_Enrique_Nieto_optimized.wav",
+    #     "prompt": """El agua, la confianza y el miedo. Una lección poderosa y reveladora sobre la verdadera
+    #     protección y el poder de la preparación. Considera la profunda enseñanza que subyace a la instrucción"""
+    # }
 }
 
 
@@ -110,6 +110,7 @@ is_windows = platform.system() == "Windows"
 should_compile = False if is_windows else True
 
 class FishTotalLab:
+
     def __init__(self):
         self.device = "cuda"
         self.checkpoint_dir = PROJECT_ROOT / "checkpoints" / "openaudio-s1-mini"
@@ -136,7 +137,7 @@ class FishTotalLab:
 
     # --- FUNCIÓN DE PRODUCCIÓN (RESTAURADA Y MEJORADA) ---
     def generate_production_batch(self, text_to_speak):
-        logger.info(f"🎙️ PRODUCCIÓN: Generando audios de alta fidelidad para Marlene y Alejandro.")
+        logger.info(f"🎙️ PRODUCCIÓN: Generando audios de alta fidelidad.")
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         out_folder = PROJECT_ROOT / f"produccion_final_{timestamp}"
         out_folder.mkdir(parents=True,
@@ -187,6 +188,15 @@ class FishTotalLab:
 
             torch.cuda.empty_cache()
             gc.collect()
+
+            # --- NUEVA SECCIÓN: GENERACIÓN DE ZIP FINAL ---
+            try:
+                zip_filename = f"lote_produccion_{timestamp}"
+                zip_path = PROJECT_ROOT / zip_filename
+                shutil.make_archive(str(zip_path), 'zip', out_folder)
+                logger.success(f"📦 ¡TODO COMPRIMIDO! Descarga el archivo: {zip_filename}.zip")
+            except Exception as e:
+                logger.error(f"❌ No se pudo crear el ZIP: {e}")
 
     # --- FUNCIÓN HYPER SEARCH (ANCLAJE DINÁMICO) ---
     def run_hyper_search(self, text, num_tests=15):
@@ -266,8 +276,14 @@ if __name__ == "__main__":
         La mente sólo tiene una actividad, pensar. El pensamiento es todo lo  de la mente lo único que somos y tenemos es pensamiento, por ello, el  pensamiento es lo más importante de todo.
     """
 
+    TEXTO_PARA_PRODUCIR_CUSTOM = """Todos venimos de un mismo campo fuente, de una misma gran energía, de un mismo 
+    Dios, de un mismo universo, como le quieras llamar. Todos somos parte de eso. Nacemos y nos convertimos en esto 
+    por un ratito muy chiquito, muy chiquitito, que creemos que es muy largo y se nos olvida que vamos a regresar a 
+    ese lugar de donde venimos, que es lo que tú creas, adonde tú creas, pero inevitablemente vas a regresar.
+    """
+
     # 1. Ejecutar producción final con los parámetros que ya te gustaron (T=0.82/0.84)
-    lab.generate_production_batch(TEXTO_PARA_PRODUCIR)
+    # lab.generate_production_batch(TEXTO_PARA_PRODUCIR)
 
     # 2. (Opcional) Si quieres seguir probando aún más fluidez:
-    # lab.run_hyper_search(TEXTO_PARA_PRODUCIR, num_tests=10)
+    lab.run_hyper_search(TEXTO_PARA_PRODUCIR_CUSTOM, num_tests=15)
