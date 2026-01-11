@@ -9,18 +9,21 @@ from pathlib import Path
 from loguru import logger
 from datetime import datetime
 
+from fish_speech.inference_engine import TTSInferenceEngine
+from fish_speech.models.dac.inference import load_model as load_decoder_model
+from fish_speech.models.text2semantic.inference import launch_thread_safe_queue
+from fish_speech.utils.schema import ServeTTSRequest, ServeReferenceAudio
+
 # --- CONFIGURACIÓN DE LOGS TRACE (PROTEGIDOS) ---
 logger.remove()
 logger.add(sys.stdout, colorize=True, level="TRACE",
            format="<green>{time:HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{message}</cyan>")
 
 os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
-PROJECT_ROOT = Path("/kaggle/working/fish-speech")
 
-from fish_speech.inference_engine import TTSInferenceEngine
-from fish_speech.models.dac.inference import load_model as load_decoder_model
-from fish_speech.models.text2semantic.inference import launch_thread_safe_queue
-from fish_speech.utils.schema import ServeTTSRequest, ServeReferenceAudio
+# --- Constants for Directory Paths ---
+# PROJECT_ROOT = Path("/kaggle/working/fish-speech")
+PROJECT_ROOT = Path(__file__).resolve().parent
 
 # --- LISTA GLOBAL DE PRESETS (ACTUALIZADA CON GANADORES) ---
 VOICE_PRESETS = {
@@ -29,7 +32,7 @@ VOICE_PRESETS = {
         "top_p": 0.91,
         "chunk": 807,
         "penalty": 1.07,
-        "ref_path": "/kaggle/working/fish-speech/ElevenLabs_2026-01-04T18_49_10_Marlene.mp3",
+        "ref_path": f"{PROJECT_ROOT}/voices/ElevenLabs_Marlene.mp3",
         "prompt": "La mente lo es todo. La causa mental. La causa de todo -absolutamente todo- es mental, es decir, "
                   "la mente es la que produce o causa todo en la vida del individuo. Cuando reconozcamos, entendamos "
                   "y aceptemos esta verdad, habremos dado un paso muy importante en el progreso del desarrollo. Si "
@@ -43,7 +46,7 @@ VOICE_PRESETS = {
         "top_p": 0.91,
         "chunk": 807,
         "penalty": 1.07,
-        "ref_path": "/kaggle/input/fish-input-files/margarita_am_2025_v2.wav",
+        "ref_path": f"{PROJECT_ROOT}/voices/margarita_am_2025_v2.wav",
         "prompt": """Mira te comparto, hicimos tres cuartos más y no suelta todavía el sistema y otros detallitos, 
         pero mira lo que te quiero comentar es que sé que suena raro, sé que se requiere dinero para el intercambio 
         de lo que se desea, sin embargo todo lo que decidas hacer, hazlo porque deseas hacerlo. Lo común es buscar 
@@ -59,12 +62,24 @@ VOICE_PRESETS = {
         haz el audio, sí, ponle ahí tú ya que sabes, un detallito ahí que quieras tú agregar, sí, y simplemente 
         grábalo y escúchate, o sea, lo que más necesitas ahorita es bombardearte con buenos pensamientos."""
     },
+    "Camila": {
+        "temp": 0.82,
+        "top_p": 0.91,
+        "chunk": 807,
+        "penalty": 1.07,
+        "ref_path": f"{PROJECT_ROOT}/voices/camila_sodi_v1.mp3",
+        "prompt": "Todos venimos de un mismo campo fuente, de una misma gran energía, de un mismo Dios, de un mismo "
+                  "universo, como le quieras llamar. Todos somos parte de eso. Nacemos y nos convertimos en esto por "
+                  "un ratito muy chiquito, muy chiquitito, que creemos que es muy largo y se nos olvida que vamos a "
+                  "regresar a ese lugar de donde venimos, que es lo que tú creas, adonde tú creas, "
+                  "pero inevitablemente vas a regresar."
+    },
     "Cristina": {
         "temp": 0.82,
         "top_p": 0.91,
         "chunk": 807,
         "penalty": 1.07,
-        "ref_path": "/kaggle/input/fish-input-files/voice_elevenlabs_cristina_campos_v3.wav",
+        "ref_path": f"{PROJECT_ROOT}/voices/voice_elevenlabs_cristina_campos_v3.wav",
         "prompt": """El agua, la confianza y el miedo. Una lección poderosa y reveladora sobre la verdadera 
         protección y el poder de la preparación. Considera la profunda enseñanza que subyace a la instrucción sobre 
         el miedo al agua. Inbuir en la mente de un niño pequeño un temor paralizante hacia la profundidad, 
@@ -86,7 +101,7 @@ VOICE_PRESETS = {
         "top_p": 0.91,
         "chunk": 807,
         "penalty": 1.07,
-        "ref_path": "/kaggle/input/fish-input-files/voice_elevenlabs_rosa_estela_v4.wav",
+        "ref_path": f"{PROJECT_ROOT}/voices/voice_elevenlabs_rosa_estela_v4.wav",
         "prompt": """El agua, la confianza y el miedo. Una lección poderosa y reveladora sobre la verdadera 
         protección y el poder de la preparación. Considera la profunda enseñanza que subyace a la instrucción sobre 
         el miedo al agua. Inbuir en la mente de un niño pequeño un temor paralizante hacia la profundidad, 
@@ -108,7 +123,7 @@ VOICE_PRESETS = {
         "top_p": 0.91,
         "chunk": 785,
         "penalty": 1.07,
-        "ref_path": "/kaggle/working/fish-speech/ElevenLabs_2026-01-04T19_56_14_Alejandro.mp3",
+        "ref_path": f"{PROJECT_ROOT}/voices/ElevenLabs_2026-01-04T19_56_14_Alejandro.mp3",
         "prompt": "La mente lo es todo. La causa mental. La causa de todo -absolutamente todo- es mental, es decir, "
                   "la mente es la que produce o causa todo en la vida del individuo. Cuando reconozcamos, entendamos "
                   "y aceptemos esta verdad, habremos dado un paso muy importante en el progreso del desarrollo. Si "
@@ -122,7 +137,7 @@ VOICE_PRESETS = {
         "top_p": 0.91,
         "chunk": 785,
         "penalty": 1.07,
-        "ref_path": "/kaggle/input/fish-input-files/voice_elevenlabs_alejandro_ballesteros_v3.wav",
+        "ref_path": f"{PROJECT_ROOT}/voices/voice_elevenlabs_alejandro_ballesteros_v3.wav",
         "prompt": """El agua, la confianza y el miedo. Una lección poderosa y reveladora sobre la verdadera 
         protección y el poder de la preparación. Considera la profunda enseñanza que subyace a la instrucción sobre 
         el miedo al agua. Inbuir en la mente de un niño pequeño un temor paralizante hacia la profundidad, 
@@ -144,7 +159,7 @@ VOICE_PRESETS = {
         "top_p": 0.91,
         "chunk": 785,
         "penalty": 1.07,
-        "ref_path": "/kaggle/input/fish-input-files/voice_elevenlabs_enrique_m_nieto_v3.wav",
+        "ref_path": f"{PROJECT_ROOT}/voices/voice_elevenlabs_enrique_m_nieto_v3.wav",
         "prompt": """El agua, la confianza y el miedo. Una lección poderosa y reveladora sobre la verdadera 
         protección y el poder de la preparación. Considera la profunda enseñanza que subyace a la instrucción sobre 
         el miedo al agua. Inbuir en la mente de un niño pequeño un temor paralizante hacia la profundidad, 
@@ -171,13 +186,22 @@ class FishTotalLab:
         self.precision = torch.half
         logger.info("🎯 INICIANDO MOTOR INTEGRADO (PRODUCCIÓN + HYPER-SEARCH)")
         self.engine = self._load_models()
+        torch.cuda.empty_cache()
+        gc.collect()
 
     def _load_models(self):
-        llama_queue = launch_thread_safe_queue(checkpoint_path=self.checkpoint_dir, device=self.device,
-                                               precision=self.precision, compile=True)
+        llama_queue = launch_thread_safe_queue(checkpoint_path=self.checkpoint_dir,
+                                               device=self.device,
+                                               precision=self.precision,
+                                               compile=False)
+
         decoder_model = load_decoder_model(config_name="modded_dac_vq",
-                                           checkpoint_path=self.checkpoint_dir / "codec.pth", device=self.device)
-        return TTSInferenceEngine(llama_queue=llama_queue, decoder_model=decoder_model, precision=self.precision,
+                                           checkpoint_path=self.checkpoint_dir / "codec.pth",
+                                           device=self.device)
+
+        return TTSInferenceEngine(llama_queue=llama_queue,
+                                  decoder_model=decoder_model,
+                                  precision=self.precision,
                                   compile=False)
 
     # --- FUNCIÓN DE PRODUCCIÓN (RESTAURADA Y MEJORADA) ---
