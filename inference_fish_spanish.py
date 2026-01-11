@@ -8,6 +8,7 @@ import soundfile as sf
 from pathlib import Path
 from loguru import logger
 from datetime import datetime
+import platform
 
 from fish_speech.inference_engine import TTSInferenceEngine
 from fish_speech.models.dac.inference import load_model as load_decoder_model
@@ -102,6 +103,12 @@ VOICE_PRESETS = {
 }
 
 
+# Detectar si estamos en Windows o Linux
+is_windows = platform.system() == "Windows"
+
+# En Windows forzamos False, en Kaggle (Linux) podemos usar True si queremos velocidad
+should_compile = False if is_windows else True
+
 class FishTotalLab:
     def __init__(self):
         self.device = "cuda"
@@ -116,7 +123,7 @@ class FishTotalLab:
         llama_queue = launch_thread_safe_queue(checkpoint_path=self.checkpoint_dir,
                                                device=self.device,
                                                precision=self.precision,
-                                               compile=False)
+                                               compile=should_compile)
 
         decoder_model = load_decoder_model(config_name="modded_dac_vq",
                                            checkpoint_path=self.checkpoint_dir / "codec.pth",
@@ -125,7 +132,7 @@ class FishTotalLab:
         return TTSInferenceEngine(llama_queue=llama_queue,
                                   decoder_model=decoder_model,
                                   precision=self.precision,
-                                  compile=False)
+                                  compile=should_compile)
 
     # --- FUNCIÓN DE PRODUCCIÓN (RESTAURADA Y MEJORADA) ---
     def generate_production_batch(self, text_to_speak):
