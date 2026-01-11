@@ -37,23 +37,25 @@ VOICE_PRESETS = {
     #     "prompt": "La mente lo es todo. La causa mental. La causa de todo -absolutamente todo- es mental, es decir, "
     #               "la mente es la que produce o causa todo en la vida del individuo."
     # },
-    # "MARGARITA": {
-    #     "temp": 0.82,
-    #     "top_p": 0.91,
-    #     "chunk": 807,
-    #     "penalty": 1.07,
-    #     "ref_path": f"{PROJECT_ROOT}/voices/Margarita_Navarrete_optimized.wav",
-    #     "prompt": """Mira te comparto, hicimos tres cuartos más y no suelta todavía el sistema y otros detallitos,
-    #     pero mira lo que te quiero comentar es que sé que suena raro, sé que se requiere"""
-    # },
+    "MARGARITA": {
+        "temp": 0.82,
+        "top_p": 0.91,
+        "chunk": 807,
+        "penalty": 1.07,
+        "ref_path": f"{PROJECT_ROOT}/voices/margarita_am_2025_v2.wav",
+        "prompt": """Mira te comparto, hicimos tres cuartos más y no suelta todavía el sistema y otros detallitos,
+        pero mira lo que te quiero comentar es que sé que suena raro, sé que se requiere"""
+    },
     "Camila": {
         "temp": 0.82,
         "top_p": 0.91,
         "chunk": 807,
         "penalty": 1.07,
-        "ref_path": f"{PROJECT_ROOT}/voices/Camila_Sodi_optimized.mp3",
-        "prompt": "Todos venimos de un mismo campo fuente, de una misma gran energía, de un mismo Dios, de un mismo "
-                  "universo, como le quieras llamar."
+        "ref_path": f"{PROJECT_ROOT}/voices/Camila_Sodi.mp3",
+        "prompt": """Todos venimos de un mismo campo fuente, de una misma gran energía, de un mismo Dios, de un mismo 
+        universo, como le quieras llamar. Todos somos parte de eso. Nacemos y nos convertimos en esto por un ratito 
+        muy chiquito, muy chiquitito, que creemos que es muy largo y se nos olvida que vamos a regresar a ese lugar 
+        de donde venimos, que es lo que tú creas, adonde tú creas, pero inevitablemente vas a regresar."""
     }
     # "Cristina": {
     #     "temp": 0.82,
@@ -283,7 +285,7 @@ if __name__ == "__main__":
     """
 
     # 1. Ejecutar producción final con los parámetros que ya te gustaron (T=0.82/0.84)
-    # lab.generate_production_batch(TEXTO_PARA_PRODUCIR)
+    lab.generate_production_batch(TEXTO_PARA_PRODUCIR_CUSTOM)
 
     # 2. (Opcional) Si quieres seguir probando aún más fluidez:
-    lab.run_hyper_search(TEXTO_PARA_PRODUCIR_CUSTOM, num_tests=15)
+    # lab.run_hyper_search(TEXTO_PARA_PRODUCIR_CUSTOM, num_tests=15)
