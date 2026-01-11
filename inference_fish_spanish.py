@@ -33,7 +33,7 @@ VOICE_PRESETS = {
         "top_p": 0.91,
         "chunk": 807,
         "penalty": 1.07,
-        "ref_path": f"{PROJECT_ROOT}/voices/ElevenLabs_Marlene_optimized.mp3",
+        "ref_path": f"{PROJECT_ROOT}/voices/ElevenLabs_Marlene.mp3",
         "prompt": """La mente lo es todo. La causa mental. La causa de todo -absolutamente todo- es mental, es decir, 
         la mente es la que produce o causa todo en la vida del individuo.
         
@@ -79,7 +79,7 @@ VOICE_PRESETS = {
         "top_p": 0.91,
         "chunk": 807,
         "penalty": 1.07,
-        "ref_path": f"{PROJECT_ROOT}/voices/Elevenlabs_Cristina_Campos_optimized.wav",
+        "ref_path": f"{PROJECT_ROOT}/voices/Elevenlabs_Cristina_Campos.wav",
         "prompt": """El agua, la confianza y el miedo. Una lección poderosa y reveladora sobre la verdadera
         protección y el poder de la preparación. Considera la profunda enseñanza que subyace a la instrucción"""
     },
@@ -88,7 +88,7 @@ VOICE_PRESETS = {
         "top_p": 0.91,
         "chunk": 807,
         "penalty": 1.07,
-        "ref_path": f"{PROJECT_ROOT}/voices/Elevenlabs_Rosa_Estela_optimized.wav",
+        "ref_path": f"{PROJECT_ROOT}/voices/Elevenlabs_Rosa_Estela.wav",
         "prompt": """El agua, la confianza y el miedo. Una lección poderosa y reveladora sobre la verdadera
         protección y el poder de la preparación. Considera la profunda enseñanza que subyace a la instrucción"""
     },
@@ -97,7 +97,7 @@ VOICE_PRESETS = {
         "top_p": 0.91,
         "chunk": 785,
         "penalty": 1.07,
-        "ref_path": f"{PROJECT_ROOT}/voices/ElevenLabs_Alejandro_optimized.mp3",
+        "ref_path": f"{PROJECT_ROOT}/voices/ElevenLabs_Alejandro.mp3",
         "prompt": """La mente lo es todo. La causa mental. La causa de todo -absolutamente todo- es mental, es decir, 
         la mente es la que produce o causa todo en la vida del individuo.
 
@@ -115,7 +115,7 @@ VOICE_PRESETS = {
         "top_p": 0.91,
         "chunk": 785,
         "penalty": 1.07,
-        "ref_path": f"{PROJECT_ROOT}/voices/Elevenlabs_Alejandro_Ballesteros_optimized.wav",
+        "ref_path": f"{PROJECT_ROOT}/voices/Elevenlabs_Alejandro_Ballesteros.wav",
         "prompt": """El agua, la confianza y el miedo. Una lección poderosa y reveladora sobre la verdadera
         protección y el poder de la preparación. Considera la profunda enseñanza que subyace a la instrucción"""
     },
@@ -124,7 +124,7 @@ VOICE_PRESETS = {
         "top_p": 0.91,
         "chunk": 785,
         "penalty": 1.07,
-        "ref_path": f"{PROJECT_ROOT}/voices/Elevenlabs_Enrique_Nieto_optimized.wav",
+        "ref_path": f"{PROJECT_ROOT}/voices/Elevenlabs_Enrique_Nieto.wav",
         "prompt": """El agua, la confianza y el miedo. Una lección poderosa y reveladora sobre la verdadera 
         protección y el poder de la preparación. Considera la profunda enseñanza que subyace a la instrucción sobre 
         el miedo al agua. Inbuir en la mente de un niño pequeño un temor paralizante hacia la profundidad, 
