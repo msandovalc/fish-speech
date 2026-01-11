@@ -28,21 +28,30 @@ PROJECT_ROOT = Path(__file__).resolve().parent
 
 # --- LISTA GLOBAL DE PRESETS (ACTUALIZADA CON GANADORES) ---
 VOICE_PRESETS = {
-    # "MARLENE": {
-    #     "temp": 0.82,
-    #     "top_p": 0.91,
-    #     "chunk": 807,
-    #     "penalty": 1.07,
-    #     "ref_path": f"{PROJECT_ROOT}/voices/ElevenLabs_Marlene_optimized.mp3",
-    #     "prompt": "La mente lo es todo. La causa mental. La causa de todo -absolutamente todo- es mental, es decir, "
-    #               "la mente es la que produce o causa todo en la vida del individuo."
-    # },
+    "MARLENE": {
+        "temp": 0.82,
+        "top_p": 0.91,
+        "chunk": 807,
+        "penalty": 1.07,
+        "ref_path": f"{PROJECT_ROOT}/voices/ElevenLabs_Marlene_optimized.mp3",
+        "prompt": """La mente lo es todo. La causa mental. La causa de todo -absolutamente todo- es mental, es decir, 
+        la mente es la que produce o causa todo en la vida del individuo.
+        
+        Cuando reconozcamos, entendamos y aceptemos esta verdad, habremos dado un paso muy importante en el progreso del desarrollo. 
+        
+        Si todo es mental, este es un universo mental, donde todo funciona por medios mentales. Nosotros somos seres 
+        mentales, mentalidades buenas, perfectas y eternas.
+        
+        La mente sólo tiene una actividad, pensar. El pensamiento es todo lo de la mente lo único que somos y tenemos es 
+        pensamiento, por ello, el pensamiento es lo más importante de todo. 
+        """
+    },
     "MARGARITA": {
         "temp": 0.82,
         "top_p": 0.91,
         "chunk": 807,
         "penalty": 1.07,
-        "ref_path": f"{PROJECT_ROOT}/voices/margarita_am_2025_v2.wav",
+        "ref_path": f"{PROJECT_ROOT}/voices/Margarita_Navarrete.wav",
         "prompt": """Mira te comparto, hicimos tres cuartos más y no suelta todavía el sistema y otros detallitos, 
         pero mira lo que te quiero comentar es que sé que suena raro, sé que se requiere dinero para el intercambio 
         de lo que se desea, sin embargo todo lo que decidas hacer, hazlo porque deseas hacerlo. Lo común es buscar 
@@ -51,13 +60,7 @@ VOICE_PRESETS = {
         las cosas porque te gusta lo que estás haciendo y de lo que te gusta empieza a hacer más, pero porque te gusta.
 
         ¿Cómo voy a poder eliminar la carencia del gusto? Por eso son las líneas, a mí me pasó, te digo tiene poco 
-        que saque el crédito y empecé a hacer líneas para ello, después empezamos a construir, te decía que por ahí 
-        generé una cuestión con la vecina, nuevamente hacer la línea y es como irnos acompañando todo este tiempo en 
-        buen pensamiento, en ese acompañamiento lo que haces es no abortar la misión, es decir, no dejar lo que estás 
-        haciendo inconcluso, al contrario, ir dándote cuenta cómo lo vas logrando, pero no dejándote de motivar. 
-        Recuerda que la motivación es las líneas y puedes grabarte, tú que tomaste el taller de Amarte, haz el audio, 
-        sí, ponle ahí tú ya que sabes, un detallito ahí que quieras tú agregar, sí, y simplemente grábalo y 
-        escúchate, o sea, lo que más necesitas ahorita es bombardearte con buenos pensamientos.
+        que saque el crédito.
         """
     },
     "Camila": {
@@ -70,52 +73,75 @@ VOICE_PRESETS = {
         universo, como le quieras llamar. Todos somos parte de eso. Nacemos y nos convertimos en esto por un ratito 
         muy chiquito, muy chiquitito, que creemos que es muy largo y se nos olvida que vamos a regresar a ese lugar 
         de donde venimos, que es lo que tú creas, adonde tú creas, pero inevitablemente vas a regresar."""
+    },
+    "Cristina": {
+        "temp": 0.82,
+        "top_p": 0.91,
+        "chunk": 807,
+        "penalty": 1.07,
+        "ref_path": f"{PROJECT_ROOT}/voices/Elevenlabs_Cristina_Campos_optimized.wav",
+        "prompt": """El agua, la confianza y el miedo. Una lección poderosa y reveladora sobre la verdadera
+        protección y el poder de la preparación. Considera la profunda enseñanza que subyace a la instrucción"""
+    },
+    "ROSA": {
+        "temp": 0.82,
+        "top_p": 0.91,
+        "chunk": 807,
+        "penalty": 1.07,
+        "ref_path": f"{PROJECT_ROOT}/voices/Elevenlabs_Rosa_Estela_optimized.wav",
+        "prompt": """El agua, la confianza y el miedo. Una lección poderosa y reveladora sobre la verdadera
+        protección y el poder de la preparación. Considera la profunda enseñanza que subyace a la instrucción"""
+    },
+    "ALEJANDRO": {
+        "temp": 0.84,
+        "top_p": 0.91,
+        "chunk": 785,
+        "penalty": 1.07,
+        "ref_path": f"{PROJECT_ROOT}/voices/ElevenLabs_Alejandro_optimized.mp3",
+        "prompt": """La mente lo es todo. La causa mental. La causa de todo -absolutamente todo- es mental, es decir, 
+        la mente es la que produce o causa todo en la vida del individuo.
+
+        Cuando reconozcamos, entendamos y aceptemos esta verdad, habremos dado un paso muy importante en el progreso del desarrollo. 
+
+        Si todo es mental, este es un universo mental, donde todo funciona por medios mentales. Nosotros somos seres 
+        mentales, mentalidades buenas, perfectas y eternas.
+
+        La mente sólo tiene una actividad, pensar. El pensamiento es todo lo de la mente lo único que somos y tenemos es 
+        pensamiento, por ello, el pensamiento es lo más importante de todo. 
+        """
+    },
+    "ALEJANDRO_BALLESTEROS": {
+        "temp": 0.84,
+        "top_p": 0.91,
+        "chunk": 785,
+        "penalty": 1.07,
+        "ref_path": f"{PROJECT_ROOT}/voices/Elevenlabs_Alejandro_Ballesteros_optimized.wav",
+        "prompt": """El agua, la confianza y el miedo. Una lección poderosa y reveladora sobre la verdadera
+        protección y el poder de la preparación. Considera la profunda enseñanza que subyace a la instrucción"""
+    },
+    "ENRIQUE": {
+        "temp": 0.84,
+        "top_p": 0.91,
+        "chunk": 785,
+        "penalty": 1.07,
+        "ref_path": f"{PROJECT_ROOT}/voices/Elevenlabs_Enrique_Nieto_optimized.wav",
+        "prompt": """El agua, la confianza y el miedo. Una lección poderosa y reveladora sobre la verdadera 
+        protección y el poder de la preparación. Considera la profunda enseñanza que subyace a la instrucción sobre 
+        el miedo al agua. Inbuir en la mente de un niño pequeño un temor paralizante hacia la profundidad, 
+        creyendo erróneamente que así se le protege de un posible ahogamiento, puede paradójicamente paralizarlo por 
+        completo en un momento de peligro real, impidiéndole reaccionar de manera efectiva para salvar su propia 
+        vida. En contraste, enseñar al niño un amor genuino por el agua como una parte esencial y maravillosa de la 
+        naturaleza, inculcarle un respeto saludable por su poder y, lo que es crucial, dotarlo de la habilidad vital 
+        de nadar con confianza, empodera al niño de una manera transformadora. Esta analogía poderosa se extiende a 
+        innumerables otros temores que, con las mejores intenciones pero con resultados a menudo limitantes, 
+        se nos transmiten desde la infancia. ¿Cuáles son esas aguas profundas metafóricas que has estado evitando en 
+        tu vida por un temor arraigado, impidiéndote explorar nuevas oportunidades y experiencias enriquecedoras? 
+        Comparte tu profunda reflexión en los comentarios. Dale like a este video si crees firmemente en el poder de 
+        la preparación activa y la confianza cultivada como la verdadera protección contra los desafíos de la vida, 
+        en lugar de la evitación basada en el miedo, y sígueme para explorar juntos más analogías reveladoras que 
+        iluminan la naturaleza del temor y el camino hacia la liberación.
+        """
     }
-    # "Cristina": {
-    #     "temp": 0.82,
-    #     "top_p": 0.91,
-    #     "chunk": 807,
-    #     "penalty": 1.07,
-    #     "ref_path": f"{PROJECT_ROOT}/voices/Elevenlabs_Cristina_Campos_optimized.wav",
-    #     "prompt": """El agua, la confianza y el miedo. Una lección poderosa y reveladora sobre la verdadera
-    #     protección y el poder de la preparación. Considera la profunda enseñanza que subyace a la instrucción"""
-    # },
-    # "ROSA": {
-    #     "temp": 0.82,
-    #     "top_p": 0.91,
-    #     "chunk": 807,
-    #     "penalty": 1.07,
-    #     "ref_path": f"{PROJECT_ROOT}/voices/Elevenlabs_Rosa_Estela_optimized.wav",
-    #     "prompt": """El agua, la confianza y el miedo. Una lección poderosa y reveladora sobre la verdadera
-    #     protección y el poder de la preparación. Considera la profunda enseñanza que subyace a la instrucción"""
-    # },
-    # "ALEJANDRO": {
-    #     "temp": 0.84,
-    #     "top_p": 0.91,
-    #     "chunk": 785,
-    #     "penalty": 1.07,
-    #     "ref_path": f"{PROJECT_ROOT}/voices/ElevenLabs_Alejandro_optimized.mp3",
-    #     "prompt": "La mente lo es todo. La causa mental. La causa de todo -absolutamente todo- es mental, es decir, "
-    #               "la mente es la que produce o causa todo en la vida del individuo."
-    # },
-    # "ALEJANDRO_BALLESTEROS": {
-    #     "temp": 0.84,
-    #     "top_p": 0.91,
-    #     "chunk": 785,
-    #     "penalty": 1.07,
-    #     "ref_path": f"{PROJECT_ROOT}/voices/Elevenlabs_Alejandro_Ballesteros_optimized.wav",
-    #     "prompt": """El agua, la confianza y el miedo. Una lección poderosa y reveladora sobre la verdadera
-    #     protección y el poder de la preparación. Considera la profunda enseñanza que subyace a la instrucción"""
-    # },
-    # "ENRIQUE": {
-    #     "temp": 0.84,
-    #     "top_p": 0.91,
-    #     "chunk": 785,
-    #     "penalty": 1.07,
-    #     "ref_path": f"{PROJECT_ROOT}/voices/Elevenlabs_Enrique_Nieto_optimized.wav",
-    #     "prompt": """El agua, la confianza y el miedo. Una lección poderosa y reveladora sobre la verdadera
-    #     protección y el poder de la preparación. Considera la profunda enseñanza que subyace a la instrucción"""
-    # }
 }
 
 
