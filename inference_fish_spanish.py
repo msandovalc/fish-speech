@@ -43,8 +43,22 @@ VOICE_PRESETS = {
         "chunk": 807,
         "penalty": 1.07,
         "ref_path": f"{PROJECT_ROOT}/voices/margarita_am_2025_v2.wav",
-        "prompt": """Mira te comparto, hicimos tres cuartos más y no suelta todavía el sistema y otros detallitos,
-        pero mira lo que te quiero comentar es que sé que suena raro, sé que se requiere"""
+        "prompt": """Mira te comparto, hicimos tres cuartos más y no suelta todavía el sistema y otros detallitos, 
+        pero mira lo que te quiero comentar es que sé que suena raro, sé que se requiere dinero para el intercambio 
+        de lo que se desea, sin embargo todo lo que decidas hacer, hazlo porque deseas hacerlo. Lo común es buscar 
+        hacerlo porque necesitas, y entonces si se empieza a hacer todo desde la necesidad, desde pues es que Magui 
+        si lo requiero para los pagos, quedó bien justito ahorita, entonces te me vas a empezar a estresar más. Haz 
+        las cosas porque te gusta lo que estás haciendo y de lo que te gusta empieza a hacer más, pero porque te gusta.
+
+        ¿Cómo voy a poder eliminar la carencia del gusto? Por eso son las líneas, a mí me pasó, te digo tiene poco 
+        que saque el crédito y empecé a hacer líneas para ello, después empezamos a construir, te decía que por ahí 
+        generé una cuestión con la vecina, nuevamente hacer la línea y es como irnos acompañando todo este tiempo en 
+        buen pensamiento, en ese acompañamiento lo que haces es no abortar la misión, es decir, no dejar lo que estás 
+        haciendo inconcluso, al contrario, ir dándote cuenta cómo lo vas logrando, pero no dejándote de motivar. 
+        Recuerda que la motivación es las líneas y puedes grabarte, tú que tomaste el taller de Amarte, haz el audio, 
+        sí, ponle ahí tú ya que sabes, un detallito ahí que quieras tú agregar, sí, y simplemente grábalo y 
+        escúchate, o sea, lo que más necesitas ahorita es bombardearte con buenos pensamientos.
+        """
     },
     "Camila": {
         "temp": 0.82,
