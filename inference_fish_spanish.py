@@ -32,149 +32,72 @@ VOICE_PRESETS = {
         "top_p": 0.91,
         "chunk": 807,
         "penalty": 1.07,
-        "ref_path": f"{PROJECT_ROOT}/voices/ElevenLabs_Marlene.mp3",
+        "ref_path": f"{PROJECT_ROOT}/voices/ElevenLabs_Marlene_optimized.mp3",
         "prompt": "La mente lo es todo. La causa mental. La causa de todo -absolutamente todo- es mental, es decir, "
-                  "la mente es la que produce o causa todo en la vida del individuo. Cuando reconozcamos, entendamos "
-                  "y aceptemos esta verdad, habremos dado un paso muy importante en el progreso del desarrollo. Si "
-                  "todo es mental, este es un universo mental, donde todo funciona por medios mentales. Nosotros "
-                  "somos seres mentales, mentalidades buenas, perfectas y eternas. La mente sólo tiene una actividad, "
-                  "pensar. El pensamiento es todo lo de la mente lo único que somos y tenemos es pensamiento, "
-                  "por ello, el pensamiento es lo más importante de todo."
+                  "la mente es la que produce o causa todo en la vida del individuo."
     },
     "MARGARITA": {
         "temp": 0.82,
         "top_p": 0.91,
         "chunk": 807,
         "penalty": 1.07,
-        "ref_path": f"{PROJECT_ROOT}/voices/margarita_am_2025_v2.wav",
+        "ref_path": f"{PROJECT_ROOT}/voices/Margarita_Navarrete_optimized.wav",
         "prompt": """Mira te comparto, hicimos tres cuartos más y no suelta todavía el sistema y otros detallitos, 
-        pero mira lo que te quiero comentar es que sé que suena raro, sé que se requiere dinero para el intercambio 
-        de lo que se desea, sin embargo todo lo que decidas hacer, hazlo porque deseas hacerlo. Lo común es buscar 
-        hacerlo porque necesitas, y entonces si se empieza a hacer todo desde la necesidad, desde pues es que Magui 
-        si lo requiero para los pagos, quedó bien justito ahorita, entonces te me vas a empezar a estresar más. Haz 
-        las cosas porque te gusta lo que estás haciendo y de lo que te gusta empieza a hacer más, pero porque te 
-        gusta. ¿Cómo voy a poder eliminar la carencia del gusto? Por eso son las líneas, a mí me pasó, te digo tiene 
-        poco que saque el crédito y empecé a hacer líneas para ello, después empezamos a construir, te decía que por 
-        ahí generé una cuestión con la vecina, nuevamente hacer la línea y es como irnos acompañando todo este tiempo 
-        en buen pensamiento, en ese acompañamiento lo que haces es no abortar la misión, es decir, no dejar lo que 
-        estás haciendo inconcluso, al contrario, ir dándote cuenta cómo lo vas logrando, pero no dejándote de 
-        motivar. Recuerda que la motivación es las líneas y puedes grabarte, tú que tomaste el taller de Amarte, 
-        haz el audio, sí, ponle ahí tú ya que sabes, un detallito ahí que quieras tú agregar, sí, y simplemente 
-        grábalo y escúchate, o sea, lo que más necesitas ahorita es bombardearte con buenos pensamientos."""
+        pero mira lo que te quiero comentar es que sé que suena raro, sé que se requiere"""
     },
     "Camila": {
         "temp": 0.82,
         "top_p": 0.91,
         "chunk": 807,
         "penalty": 1.07,
-        "ref_path": f"{PROJECT_ROOT}/voices/camila_sodi_v1.mp3",
+        "ref_path": f"{PROJECT_ROOT}/voices/Camila_Sodi_optimized.mp3",
         "prompt": "Todos venimos de un mismo campo fuente, de una misma gran energía, de un mismo Dios, de un mismo "
-                  "universo, como le quieras llamar. Todos somos parte de eso. Nacemos y nos convertimos en esto por "
-                  "un ratito muy chiquito, muy chiquitito, que creemos que es muy largo y se nos olvida que vamos a "
-                  "regresar a ese lugar de donde venimos, que es lo que tú creas, adonde tú creas, "
-                  "pero inevitablemente vas a regresar."
+                  "universo, como le quieras llamar."
     },
     "Cristina": {
         "temp": 0.82,
         "top_p": 0.91,
         "chunk": 807,
         "penalty": 1.07,
-        "ref_path": f"{PROJECT_ROOT}/voices/voice_elevenlabs_cristina_campos_v3.wav",
+        "ref_path": f"{PROJECT_ROOT}/voices/Elevenlabs_Cristina_Campos_optimized.wav",
         "prompt": """El agua, la confianza y el miedo. Una lección poderosa y reveladora sobre la verdadera 
-        protección y el poder de la preparación. Considera la profunda enseñanza que subyace a la instrucción sobre 
-        el miedo al agua. Inbuir en la mente de un niño pequeño un temor paralizante hacia la profundidad, 
-        creyendo erróneamente que así se le protege de un posible ahogamiento, puede paradójicamente paralizarlo por 
-        completo en un momento de peligro real, impidiéndole reaccionar de manera efectiva para salvar su propia 
-        vida. En contraste, enseñar al niño un amor genuino por el agua como una parte esencial y maravillosa de la 
-        naturaleza, inculcarle un respeto saludable por su poder y, lo que es crucial, dotarlo de la habilidad vital 
-        de nadar con confianza, empodera al niño de una manera transformadora. Esta analogía poderosa se extiende a 
-        innumerables otros temores que, con las mejores intenciones pero con resultados a menudo limitantes, 
-        se nos transmiten desde la infancia. ¿Cuáles son esas aguas profundas metafóricas que has estado evitando en 
-        tu vida por un temor arraigado, impidiéndote explorar nuevas oportunidades y experiencias enriquecedoras? 
-        Comparte tu profunda reflexión en los comentarios. Dale like a este video si crees firmemente en el poder de 
-        la preparación activa y la confianza cultivada como la verdadera protección contra los desafíos de la vida, 
-        en lugar de la evitación basada en el miedo, y sígueme para explorar juntos más analogías reveladoras que 
-        iluminan la naturaleza del temor y el camino hacia la liberación."""
+        protección y el poder de la preparación. Considera la profunda enseñanza que subyace a la instrucción"""
     },
     "ROSA": {
         "temp": 0.82,
         "top_p": 0.91,
         "chunk": 807,
         "penalty": 1.07,
-        "ref_path": f"{PROJECT_ROOT}/voices/voice_elevenlabs_rosa_estela_v4.wav",
+        "ref_path": f"{PROJECT_ROOT}/voices/Elevenlabs_Rosa_Estela_optimized.wav",
         "prompt": """El agua, la confianza y el miedo. Una lección poderosa y reveladora sobre la verdadera 
-        protección y el poder de la preparación. Considera la profunda enseñanza que subyace a la instrucción sobre 
-        el miedo al agua. Inbuir en la mente de un niño pequeño un temor paralizante hacia la profundidad, 
-        creyendo erróneamente que así se le protege de un posible ahogamiento, puede paradójicamente paralizarlo por 
-        completo en un momento de peligro real, impidiéndole reaccionar de manera efectiva para salvar su propia 
-        vida. En contraste, enseñar al niño un amor genuino por el agua como una parte esencial y maravillosa de la 
-        naturaleza, inculcarle un respeto saludable por su poder y, lo que es crucial, dotarlo de la habilidad vital 
-        de nadar con confianza, empodera al niño de una manera transformadora. Esta analogía poderosa se extiende a 
-        innumerables otros temores que, con las mejores intenciones pero con resultados a menudo limitantes, 
-        se nos transmiten desde la infancia. ¿Cuáles son esas aguas profundas metafóricas que has estado evitando en 
-        tu vida por un temor arraigado, impidiéndote explorar nuevas oportunidades y experiencias enriquecedoras? 
-        Comparte tu profunda reflexión en los comentarios. Dale like a este video si crees firmemente en el poder de 
-        la preparación activa y la confianza cultivada como la verdadera protección contra los desafíos de la vida, 
-        en lugar de la evitación basada en el miedo, y sígueme para explorar juntos más analogías reveladoras que 
-        iluminan la naturaleza del temor y el camino hacia la liberación."""
+        protección y el poder de la preparación. Considera la profunda enseñanza que subyace a la instrucción"""
     },
     "ALEJANDRO": {
         "temp": 0.84,
         "top_p": 0.91,
         "chunk": 785,
         "penalty": 1.07,
-        "ref_path": f"{PROJECT_ROOT}/voices/ElevenLabs_2026-01-04T19_56_14_Alejandro.mp3",
+        "ref_path": f"{PROJECT_ROOT}/voices/ElevenLabs_Alejandro_optimized.mp3",
         "prompt": "La mente lo es todo. La causa mental. La causa de todo -absolutamente todo- es mental, es decir, "
-                  "la mente es la que produce o causa todo en la vida del individuo. Cuando reconozcamos, entendamos "
-                  "y aceptemos esta verdad, habremos dado un paso muy importante en el progreso del desarrollo. Si "
-                  "todo es mental, este es un universo mental, donde todo funciona por medios mentales. Nosotros "
-                  "somos seres mentales, mentalidades buenas, perfectas y eternas. La mente sólo tiene una actividad, "
-                  "pensar. El pensamiento es todo lo de la mente lo único que somos y tenemos es pensamiento, "
-                  "por ello, el pensamiento es lo más importante de todo."
+                  "la mente es la que produce o causa todo en la vida del individuo."
     },
     "ALEJANDRO_BALLESTEROS": {
         "temp": 0.84,
         "top_p": 0.91,
         "chunk": 785,
         "penalty": 1.07,
-        "ref_path": f"{PROJECT_ROOT}/voices/voice_elevenlabs_alejandro_ballesteros_v3.wav",
+        "ref_path": f"{PROJECT_ROOT}/voices/Elevenlabs_Alejandro_Ballesteros_optimized.wav",
         "prompt": """El agua, la confianza y el miedo. Una lección poderosa y reveladora sobre la verdadera 
-        protección y el poder de la preparación. Considera la profunda enseñanza que subyace a la instrucción sobre 
-        el miedo al agua. Inbuir en la mente de un niño pequeño un temor paralizante hacia la profundidad, 
-        creyendo erróneamente que así se le protege de un posible ahogamiento, puede paradójicamente paralizarlo por 
-        completo en un momento de peligro real, impidiéndole reaccionar de manera efectiva para salvar su propia 
-        vida. En contraste, enseñar al niño un amor genuino por el agua como una parte esencial y maravillosa de la 
-        naturaleza, inculcarle un respeto saludable por su poder y, lo que es crucial, dotarlo de la habilidad vital 
-        de nadar con confianza, empodera al niño de una manera transformadora. Esta analogía poderosa se extiende a 
-        innumerables otros temores que, con las mejores intenciones pero con resultados a menudo limitantes, 
-        se nos transmiten desde la infancia. ¿Cuáles son esas aguas profundas metafóricas que has estado evitando en 
-        tu vida por un temor arraigado, impidiéndote explorar nuevas oportunidades y experiencias enriquecedoras? 
-        Comparte tu profunda reflexión en los comentarios. Dale like a este video si crees firmemente en el poder de 
-        la preparación activa y la confianza cultivada como la verdadera protección contra los desafíos de la vida, 
-        en lugar de la evitación basada en el miedo, y sígueme para explorar juntos más analogías reveladoras que 
-        iluminan la naturaleza del temor y el camino hacia la liberación."""
+        protección y el poder de la preparación. Considera la profunda enseñanza que subyace a la instrucción"""
     },
     "ENRIQUE": {
         "temp": 0.84,
         "top_p": 0.91,
         "chunk": 785,
         "penalty": 1.07,
-        "ref_path": f"{PROJECT_ROOT}/voices/voice_elevenlabs_enrique_m_nieto_v3.wav",
+        "ref_path": f"{PROJECT_ROOT}/voices/Elevenlabs_Enrique_Nieto_optimized.wav",
         "prompt": """El agua, la confianza y el miedo. Una lección poderosa y reveladora sobre la verdadera 
-        protección y el poder de la preparación. Considera la profunda enseñanza que subyace a la instrucción sobre 
-        el miedo al agua. Inbuir en la mente de un niño pequeño un temor paralizante hacia la profundidad, 
-        creyendo erróneamente que así se le protege de un posible ahogamiento, puede paradójicamente paralizarlo por 
-        completo en un momento de peligro real, impidiéndole reaccionar de manera efectiva para salvar su propia 
-        vida. En contraste, enseñar al niño un amor genuino por el agua como una parte esencial y maravillosa de la 
-        naturaleza, inculcarle un respeto saludable por su poder y, lo que es crucial, dotarlo de la habilidad vital 
-        de nadar con confianza, empodera al niño de una manera transformadora. Esta analogía poderosa se extiende a 
-        innumerables otros temores que, con las mejores intenciones pero con resultados a menudo limitantes, 
-        se nos transmiten desde la infancia. ¿Cuáles son esas aguas profundas metafóricas que has estado evitando en 
-        tu vida por un temor arraigado, impidiéndote explorar nuevas oportunidades y experiencias enriquecedoras? 
-        Comparte tu profunda reflexión en los comentarios. Dale like a este video si crees firmemente en el poder de 
-        la preparación activa y la confianza cultivada como la verdadera protección contra los desafíos de la vida, 
-        en lugar de la evitación basada en el miedo, y sígueme para explorar juntos más analogías reveladoras que 
-        iluminan la naturaleza del temor y el camino hacia la liberación."""
+        protección y el poder de la preparación. Considera la profunda enseñanza que subyace a la instrucción"""
     }
 }
 
@@ -209,7 +132,9 @@ class FishTotalLab:
         logger.info(f"🎙️ PRODUCCIÓN: Generando audios de alta fidelidad para Marlene y Alejandro.")
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         out_folder = PROJECT_ROOT / f"produccion_final_{timestamp}"
-        out_folder.mkdir(parents=True, exist_ok=True)
+        out_folder.mkdir(parents=True,
+                         exist_ok=True
+                         )
 
         for name, params in VOICE_PRESETS.items():
             logger.trace(
@@ -219,7 +144,9 @@ class FishTotalLab:
                 audio_bytes = f.read()
 
             with torch.inference_mode():
-                vq_tokens = self.engine.encode_reference(audio_bytes, enable_reference_audio=True)
+                vq_tokens = self.engine.encode_reference(audio_bytes,
+                                                         enable_reference_audio=True
+                                                         )
 
                 req = ServeTTSRequest(
                     text=text_to_speak,
@@ -261,12 +188,16 @@ class FishTotalLab:
 
         for voice_name, base_params in VOICE_PRESETS.items():
             voice_folder = PROJECT_ROOT / f"hyper_{voice_name}_{timestamp}"
-            voice_folder.mkdir(parents=True, exist_ok=True)
+            voice_folder.mkdir(parents=True,
+                               exist_ok=True
+                               )
 
             with open(base_params['ref_path'], "rb") as f:
                 audio_bytes = f.read()
             with torch.inference_mode():
-                vq_tokens = self.engine.encode_reference(audio_bytes, enable_reference_audio=True)
+                vq_tokens = self.engine.encode_reference(audio_bytes,
+                                                         enable_reference_audio=True
+                                                         )
 
             t_base = base_params['temp']
             p_base = base_params['top_p']
