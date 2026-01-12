@@ -46,15 +46,18 @@ ormsgpack = "*"
 tiktoken = ">=0.8.0"
 pydantic = ">=2.9.2"
 cachetools = "*"
-descript-audio-codec = "*"
-descript-audiotools = "*"
+#descript-audio-codec = "*"
+#descript-audiotools = "*"
+protobuf = ">=3.20.2"
 
 # ==========================================
 # SECCIÓN 3: PYTORCH Y SOPORTE CUDA (> 12.1)
 # ==========================================
 # Usamos CUDA 12.4 (cu124) para cumplir el requisito de > 12.1
-torch = {version = ">=2.4.0", source = "pytorch-gpu"}
-torchaudio = {version = ">=2.4.0", source = "pytorch-gpu"}
+torch = {version = "2.6.0+cu124", source = "pytorch-gpu"}
+torchvision = {version = "0.21.0+cu124", source = "pytorch-gpu"}
+torchaudio = {version = "2.6.0+cu124", source = "pytorch-gpu"}
+
 
 # ==========================================
 # SECCIÓN 4: HERRAMIENTAS DE DESARROLLO
