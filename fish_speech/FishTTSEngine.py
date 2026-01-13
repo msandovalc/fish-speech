@@ -80,27 +80,33 @@ VOICE_PRESETS = {
 
 
 class FishTTSEngine:
-
-    def __init__(self):
-        """Initializes the engine, detecting platform and loading models safely."""
+    def __init__(self, checkpoint_path=None):
+        """
+        Initializes the TTS engine.
+        :param checkpoint_path: Optional custom path to models. Defaults to PROJECT_ROOT/checkpoints.
+        """
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        self.checkpoint_dir = PROJECT_ROOT / "checkpoints" / "openaudio-s1-mini"
+        # Cache to store encoded Vocal DNA
+        # format: { "MARLENE": (audio_bytes, vq_tokens), ... }
+        self.vocal_dna_cache = {}
+
+        self.checkpoint_dir = checkpoint_path or (PROJECT_ROOT / "checkpoints" / "openaudio-s1-mini")
         self.precision = torch.half
 
-        # Windows doesn't support torch.compile (Triton missing)
+        # Windows does not support torch.compile due to missing Triton support
         self.should_compile = False if platform.system() == "Windows" else True
 
-        logger.info(f"🚀 Initializing Engine | OS: {platform.system()} | Compile: {self.should_compile}")
+        logger.info(f"🚀 Initializing Engine | OS: {platform.system()} | Device: {self.device}")
 
         try:
             self.engine = self._load_models()
             logger.success("✅ Models loaded successfully into VRAM.")
         except Exception as e:
             logger.error(f"❌ Failed to load models: {e}")
-            sys.exit(1)
+            raise e
 
     def _load_models(self):
-        """Loads Llama and DAC models with memory safety."""
+        """Loads Llama (LLM) and DAC (Decoder) models with memory safety."""
         llama_queue = launch_thread_safe_queue(
             checkpoint_path=self.checkpoint_dir,
             device=self.device,
@@ -120,25 +126,15 @@ class FishTTSEngine:
         )
 
     def clean_text(self, text):
-        """
-        Cleans up the input text by removing multiple spaces, tabs, and newlines.
-        This prevents the AI from getting 'lost' in empty spaces.
-        """
-        if not text:
-            return ""
-        # Replace newlines/tabs with space
+        """Removes extra whitespaces, tabs, and newlines to prevent AI artifacts."""
+        if not text: return ""
         text = text.replace("\n", " ").replace("\t", " ")
-        # Collapse multiple spaces into one using Regex
-        text = re.sub(r'\s+', ' ', text)
-        return text.strip()
+        return re.sub(r'\s+', ' ', text).strip()
 
     def split_text(self, text, max_chars=1000):
-        """Splits long text into chunks by sentences to avoid cutting words."""
-        logger.debug(f"✂️ Splitting text into chunks (Max Chars: {max_chars})")
-        # Split by periods to keep semantic meaning
+        """Splits long text into semantic chunks to avoid VRAM overflow."""
         sentences = text.replace('\n', ' ').split('. ')
-        chunks = []
-        current_chunk = ""
+        chunks, current_chunk = [], ""
 
         for sentence in sentences:
             if len(current_chunk) + len(sentence) < max_chars:
@@ -149,50 +145,49 @@ class FishTTSEngine:
 
         if current_chunk:
             chunks.append(current_chunk.strip())
-
-        logger.info(f"📦 Text divided into {len(chunks)} logical chunks.")
         return chunks
 
     def process_narration(self, voice_key, raw_text):
         """
-        Main pipeline to process long text. Includes text sanitization,
-        dynamic audio extraction, and final assembly.
+        API-like method: Processes text and returns the raw audio data.
+        NO files are saved within the engine directory.
+
+        :param voice_key: The key for the voice (e.g., 'CAMILA').
+        :param raw_text: The string to be narrated.
+        :return: Tuple (numpy_array_audio, sample_rate)
         """
         if voice_key not in VOICE_PRESETS:
-            logger.error(f"❌ Voice key '{voice_key}' not found in VOICE_PRESETS.")
-            return
+            logger.error(f"❌ Voice key '{voice_key}' not found in presets.")
+            return None, None
 
         params = VOICE_PRESETS[voice_key]
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        output_dir = PROJECT_ROOT / f"narration_{voice_key}_{timestamp}"
-        output_dir.mkdir(parents=True, exist_ok=True)
-
-        # --- STEP 1: TEXT SANITIZATION ---
-        logger.info(f"🧹 Sanitizing input text for {voice_key}...")
         clean_input = self.clean_text(raw_text)
-        logger.debug(f"Input text length: {len(clean_input)} chars.")
-
         final_audio_segments = []
 
         try:
-            # --- STEP 2: VOCAL DNA ENCODING ---
-            logger.info(f"🧬 Encoding Reference Audio: {params['ref_path']}")
-            with open(params['ref_path'], "rb") as f:
-                audio_bytes = f.read()
 
-            with torch.inference_mode():
-                vq_tokens = self.engine.encode_reference(audio_bytes, enable_reference_audio=True)
-                logger.success("✅ Vocal DNA encoded successfully.")
+            # --- STEP 1: VOCAL DNA (With Caching Logic) ---
+            if voice_key in self.vocal_dna_cache:
+                logger.info(f"⚡ Using cached Vocal DNA for: {voice_key}")
+                audio_bytes, vq_tokens = self.vocal_dna_cache[voice_key]
+            else:
+                logger.info(f"🧬 First run: Encoding Reference for {voice_key}...")
+                with open(params['ref_path'], "rb") as f:
+                    audio_bytes = f.read()
 
-            # --- STEP 3: TEXT CHUNKING ---
-            text_chunks = self.split_text(clean_input, max_chars=1000)
-            total_chunks = len(text_chunks)
-            logger.info(f"📦 Starting loop for {total_chunks} chunks.")
+                with torch.inference_mode():
+                    vq_tokens = self.engine.encode_reference(audio_bytes,
+                                                             enable_reference_audio=True
+                                                             )
 
-            # --- STEP 4: INFERENCE LOOP ---
+                # Store in cache for future calls
+                self.vocal_dna_cache[voice_key] = (audio_bytes, vq_tokens)
+                logger.success(f"💾 Vocal DNA for {voice_key} stored in cache.")
+
+            # --- Step 2: Inference Loop  ---
+            text_chunks = self.split_text(clean_input)
             for i, chunk_text in enumerate(text_chunks):
-                current_idx = i + 1
-                logger.trace(f"⏳ [CHUNK {current_idx}/{total_chunks}] Processing: '{chunk_text[:50]}...'")
+                logger.debug(f"⏳ Processing chunk {i + 1}/{len(text_chunks)}")
 
                 req = ServeTTSRequest(
                     text=chunk_text,
@@ -209,66 +204,31 @@ class FishTTSEngine:
                     format="wav"
                 )
 
-                # Generate Audio
+                # Collect audio segments in memory
                 results = self.engine.inference(req)
-
-                # --- ROBUST EXTRACTION LOGIC ---
-                # We must be careful: results can be a generator of objects containing audio
-                chunk_collected_parts = 0
                 for res in results:
-                    # Check if result has an 'audio' attribute or is the audio itself
-                    raw_data = res.audio if hasattr(res, 'audio') else res
-
-                    # Case A: Data is a Tuple (common in compiled/distributed modes)
-                    if isinstance(raw_data, tuple):
-                        for item in raw_data:
+                    data = res.audio if hasattr(res, 'audio') else res
+                    if isinstance(data, np.ndarray):
+                        final_audio_segments.append(data)
+                    elif isinstance(data, tuple):
+                        for item in data:
                             if isinstance(item, np.ndarray):
                                 final_audio_segments.append(item)
-                                chunk_collected_parts += 1
 
-                    # Case B: Data is a direct Numpy Array
-                    elif isinstance(raw_data, np.ndarray):
-                        final_audio_segments.append(raw_data)
-                        chunk_collected_parts += 1
-
-                if chunk_collected_parts > 0:
-                    logger.debug(f"📥 [CHUNK {current_idx}] Stored {chunk_collected_parts} audio segment(s).")
-                else:
-                    logger.warning(f"⚠️ [CHUNK {current_idx}] No audio data was extracted! Check model stability.")
-
-                # VRAM Garbage Collection
+                # Memory management for Quadro T1000
                 torch.cuda.empty_cache()
                 gc.collect()
 
-            # --- STEP 5: FINAL ASSEMBLY & EXPORT ---
-            if len(final_audio_segments) > 0:
-                logger.info(f"🧵 Concatenating {len(final_audio_segments)} segments into master file...")
-
-                # Combine all pieces into one single array
+            if final_audio_segments:
                 combined_audio = np.concatenate(final_audio_segments)
+                return combined_audio, 44100
 
-                final_filename = f"MASTER_{voice_key}_{timestamp}.wav"
-                final_path = output_dir / final_filename
-
-                # Write to disk
-                sf.write(str(final_path), combined_audio, 44100)
-
-                # Verify file exists and has size
-                if final_path.exists() and final_path.stat().st_size > 0:
-                    logger.success(f"🏆 SUCCESS: Full narration saved at {final_path}")
-                    logger.info(f"📊 Final file size: {final_path.stat().st_size / 1024 / 1024:.2f} MB")
-
-                    # Zip the output directory
-                    zip_name = f"bundle_{voice_key}_{timestamp}"
-                    shutil.make_archive(str(PROJECT_ROOT / zip_name), 'zip', output_dir)
-                    logger.success(f"📦 ZIP BUNDLE READY: {zip_name}.zip")
-                else:
-                    logger.error("❌ File was created but appears to be empty (0 bytes).")
-            else:
-                logger.error("❌ No audio segments were collected. Nothing to assemble.")
+            return None, None
 
         except Exception as e:
-            logger.exception(f"🔥 CRITICAL ERROR during process_narration: {str(e)}")
+            logger.error(f"🔥 Engine Error: {e}")
+            return None, None
+
 
 # --- EXECUTION ---
 if __name__ == "__main__":
@@ -303,6 +263,7 @@ if __name__ == "__main__":
     (proud) (excited) Invariablemente y en forma automática todo lo bueno llegará a tu vida (excited) .
     """
 
-    # Run production for Marlene
+    # Run production for Camila
     engine.process_narration(voice_key="CAMILA",
-                             raw_text=LONG_CHAPTER)
+                             raw_text=LONG_CHAPTER
+                             )

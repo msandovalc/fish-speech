@@ -111,3 +111,5 @@ ffprobe.exe
 # ----------
 /*.test.sh
 asr-label*
+
+poetry.lock
