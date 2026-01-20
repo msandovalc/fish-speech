@@ -40,15 +40,15 @@ except ImportError:
 # --- VOICE PRESETS (OPTIMIZED FOR S1-MINI) ---
 # NOTE: Temperatures lowered to ~0.75 and Penalty to ~1.05 to prevent metallic artifacts.
 VOICE_PRESETS = {
-    "MARLENE": {
-        "temp": 0.75,
-        "top_p": 0.90,
-        "chunk": 807,
-        "penalty": 1.05,
-        "ref_path": str(PROJECT_ROOT / "voices" / "ElevenLabs_Marlene.mp3"),
-        "prompt": "La mente lo es todo. La causa mental...",
-        "style_tags": "(calm) (narrative)"
-    },
+    # "MARLENE": {
+    #     "temp": 0.75,
+    #     "top_p": 0.90,
+    #     "chunk": 807,
+    #     "penalty": 1.05,
+    #     "ref_path": str(PROJECT_ROOT / "voices" / "ElevenLabs_Marlene.mp3"),
+    #     "prompt": "La mente lo es todo. La causa mental...",
+    #     "style_tags": "(calm) (narrative)"
+    # },
     "MARGARITA": {
         "temp": 0.75,
         "top_p": 0.90,
@@ -61,57 +61,57 @@ VOICE_PRESETS = {
     "CAMILA": {
         "temp": 0.70,  # Optimized for deep voice stability
         "top_p": 0.70,
-        "chunk": 512,
+        "chunk": 807,
         "penalty": 1.05,
         "ref_path": str(PROJECT_ROOT / "voices" / "Camila_Sodi.mp3"),
         "prompt": "(calm) (deep voice) Todos venimos de un mismo campo fuente...",
         "style_tags": "(calm) (deep voice)"
-    },
-    "CRISTINA": {
-        "temp": 0.75,
-        "top_p": 0.90,
-        "chunk": 807,
-        "penalty": 1.05,
-        "ref_path": str(PROJECT_ROOT / "voices" / "Elevenlabs_Cristina_Campos.wav"),
-        "prompt": "El agua, la confianza y el miedo...",
-        "style_tags": "(calm) (narrative)"
-    },
-    "ROSA": {
-        "temp": 0.75,
-        "top_p": 0.90,
-        "chunk": 807,
-        "penalty": 1.05,
-        "ref_path": str(PROJECT_ROOT / "voices" / "Elevenlabs_Rosa_Estela.wav"),
-        "prompt": "El agua, la confianza y el miedo...",
-        "style_tags": "(calm) (soft)"
-    },
-    "ALEJANDRO": {
-        "temp": 0.75,
-        "top_p": 0.85,
-        "chunk": 512,
-        "penalty": 1.10,
-        "ref_path": str(PROJECT_ROOT / "voices" / "ElevenLabs_Alejandro.mp3"),
-        "prompt": "(serious) (calm) La mente lo es todo.",
-        "style_tags": "(serious) (calm)"
-    },
-    "ALEJANDRO_BALLESTEROS": {
-        "temp": 0.75,
-        "top_p": 0.90,
-        "chunk": 785,
-        "penalty": 1.05,
-        "ref_path": str(PROJECT_ROOT / "voices" / "Elevenlabs_Alejandro_Ballesteros.wav"),
-        "prompt": "El agua, la confianza y el miedo...",
-        "style_tags": "(serious) (deep)"
-    },
-    "ENRIQUE": {
-        "temp": 0.75,
-        "top_p": 0.90,
-        "chunk": 785,
-        "penalty": 1.05,
-        "ref_path": str(PROJECT_ROOT / "voices" / "Elevenlabs_Enrique_Nieto.wav"),
-        "prompt": "El agua, la confianza y el miedo...",
-        "style_tags": "(narrative) (serious)"
     }
+    # "CRISTINA": {
+    #     "temp": 0.75,
+    #     "top_p": 0.90,
+    #     "chunk": 807,
+    #     "penalty": 1.05,
+    #     "ref_path": str(PROJECT_ROOT / "voices" / "Elevenlabs_Cristina_Campos.wav"),
+    #     "prompt": "El agua, la confianza y el miedo...",
+    #     "style_tags": "(calm) (narrative)"
+    # },
+    # "ROSA": {
+    #     "temp": 0.75,
+    #     "top_p": 0.90,
+    #     "chunk": 807,
+    #     "penalty": 1.05,
+    #     "ref_path": str(PROJECT_ROOT / "voices" / "Elevenlabs_Rosa_Estela.wav"),
+    #     "prompt": "El agua, la confianza y el miedo...",
+    #     "style_tags": "(calm) (soft)"
+    # },
+    # "ALEJANDRO": {
+    #     "temp": 0.75,
+    #     "top_p": 0.85,
+    #     "chunk": 512,
+    #     "penalty": 1.10,
+    #     "ref_path": str(PROJECT_ROOT / "voices" / "ElevenLabs_Alejandro.mp3"),
+    #     "prompt": "(serious) (calm) La mente lo es todo.",
+    #     "style_tags": "(serious) (calm)"
+    # },
+    # "ALEJANDRO_BALLESTEROS": {
+    #     "temp": 0.75,
+    #     "top_p": 0.90,
+    #     "chunk": 785,
+    #     "penalty": 1.05,
+    #     "ref_path": str(PROJECT_ROOT / "voices" / "Elevenlabs_Alejandro_Ballesteros.wav"),
+    #     "prompt": "El agua, la confianza y el miedo...",
+    #     "style_tags": "(serious) (deep)"
+    # },
+    # "ENRIQUE": {
+    #     "temp": 0.75,
+    #     "top_p": 0.90,
+    #     "chunk": 785,
+    #     "penalty": 1.05,
+    #     "ref_path": str(PROJECT_ROOT / "voices" / "Elevenlabs_Enrique_Nieto.wav"),
+    #     "prompt": "El agua, la confianza y el miedo...",
+    #     "style_tags": "(narrative) (serious)"
+    # }
 }
 
 # Platform detection
@@ -301,11 +301,13 @@ class FishTotalLab:
                 progress = i / (num_tests - 1) if num_tests > 1 else 0
 
                 # Calculate current params
-                curr_temp = round(start_temp + (end_temp - start_temp) * progress, 2)
-                curr_pen = round(start_pen + (end_pen - start_pen) * progress, 2)
-                curr_chunk = 512  # Keep fixed to isolate variables
+                curr_temp = base_params['temp'] #round(start_temp + (end_temp - start_temp) * progress, 2)
+                curr_pen = base_params['penalty'] #round(start_pen + (end_pen - start_pen) * progress, 2)
+                # curr_chunk = 512  # Keep fixed to isolate variables
+                chunk_options = [512, 640, 768, 800, 900]
+                curr_chunk = chunk_options[i % len(chunk_options)]
 
-                logger.trace(f"🌀 Test {i + 1}/{num_tests}: T={curr_temp} | Pen={curr_pen}")
+                logger.trace(f"🌀 Test {i + 1}: Chunk Size={curr_chunk} | (T={curr_temp}, P={curr_pen})")
 
                 audio = self.generate_audio_for_params(
                     voice_name,
