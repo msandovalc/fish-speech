@@ -48,10 +48,10 @@ VOICE_PRESETS = {
         """
     },
     "CAMILA": {
-        "temp": 0.82,
-        "top_p": 0.91,
-        "chunk": 807,
-        "penalty": 1.07,
+        "temp": 0.88,
+        "top_p": 0.85,
+        "chunk": 512,
+        "penalty": 1.15,
         "ref_path": str(PROJECT_ROOT / "voices" / "Camila_Sodi.mp3"),
         "prompt": """Todos venimos de un mismo campo fuente, de una misma gran energía, de un mismo Dios, de un mismo 
         universo, como le quieras llamar. Todos somos parte de eso. Nacemos y nos convertimos en esto por un ratito 
@@ -132,19 +132,31 @@ class FishTTSEngine:
         return re.sub(r'\s+', ' ', text).strip()
 
     def split_text(self, text, max_chars=1000):
-        """Splits long text into semantic chunks to avoid VRAM overflow."""
-        sentences = text.replace('\n', ' ').split('. ')
+        """
+        Advanced split using Regex to handle '.', '!', and '?'
+        while preserving the original punctuation.
+        """
+        # Clean text from newlines and tabs
+        text = text.replace('\n', ' ').replace('\t', ' ')
+
+        # Regex that splits by . ! or ? followed by a space, keeping the punctuation
+        # This avoids adding extra periods at the end of every sentence.
+        sentences = re.split(r'(?<=[.!?]) +', text)
+
         chunks, current_chunk = [], ""
 
         for sentence in sentences:
-            if len(current_chunk) + len(sentence) < max_chars:
-                current_chunk += sentence + ". "
+            # Check if adding the next sentence exceeds the limit
+            if len(current_chunk) + len(sentence) + 1 < max_chars:
+                current_chunk += (sentence + " ")
             else:
-                chunks.append(current_chunk.strip())
-                current_chunk = sentence + ". "
+                if current_chunk:
+                    chunks.append(current_chunk.strip())
+                current_chunk = sentence + " "
 
         if current_chunk:
             chunks.append(current_chunk.strip())
+
         return chunks
 
     def process_narration(self, voice_key, raw_text):
@@ -221,6 +233,11 @@ class FishTTSEngine:
 
             if final_audio_segments:
                 combined_audio = np.concatenate(final_audio_segments)
+
+                max_val = np.abs(combined_audio).max()
+                if max_val > 0:
+                    combined_audio = combined_audio / max_val
+
                 return combined_audio, 44100
 
             return None, None
@@ -258,12 +275,29 @@ if __name__ == "__main__":
     # evitar el pensamiento erróneo.
     # """
 
+    # LONG_CHAPTER = """
+    # (sighing) (shouting) El gran secreto (sighing) muy sencillo y claro (whispering) es mantener nuestro pensamiento en el bien.
+    # (proud) (excited) Invariablemente y en forma automática todo lo bueno llegará a tu vida (excited) .
+    # """
+
     LONG_CHAPTER = """
-    (sighing) (shouting) El gran secreto (sighing) muy sencillo y claro (whispering) es mantener nuestro pensamiento en el bien. 
-    (proud) (excited) Invariablemente y en forma automática todo lo bueno llegará a tu vida (excited) .
+        (calm) (confident) (deep voice) Todos venimos de un mismo campo fuente, de una misma gran energía, de un mismo Dios, de un mismo 
+        universo, como le quieras llamar... Todos somos parte de eso... Nacemos y nos convertimos en esto por un ratito... 
+        muy chiquito..., muy chiquitito, que creemos que es muy largo y se nos olvida que vamos a regresar a ese lugar 
+        de donde venimos..., que es lo que tú creas, adonde tú creas, pero inevitablemente vas a regresar.
     """
 
     # Run production for Camila
-    engine.process_narration(voice_key="CAMILA",
-                             raw_text=LONG_CHAPTER
-                             )
+    audio_data, sample_rate = engine.process_narration(
+        voice_key="CAMILA",
+        raw_text=LONG_CHAPTER
+    )
+
+    if audio_data is not None:
+        output_path = "output_camila_test.wav"
+
+        sf.write(output_path, audio_data, sample_rate)
+
+        logger.success(f"🏆 ¡POR FIN! El audio se guardó físicamente en: {output_path}")
+    else:
+        logger.error("❌ El motor no regresó audio. Revisa los logs anteriores.")

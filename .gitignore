@@ -73,11 +73,11 @@ filelists/
 
 # Audio Files
 # -----------
-#*.wav
-#*.mp3
-#*.flac
-#*.ogg
-#*.m4a
+*.wav
+*.mp3
+*.flac
+*.ogg
+*.m4a
 
 # Data Files
 # ----------
