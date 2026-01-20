@@ -59,10 +59,10 @@ VOICE_PRESETS = {
         de donde venimos, que es lo que tú creas, adonde tú creas, pero inevitablemente vas a regresar."""
     },
     "ALEJANDRO": {
-        "temp": 0.84,
-        "top_p": 0.91,
-        "chunk": 785,
-        "penalty": 1.07,
+        "temp": 0.88,
+        "top_p": 0.85,
+        "chunk": 512,
+        "penalty": 1.15,
         "ref_path": str(PROJECT_ROOT / "voices" / "ElevenLabs_Alejandro.mp3"),
         "prompt": """La mente lo es todo. La causa mental. La causa de todo -absolutamente todo- es mental, es decir, 
         la mente es la que produce o causa todo en la vida del individuo.
