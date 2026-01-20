@@ -45,10 +45,10 @@ VOICE_PRESETS = {
         "style_tags": "(calm) (deep voice) (slow)"
     },
     "CAMILA": {
-        "temp": 0.75,  # FIXED: Lowered from 0.88 to prevent "shrill" voice
-        "top_p": 0.85,  # Tighter control to avoid robotic drifting
+        "temp": 0.70,  # FIXED: Lowered from 0.88 to prevent "shrill" voice
+        "top_p": 0.70,  # Tighter control to avoid robotic drifting
         "chunk": 512,  # Safe size for Quadro T1000
-        "penalty": 1.20,  # Increased to prevent loop/stuttering
+        "penalty": 1.05,  # Increased to prevent loop/stuttering
         "ref_path": str(PROJECT_ROOT / "voices" / "Camila_Sodi.mp3"),
         "prompt": """Todos venimos de un mismo campo fuente, de una misma gran energía, de un mismo Dios, de un mismo 
         universo, como le quieras llamar. Todos somos parte de eso. Nacemos y nos convertimos en esto por un ratito 
