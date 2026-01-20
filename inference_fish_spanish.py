@@ -3,6 +3,7 @@ import sys
 import torch
 import gc
 import shutil
+import re
 import numpy as np
 import soundfile as sf
 from pathlib import Path
@@ -10,322 +11,348 @@ from loguru import logger
 from datetime import datetime
 import platform
 
-from fish_speech.inference_engine import TTSInferenceEngine
-from fish_speech.models.dac.inference import load_model as load_decoder_model
-from fish_speech.models.text2semantic.inference import launch_thread_safe_queue
-from fish_speech.utils.schema import ServeTTSRequest, ServeReferenceAudio
-
-# --- CONFIGURACIÓN DE LOGS TRACE (PROTEGIDOS) ---
+# --- SYSTEM CONFIGURATION ---
 logger.remove()
 logger.add(sys.stdout, colorize=True, level="TRACE",
            format="<green>{time:HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{message}</cyan>")
 
+# Optimize Memory Fragmentation
 os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
 
-# --- Constants for Directory Paths ---
-# PROJECT_ROOT = Path("/kaggle/working/fish-speech")
+# --- CONSTANTS ---
+# Auto-detect project root
 PROJECT_ROOT = Path(__file__).resolve().parent
 
-# --- LISTA GLOBAL DE PRESETS (ACTUALIZADA CON GANADORES) ---
+# --- IMPORTS WITH FALLBACK ---
+try:
+    from fish_speech.inference_engine import TTSInferenceEngine
+    from fish_speech.models.dac.inference import load_model as load_decoder_model
+    from fish_speech.models.text2semantic.inference import launch_thread_safe_queue
+    from fish_speech.utils.schema import ServeTTSRequest, ServeReferenceAudio
+except ImportError:
+    # If running from a notebook cell, add root to path
+    sys.path.insert(0, str(PROJECT_ROOT))
+    from fish_speech.inference_engine import TTSInferenceEngine
+    from fish_speech.models.dac.inference import load_model as load_decoder_model
+    from fish_speech.models.text2semantic.inference import launch_thread_safe_queue
+    from fish_speech.utils.schema import ServeTTSRequest, ServeReferenceAudio
+
+# --- VOICE PRESETS (OPTIMIZED FOR S1-MINI) ---
+# NOTE: Temperatures lowered to ~0.75 and Penalty to ~1.05 to prevent metallic artifacts.
 VOICE_PRESETS = {
     "MARLENE": {
-        "temp": 0.82,
-        "top_p": 0.91,
+        "temp": 0.75,
+        "top_p": 0.90,
         "chunk": 807,
-        "penalty": 1.07,
-        "ref_path": f"{PROJECT_ROOT}/voices/ElevenLabs_Marlene.mp3",
-        "prompt": """La mente lo es todo. La causa mental. La causa de todo -absolutamente todo- es mental, es decir, 
-        la mente es la que produce o causa todo en la vida del individuo.
-        
-        Cuando reconozcamos, entendamos y aceptemos esta verdad, habremos dado un paso muy importante en el progreso del desarrollo. 
-        
-        Si todo es mental, este es un universo mental, donde todo funciona por medios mentales. Nosotros somos seres 
-        mentales, mentalidades buenas, perfectas y eternas.
-        
-        La mente sólo tiene una actividad, pensar. El pensamiento es todo lo de la mente lo único que somos y tenemos es 
-        pensamiento, por ello, el pensamiento es lo más importante de todo. 
-        """
+        "penalty": 1.05,
+        "ref_path": str(PROJECT_ROOT / "voices" / "ElevenLabs_Marlene.mp3"),
+        "prompt": "La mente lo es todo. La causa mental...",
+        "style_tags": "(calm) (narrative)"
     },
     "MARGARITA": {
-        "temp": 0.82,
-        "top_p": 0.91,
+        "temp": 0.75,
+        "top_p": 0.90,
         "chunk": 807,
-        "penalty": 1.07,
-        "ref_path": f"{PROJECT_ROOT}/voices/Margarita_Navarrete.wav",
-        "prompt": """Mira te comparto, hicimos tres cuartos más y no suelta todavía el sistema y otros detallitos, 
-        pero mira lo que te quiero comentar es que sé que suena raro, sé que se requiere dinero para el intercambio 
-        de lo que se desea, sin embargo todo lo que decidas hacer, hazlo porque deseas hacerlo. Lo común es buscar 
-        hacerlo porque necesitas, y entonces si se empieza a hacer todo desde la necesidad, desde pues es que Magui 
-        si lo requiero para los pagos, quedó bien justito ahorita, entonces te me vas a empezar a estresar más. Haz 
-        las cosas porque te gusta lo que estás haciendo y de lo que te gusta empieza a hacer más, pero porque te gusta.
-
-        ¿Cómo voy a poder eliminar la carencia del gusto? Por eso son las líneas, a mí me pasó, te digo tiene poco 
-        que saque el crédito.
-        """
+        "penalty": 1.05,
+        "ref_path": str(PROJECT_ROOT / "voices" / "Margarita_Navarrete.wav"),
+        "prompt": "Mira te comparto, hicimos tres cuartos más...",
+        "style_tags": "(casual) (friendly)"
     },
-    "Camila": {
-        "temp": 0.82,
-        "top_p": 0.91,
-        "chunk": 807,
-        "penalty": 1.07,
-        "ref_path": f"{PROJECT_ROOT}/voices/Camila_Sodi.mp3",
-        "prompt": """Todos venimos de un mismo campo fuente, de una misma gran energía, de un mismo Dios, de un mismo 
-        universo, como le quieras llamar. Todos somos parte de eso. Nacemos y nos convertimos en esto por un ratito 
-        muy chiquito, muy chiquitito, que creemos que es muy largo y se nos olvida que vamos a regresar a ese lugar 
-        de donde venimos, que es lo que tú creas, adonde tú creas, pero inevitablemente vas a regresar."""
+    "CAMILA": {
+        "temp": 0.70,  # Optimized for deep voice stability
+        "top_p": 0.70,
+        "chunk": 512,
+        "penalty": 1.05,
+        "ref_path": str(PROJECT_ROOT / "voices" / "Camila_Sodi.mp3"),
+        "prompt": "(calm) (deep voice) Todos venimos de un mismo campo fuente...",
+        "style_tags": "(calm) (deep voice)"
     },
-    "Cristina": {
-        "temp": 0.82,
-        "top_p": 0.91,
+    "CRISTINA": {
+        "temp": 0.75,
+        "top_p": 0.90,
         "chunk": 807,
-        "penalty": 1.07,
-        "ref_path": f"{PROJECT_ROOT}/voices/Elevenlabs_Cristina_Campos.wav",
-        "prompt": """El agua, la confianza y el miedo. Una lección poderosa y reveladora sobre la verdadera
-        protección y el poder de la preparación. Considera la profunda enseñanza que subyace a la instrucción"""
+        "penalty": 1.05,
+        "ref_path": str(PROJECT_ROOT / "voices" / "Elevenlabs_Cristina_Campos.wav"),
+        "prompt": "El agua, la confianza y el miedo...",
+        "style_tags": "(calm) (narrative)"
     },
     "ROSA": {
-        "temp": 0.82,
-        "top_p": 0.91,
+        "temp": 0.75,
+        "top_p": 0.90,
         "chunk": 807,
-        "penalty": 1.07,
-        "ref_path": f"{PROJECT_ROOT}/voices/Elevenlabs_Rosa_Estela.wav",
-        "prompt": """El agua, la confianza y el miedo. Una lección poderosa y reveladora sobre la verdadera
-        protección y el poder de la preparación. Considera la profunda enseñanza que subyace a la instrucción"""
+        "penalty": 1.05,
+        "ref_path": str(PROJECT_ROOT / "voices" / "Elevenlabs_Rosa_Estela.wav"),
+        "prompt": "El agua, la confianza y el miedo...",
+        "style_tags": "(calm) (soft)"
     },
     "ALEJANDRO": {
-        "temp": 0.84,
-        "top_p": 0.91,
-        "chunk": 785,
-        "penalty": 1.07,
-        "ref_path": f"{PROJECT_ROOT}/voices/ElevenLabs_Alejandro.mp3",
-        "prompt": """La mente lo es todo. La causa mental. La causa de todo -absolutamente todo- es mental, es decir, 
-        la mente es la que produce o causa todo en la vida del individuo.
-
-        Cuando reconozcamos, entendamos y aceptemos esta verdad, habremos dado un paso muy importante en el progreso del desarrollo. 
-
-        Si todo es mental, este es un universo mental, donde todo funciona por medios mentales. Nosotros somos seres 
-        mentales, mentalidades buenas, perfectas y eternas.
-
-        La mente sólo tiene una actividad, pensar. El pensamiento es todo lo de la mente lo único que somos y tenemos es 
-        pensamiento, por ello, el pensamiento es lo más importante de todo. 
-        """
+        "temp": 0.75,
+        "top_p": 0.85,
+        "chunk": 512,
+        "penalty": 1.10,
+        "ref_path": str(PROJECT_ROOT / "voices" / "ElevenLabs_Alejandro.mp3"),
+        "prompt": "(serious) (calm) La mente lo es todo.",
+        "style_tags": "(serious) (calm)"
     },
     "ALEJANDRO_BALLESTEROS": {
-        "temp": 0.84,
-        "top_p": 0.91,
+        "temp": 0.75,
+        "top_p": 0.90,
         "chunk": 785,
-        "penalty": 1.07,
-        "ref_path": f"{PROJECT_ROOT}/voices/Elevenlabs_Alejandro_Ballesteros.wav",
-        "prompt": """El agua, la confianza y el miedo. Una lección poderosa y reveladora sobre la verdadera
-        protección y el poder de la preparación. Considera la profunda enseñanza que subyace a la instrucción"""
+        "penalty": 1.05,
+        "ref_path": str(PROJECT_ROOT / "voices" / "Elevenlabs_Alejandro_Ballesteros.wav"),
+        "prompt": "El agua, la confianza y el miedo...",
+        "style_tags": "(serious) (deep)"
     },
     "ENRIQUE": {
-        "temp": 0.84,
-        "top_p": 0.91,
+        "temp": 0.75,
+        "top_p": 0.90,
         "chunk": 785,
-        "penalty": 1.07,
-        "ref_path": f"{PROJECT_ROOT}/voices/Elevenlabs_Enrique_Nieto.wav",
-        "prompt": """El agua, la confianza y el miedo. Una lección poderosa y reveladora sobre la verdadera 
-        protección y el poder de la preparación. Considera la profunda enseñanza que subyace a la instrucción sobre 
-        el miedo al agua. Inbuir en la mente de un niño pequeño un temor paralizante hacia la profundidad, 
-        creyendo erróneamente que así se le protege de un posible ahogamiento, puede paradójicamente paralizarlo por 
-        completo en un momento de peligro real, impidiéndole reaccionar de manera efectiva para salvar su propia 
-        vida. En contraste, enseñar al niño un amor genuino por el agua como una parte esencial y maravillosa de la 
-        naturaleza, inculcarle un respeto saludable por su poder y, lo que es crucial, dotarlo de la habilidad vital 
-        de nadar con confianza, empodera al niño de una manera transformadora. Esta analogía poderosa se extiende a 
-        innumerables otros temores que, con las mejores intenciones pero con resultados a menudo limitantes, 
-        se nos transmiten desde la infancia. ¿Cuáles son esas aguas profundas metafóricas que has estado evitando en 
-        tu vida por un temor arraigado, impidiéndote explorar nuevas oportunidades y experiencias enriquecedoras? 
-        Comparte tu profunda reflexión en los comentarios. Dale like a este video si crees firmemente en el poder de 
-        la preparación activa y la confianza cultivada como la verdadera protección contra los desafíos de la vida, 
-        en lugar de la evitación basada en el miedo, y sígueme para explorar juntos más analogías reveladoras que 
-        iluminan la naturaleza del temor y el camino hacia la liberación.
-        """
+        "penalty": 1.05,
+        "ref_path": str(PROJECT_ROOT / "voices" / "Elevenlabs_Enrique_Nieto.wav"),
+        "prompt": "El agua, la confianza y el miedo...",
+        "style_tags": "(narrative) (serious)"
     }
 }
 
-
-# Detectar si estamos en Windows o Linux
+# Platform detection
 is_windows = platform.system() == "Windows"
-
-# En Windows forzamos False, en Kaggle (Linux) podemos usar True si queremos velocidad
 should_compile = False if is_windows else True
 
-class FishTotalLab:
 
+class FishTotalLab:
     def __init__(self):
-        self.device = "cuda"
+        """Initializes the Inference Engine."""
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.checkpoint_dir = PROJECT_ROOT / "checkpoints" / "openaudio-s1-mini"
         self.precision = torch.half
-        logger.info("🎯 INICIANDO MOTOR INTEGRADO (PRODUCCIÓN + HYPER-SEARCH)")
+        self.vocal_dna_cache = {}
+
+        logger.info(f"🎯 STARTING FISH LABORATORY | Device: {self.device} | Compile: {should_compile}")
+
         self.engine = self._load_models()
         torch.cuda.empty_cache()
         gc.collect()
 
     def _load_models(self):
-        llama_queue = launch_thread_safe_queue(checkpoint_path=self.checkpoint_dir,
-                                               device=self.device,
-                                               precision=self.precision,
-                                               compile=should_compile)
+        """Loads Llama (Semantic) and VQ-GAN (Acoustic) models."""
+        llama_queue = launch_thread_safe_queue(
+            checkpoint_path=self.checkpoint_dir,
+            device=self.device,
+            precision=self.precision,
+            compile=should_compile
+        )
+        decoder_model = load_decoder_model(
+            config_name="modded_dac_vq",
+            checkpoint_path=self.checkpoint_dir / "codec.pth",
+            device=self.device
+        )
+        return TTSInferenceEngine(
+            llama_queue=llama_queue,
+            decoder_model=decoder_model,
+            precision=self.precision,
+            compile=should_compile
+        )
 
-        decoder_model = load_decoder_model(config_name="modded_dac_vq",
-                                           checkpoint_path=self.checkpoint_dir / "codec.pth",
-                                           device=self.device)
+    def clean_text(self, text):
+        """Basic text sanitization."""
+        if not text: return ""
+        text = text.replace("\n", " ").replace("\t", " ")
+        return re.sub(r'\s+', ' ', text).strip()
 
-        return TTSInferenceEngine(llama_queue=llama_queue,
-                                  decoder_model=decoder_model,
-                                  precision=self.precision,
-                                  compile=should_compile)
+    def split_text(self, text, max_chars=1000):
+        """Splits text intelligently by punctuation."""
+        text = self.clean_text(text)
+        sentences = re.split(r'(?<=[.!?]) +', text)
+        chunks, current_chunk = [], ""
+        for sentence in sentences:
+            if len(current_chunk) + len(sentence) + 1 < max_chars:
+                current_chunk += (sentence + " ")
+            else:
+                if current_chunk: chunks.append(current_chunk.strip())
+                current_chunk = sentence + " "
+        if current_chunk: chunks.append(current_chunk.strip())
+        return chunks
 
-    # --- FUNCIÓN DE PRODUCCIÓN (RESTAURADA Y MEJORADA) ---
-    def generate_production_batch(self, text_to_speak):
-        logger.info(f"🎙️ PRODUCCIÓN: Generando audios de alta fidelidad.")
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        out_folder = PROJECT_ROOT / f"produccion_final_{timestamp}"
-        out_folder.mkdir(parents=True,
-                         exist_ok=True
-                         )
+    def _crossfade_chunks(self, audio_list, crossfade_ms=50, sample_rate=44100):
+        """
+        Applies a linear crossfade between audio segments to remove robotic cuts.
+        """
+        if not audio_list: return None
+        if len(audio_list) == 1: return audio_list[0]
 
-        for name, params in VOICE_PRESETS.items():
-            logger.trace(
-                f"🚀 Generando voz final: {name} | T={params['temp']} | P={params['top_p']} | C={params['chunk']}")
+        fade_samples = int(sample_rate * crossfade_ms / 1000)
+        combined = audio_list[0]
 
+        for next_chunk in audio_list[1:]:
+            # Skip if chunks are too short
+            if len(combined) < fade_samples or len(next_chunk) < fade_samples:
+                combined = np.concatenate((combined, next_chunk))
+                continue
+
+            # Create fade curves
+            fade_out = np.linspace(1, 0, fade_samples)
+            fade_in = np.linspace(0, 1, fade_samples)
+
+            # Blend
+            tail = combined[-fade_samples:] * fade_out
+            head = next_chunk[:fade_samples] * fade_in
+            overlap = tail + head
+
+            # Stitch
+            combined = np.concatenate((combined[:-fade_samples], overlap, next_chunk[fade_samples:]))
+
+        return combined
+
+    def _normalize_audio(self, audio_data, target_db=-1.0):
+        """Normalizes audio to a standard dB level."""
+        max_val = np.abs(audio_data).max()
+        if max_val == 0: return audio_data
+
+        target_amp = 10 ** (target_db / 20)
+        return audio_data * (target_amp / max_val)
+
+    def generate_audio_for_params(self, voice_key, text, temp, top_p, penalty, chunk_size, style_tags):
+        """Core generation logic for a single parameter set."""
+        if voice_key not in VOICE_PRESETS:
+            logger.error(f"Voice {voice_key} not found.")
+            return None
+
+        params = VOICE_PRESETS[voice_key]
+
+        # 1. Caching DNA
+        if voice_key in self.vocal_dna_cache:
+            audio_bytes, vq_tokens = self.vocal_dna_cache[voice_key]
+        else:
             with open(params['ref_path'], "rb") as f:
                 audio_bytes = f.read()
-
             with torch.inference_mode():
-                vq_tokens = self.engine.encode_reference(audio_bytes,
-                                                         enable_reference_audio=True
-                                                         )
+                vq_tokens = self.engine.encode_reference(audio_bytes, enable_reference_audio=True)
+            self.vocal_dna_cache[voice_key] = (audio_bytes, vq_tokens)
 
-                req = ServeTTSRequest(
-                    text=text_to_speak,
-                    references=[
-                        ServeReferenceAudio(
-                            audio=audio_bytes,
-                            tokens=vq_tokens.tolist(),
-                            text=params['prompt']
-                        )],
-                    max_new_tokens=2048,
-                    chunk_length=params['chunk'],
-                    top_p=params['top_p'],
-                    temperature=params['temp'],
-                    repetition_penalty=params['penalty'],
-                    format="wav"
-                )
+        # 2. Chunking & Inference
+        text_chunks = self.split_text(text)
+        raw_parts = []
 
-                results = self.engine.inference(req)
-                audio_parts = []
-                for res in results:
-                    chunk = res.audio if hasattr(res, 'audio') else res
-                    if isinstance(chunk, tuple):
-                        audio_parts.extend([x for x in chunk if isinstance(x, np.ndarray)])
-                    elif isinstance(chunk, np.ndarray):
-                        audio_parts.append(chunk)
+        for chunk_text in text_chunks:
+            # INJECTION: Add style tags + trailing dots for natural pauses
+            processed_text = f"{style_tags} {chunk_text} ..."
 
-                if audio_parts:
-                    final_path = out_folder / f"FINAL_{name}_{timestamp}.wav"
-                    sf.write(str(final_path), np.concatenate(audio_parts), 44100)
-                    logger.success(f"✅ ¡LISTO! {name} guardado en: {final_path}")
+            req = ServeTTSRequest(
+                text=processed_text,
+                references=[ServeReferenceAudio(
+                    audio=audio_bytes,
+                    tokens=vq_tokens.tolist(),
+                    text=params['prompt']
+                )],
+                max_new_tokens=2048,
+                chunk_length=chunk_size,
+                top_p=top_p,
+                temperature=temp,
+                repetition_penalty=penalty,
+                format="wav"
+            )
+
+            results = self.engine.inference(req)
+
+            # Extract numpy arrays
+            chunk_audio = []
+            for res in results:
+                data = res.audio if hasattr(res, 'audio') else res
+                if isinstance(data, np.ndarray):
+                    chunk_audio.append(data)
+                elif isinstance(data, tuple):
+                    for item in data:
+                        if isinstance(item, np.ndarray): chunk_audio.append(item)
+
+            if chunk_audio:
+                raw_parts.append(np.concatenate(chunk_audio))
 
             torch.cuda.empty_cache()
             gc.collect()
 
-            # --- NUEVA SECCIÓN: GENERACIÓN DE ZIP FINAL ---
-            try:
-                zip_filename = f"lote_produccion_{timestamp}"
-                zip_path = PROJECT_ROOT / zip_filename
-                shutil.make_archive(str(zip_path), 'zip', out_folder)
-                logger.success(f"📦 ¡TODO COMPRIMIDO! Descarga el archivo: {zip_filename}.zip")
-            except Exception as e:
-                logger.error(f"❌ No se pudo crear el ZIP: {e}")
+        # 3. Stitching & Normalizing
+        if raw_parts:
+            # Crossfade
+            merged = self._crossfade_chunks(raw_parts, crossfade_ms=50)
+            # Normalize
+            final = self._normalize_audio(merged)
+            return final
+        return None
 
-    # --- FUNCIÓN HYPER SEARCH (ANCLAJE DINÁMICO) ---
-    def run_hyper_search(self, text, num_tests=15):
-        logger.info(f"🧪 Iniciando laboratorio Multivoz para {len(VOICE_PRESETS)} voces.")
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    def run_hyper_search(self, text, num_tests=5):
+        """
+        Runs a hyper-parameter search loop for ALL voices.
+        Sweeps Temperature from 0.65 to 0.85 and Penalty from 1.02 to 1.15.
+        """
+        logger.info(f"🧪 Starting Hyper-Search for {len(VOICE_PRESETS)} voices.")
+        timestamp = datetime.now().strftime("%H%M%S")
 
         for voice_name, base_params in VOICE_PRESETS.items():
-            voice_folder = PROJECT_ROOT / f"hyper_{voice_name}_{timestamp}"
-            voice_folder.mkdir(parents=True,
-                               exist_ok=True
-                               )
+            voice_folder = PROJECT_ROOT / f"LAB_{voice_name}_{timestamp}"
+            voice_folder.mkdir(parents=True, exist_ok=True)
 
-            with open(base_params['ref_path'], "rb") as f:
-                audio_bytes = f.read()
-            with torch.inference_mode():
-                vq_tokens = self.engine.encode_reference(audio_bytes,
-                                                         enable_reference_audio=True
-                                                         )
+            logger.info(f"🔬 Testing Voice: {voice_name}")
 
-            t_base = base_params['temp']
-            p_base = base_params['top_p']
+            # Define search ranges
+            start_temp, end_temp = 0.65, 0.85
+            start_pen, end_pen = 1.02, 1.15
 
             for i in range(num_tests):
                 progress = i / (num_tests - 1) if num_tests > 1 else 0
-                curr_t = round(t_base + (0.05 * progress), 2)  # Exploración fina
-                curr_p = round(min(p_base + (0.04 * progress), 0.96), 2)
-                curr_chunk = int(base_params['chunk'] + (200 * progress))
-                curr_pen = 1.07  # Mantener fluidez ganada
 
-                logger.trace(f"🌀 [{voice_name} {i + 1}/{num_tests}] | T={curr_t} | P={curr_p} | C={curr_chunk}")
+                # Calculate current params
+                curr_temp = round(start_temp + (end_temp - start_temp) * progress, 2)
+                curr_pen = round(start_pen + (end_pen - start_pen) * progress, 2)
+                curr_chunk = 512  # Keep fixed to isolate variables
 
-                req = ServeTTSRequest(
-                    text=text,
-                    references=[
-                        ServeReferenceAudio(audio=audio_bytes, tokens=vq_tokens.tolist(), text=base_params['prompt'])],
-                    max_new_tokens=1024,
-                    chunk_length=curr_chunk,
-                    top_p=curr_p,
-                    temperature=curr_t,
-                    repetition_penalty=curr_pen,
-                    format="wav"
+                logger.trace(f"🌀 Test {i + 1}/{num_tests}: T={curr_temp} | Pen={curr_pen}")
+
+                audio = self.generate_audio_for_params(
+                    voice_name,
+                    text,
+                    temp=curr_temp,
+                    top_p=base_params['top_p'],  # Keep Top_P from preset
+                    penalty=curr_pen,
+                    chunk_size=curr_chunk,
+                    style_tags=base_params.get('style_tags', '')
                 )
 
-                try:
-                    results = self.engine.inference(req)
-                    audio_parts = [res.audio if hasattr(res, 'audio') else res for res in results]
-                    clean_parts = []
-                    for p in audio_parts:
-                        if isinstance(p, tuple):
-                            clean_parts.extend([x for x in p if isinstance(x, np.ndarray)])
-                        elif isinstance(p, np.ndarray):
-                            clean_parts.append(p)
+                if audio is not None:
+                    filename = f"{voice_name}_T{curr_temp}_P{curr_pen}.wav"
+                    sf.write(str(voice_folder / filename), audio, 44100)
 
-                    if clean_parts:
-                        sf.write(str(voice_folder / f"{voice_name}_TEST_{i + 1:02d}.wav"), np.concatenate(clean_parts),
-                                 44100)
-                except Exception as e:
-                    logger.error(f"Error en {voice_name}: {e}")
-
-            shutil.make_archive(str(PROJECT_ROOT / f"pruebas_{voice_name}_{timestamp}"), 'zip', voice_folder)
-            logger.success(f"🏁 Pack de pruebas generado para {voice_name}")
+            # Zip results
+            shutil.make_archive(str(PROJECT_ROOT / f"RESULTS_{voice_name}_{timestamp}"), 'zip', voice_folder)
+            logger.success(f"📦 Test pack created for {voice_name}")
 
 
 if __name__ == "__main__":
     lab = FishTotalLab()
 
-    TEXTO_PARA_PRODUCIR = """
-        La mente lo es todo. 
-        
-        La causa mental.
-        
-        La causa de todo -absolutamente todo- es mental, es decir,  la mente es la que produce o causa todo en la vida del individuo.  
-        Cuando reconozcamos, entendamos y aceptemos esta verdad,  habremos dado un paso muy importante en el progreso del desarrollo. 
-        
-        Si todo es mental, este es un universo mental, donde todo funciona por  medios mentales. Nosotros somos seres mentales, mentalidades buenas,  perfectas y eternas. 
-        
-        La mente sólo tiene una actividad, pensar. El pensamiento es todo lo  de la mente lo único que somos y tenemos es pensamiento, por ello, el  pensamiento es lo más importante de todo.
-    """
+    TEST_TEXT = """
+            (calm) (deep voice) Todos venimos de un mismo campo fuente, de una misma gran energía, de un mismo Dios, de un mismo 
+            universo, como le quieras llamar... Todos somos parte de eso... Nacemos y nos convertimos en esto por un ratito... 
+            muy chiquito..., muy chiquitito, que creemos que es muy largo y se nos olvida que vamos a regresar a ese lugar 
+            de donde venimos.
 
-    TEXTO_PARA_PRODUCIR_CUSTOM = """Todos venimos de un mismo campo fuente, de una misma gran energía, de un mismo 
-    Dios, de un mismo universo, como le quieras llamar. Todos somos parte de eso. Nacemos y nos convertimos en esto 
-    por un ratito muy chiquito, muy chiquitito, que creemos que es muy largo y se nos olvida que vamos a regresar a 
-    ese lugar de donde venimos, que es lo que tú creas, adonde tú creas, pero inevitablemente vas a regresar.
-    """
+            Escucha bien esto. No eres una gota en el océano, eres el océano entero en una gota. Tu imaginación no es un estado 
+            de fantasía o ilusión, es la verdadera realidad esperando ser reconocida. Cuando cierras los ojos y asumes el 
+            sentimiento de tu deseo cumplido, no estás "fingiendo", estás accediendo a la cuarta dimensión, al mundo de las 
+            causas, donde todo ya existe. Lo que ves afuera, en tu mundo físico, es simplemente una pantalla retrasada, un 
+            eco de lo que fuiste ayer, de lo que pensaste ayer.
 
-    # 1. Ejecutar producción final con los parámetros que ya te gustaron (T=0.82/0.84)
-    lab.generate_production_batch(TEXTO_PARA_PRODUCIR_CUSTOM)
+            Si tu realidad actual no te gusta, deja de pelear con la pantalla. No puedes peinar tu reflejo en el espejo, 
+            tienes que peinarte tú. Debes cambiar la concepción que tienes de ti mismo. Pregúntate: ¿Quién soy yo ahora? 
+            Si la respuesta no es "Soy próspero", "Soy amado", "Soy saludable", entonces estás usando tu poder divino en tu 
+            contra. El universo no te juzga, simplemente te dice "SÍ". Si dices "estoy arruinado", el universo dice "SÍ, lo estás". 
+            Si dices "Soy abundante", el universo dice "SÍ, lo eres".
 
-    # 2. (Opcional) Si quieres seguir probando aún más fluidez:
-    # lab.run_hyper_search(TEXTO_PARA_PRODUCIR_CUSTOM, num_tests=15)
+            Por lo tanto, el secreto no es el esfuerzo físico ni la lucha externa. El secreto es el cambio interno de estado. 
+            Moverte, en tu mente, del estado de carencia al estado de posesión. Sentir la textura de la realidad que deseas 
+            hasta que sea tan natural que ya no la busques, porque sabes que ya la tienes. Y cuando esa certeza interna hace 
+            clic, el mundo exterior no tiene más remedio que reorganizarse para reflejar tu nueva verdad... Inevitablemente, 
+            vas a regresar a tu poder.
+        """
+
+    # Run the lab: This will generate 5 variations for EVERY voice in the list.
+    lab.run_hyper_search(TEST_TEXT, num_tests=5)
