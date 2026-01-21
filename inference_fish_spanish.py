@@ -59,24 +59,24 @@ VOICE_PRESETS = {
     #     """
     #     "style_tags": "(calm) (narrative)"
     # },
-    "MARGARITA": {
-        "temp": 0.82,
-        "top_p": 0.91,
-        "chunk": 900,
-        "penalty": 1.07,
-        "ref_path": str(PROJECT_ROOT / "voices" / "Margarita_Navarrete.wav"),
-        "prompt": """Mira te comparto, hicimos tres cuartos más y no suelta todavía el sistema y otros detallitos, 
-        pero mira lo que te quiero comentar es que sé que suena raro, sé que se requiere dinero para el intercambio 
-        de lo que se desea, sin embargo todo lo que decidas hacer, hazlo porque deseas hacerlo. Lo común es buscar 
-        hacerlo porque necesitas, y entonces si se empieza a hacer todo desde la necesidad, desde pues es que Magui 
-        si lo requiero para los pagos, quedó bien justito ahorita, entonces te me vas a empezar a estresar más. Haz 
-        las cosas porque te gusta lo que estás haciendo y de lo que te gusta empieza a hacer más, pero porque te gusta.
-
-        ¿Cómo voy a poder eliminar la carencia del gusto? Por eso son las líneas, a mí me pasó, te digo tiene poco 
-        que saque el crédito.
-        """,
-        "style_tags": "(calm) (deep voice)"
-    },
+    # "MARGARITA": {
+    #     "temp": 0.82,
+    #     "top_p": 0.91,
+    #     "chunk": 900,
+    #     "penalty": 1.07,
+    #     "ref_path": str(PROJECT_ROOT / "voices" / "Margarita_Navarrete.wav"),
+    #     "prompt": """Mira te comparto, hicimos tres cuartos más y no suelta todavía el sistema y otros detallitos,
+    #     pero mira lo que te quiero comentar es que sé que suena raro, sé que se requiere dinero para el intercambio
+    #     de lo que se desea, sin embargo todo lo que decidas hacer, hazlo porque deseas hacerlo. Lo común es buscar
+    #     hacerlo porque necesitas, y entonces si se empieza a hacer todo desde la necesidad, desde pues es que Magui
+    #     si lo requiero para los pagos, quedó bien justito ahorita, entonces te me vas a empezar a estresar más. Haz
+    #     las cosas porque te gusta lo que estás haciendo y de lo que te gusta empieza a hacer más, pero porque te gusta.
+    #
+    #     ¿Cómo voy a poder eliminar la carencia del gusto? Por eso son las líneas, a mí me pasó, te digo tiene poco
+    #     que saque el crédito.
+    #     """,
+    #     "style_tags": "(calm) (deep voice)"
+    # },
     "CAMILA": {
         "temp": 0.70,
         "top_p": 0.70,
@@ -181,7 +181,7 @@ class FishTotalLab:
         text = text.replace("\n", " ").replace("\t", " ")
         return re.sub(r'\s+', ' ', text).strip()
 
-    def split_text(self, text, max_chars=350):
+    def split_text(self, text, max_chars=450):
         """Splits text intelligently by punctuation."""
         text = self.clean_text(text)
         sentences = re.split(r'(?<=[.!?]) +', text)
@@ -195,7 +195,7 @@ class FishTotalLab:
         if current_chunk: chunks.append(current_chunk.strip())
         return chunks
 
-    def _crossfade_chunks(self, audio_list, crossfade_ms=80, sample_rate=44100):
+    def _crossfade_chunks(self, audio_list, crossfade_ms=50, sample_rate=44100):
         """
         Applies a linear crossfade between audio segments to remove robotic cuts.
         """
@@ -300,7 +300,7 @@ class FishTotalLab:
 
         # 3. Stitching & Normalizing
         if raw_parts:
-            merged = self._crossfade_chunks(raw_parts, crossfade_ms=80)
+            merged = self._crossfade_chunks(raw_parts, crossfade_ms=50)
 
             # Normalize
             final = self._normalize_audio(merged)

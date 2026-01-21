@@ -126,7 +126,7 @@ class FishTTSEngine:
         text = text.replace("\n", " ").replace("\t", " ")
         return re.sub(r'\s+', ' ', text).strip()
 
-    def split_text(self, text, max_chars=350):
+    def split_text(self, text, max_chars=450):
         """
         Intelligent splitter using Regex.
         Splits by punctuation (. ! ?) to preserve semantic meaning.
@@ -148,7 +148,7 @@ class FishTTSEngine:
             chunks.append(current_chunk.strip())
         return chunks
 
-    def _crossfade_chunks(self, audio_list, crossfade_ms=80, sample_rate=44100):
+    def _crossfade_chunks(self, audio_list, crossfade_ms=50, sample_rate=44100):
         """
         Merges audio chunks using a linear crossfade to eliminate robotic clicks.
         """
@@ -263,7 +263,7 @@ class FishTTSEngine:
                 logger.info("🔧 Applying Crossfade and Normalization...")
 
                 # Apply Crossfade (50ms overlap)
-                final_audio = self._crossfade_chunks(raw_audio_segments, crossfade_ms=80)
+                final_audio = self._crossfade_chunks(raw_audio_segments, crossfade_ms=50)
 
                 # Soft Limiter / Normalization (Target -1.0 dB)
                 max_val = np.abs(final_audio).max()
