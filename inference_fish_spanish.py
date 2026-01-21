@@ -371,7 +371,7 @@ class FishTotalLab:
                 references=[ServeReferenceAudio(audio=audio_bytes, text=params["prompt"])],
                 use_memory_cache="on",
                 chunk_length=chunk_size,
-                max_new_tokens=768,
+                max_new_tokens=1024,
                 top_p=top_p,
                 temperature=temp,
                 repetition_penalty=penalty,
