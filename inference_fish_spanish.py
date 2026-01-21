@@ -81,7 +81,7 @@ VOICE_PRESETS = {
         "temp": 0.70,
         "top_p": 0.70,
         "chunk": 900,
-        "penalty": 1.035,
+        "penalty": 1.05, #1.035
         "ref_path": str(PROJECT_ROOT / "voices" / "Camila_Sodi.mp3"),
         "prompt": """Todos venimos de un mismo campo fuente, de una misma gran energía, de un mismo Dios, de un mismo 
         universo, como le quieras llamar. Todos somos parte de eso. Nacemos y nos convertimos en esto por un ratito 
@@ -181,7 +181,7 @@ class FishTotalLab:
         text = text.replace("\n", " ").replace("\t", " ")
         return re.sub(r'\s+', ' ', text).strip()
 
-    def split_text(self, text, max_chars=450):
+    def split_text(self, text, max_chars=300):
         """
         SMART BATCHING STRATEGY:
         Splits text by sentences (., !, ?, ...) and groups them into chunks
