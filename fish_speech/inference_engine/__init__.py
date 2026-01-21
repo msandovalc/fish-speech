@@ -61,6 +61,14 @@ class TTSInferenceEngine(ReferenceLoader, VQManager):
             set_seed(req.seed)
             logger.warning(f"set seed: {req.seed}")
 
+        # Extra prompt (para chaining entre chunks)
+        if req.prompt_tokens is not None and req.prompt_text is not None:
+
+            if len(req.prompt_tokens) != len(req.prompt_text):
+                raise ValueError("req.prompt_tokens y req.prompt_text deben tener la misma longitud")
+            prompt_tokens = list(prompt_tokens) + list(req.prompt_tokens)
+            prompt_texts = list(prompt_texts) + list(req.prompt_text)
+
         # Get the symbolic tokens from the LLAMA model
         response_queue = self.send_Llama_request(req, prompt_tokens, prompt_texts)
 
@@ -82,6 +90,7 @@ class TTSInferenceEngine(ReferenceLoader, VQManager):
             )
 
         segments = []
+        last_codes = None
 
         while True:
             # Get the response from the LLAMA model
@@ -107,11 +116,13 @@ class TTSInferenceEngine(ReferenceLoader, VQManager):
             result: GenerateResponse = wrapped_result.response
             if result.action != "next":
                 segment = self.get_audio_segment(result)
+                last_codes = result.codes.detach().cpu().numpy() if result.codes is not None else None #MaSa
 
                 if req.streaming:  # Used only by the API server
                     yield InferenceResult(
                         code="segment",
                         audio=(sample_rate, segment),
+                        codes=last_codes, #MaSa
                         error=None,
                     )
                 segments.append(segment)
@@ -133,11 +144,15 @@ class TTSInferenceEngine(ReferenceLoader, VQManager):
         else:
             # Streaming or not, return the final audio
             audio = np.concatenate(segments, axis=0)
-            yield InferenceResult(
-                code="final",
-                audio=(sample_rate, audio),
-                error=None,
-            )
+            # yield InferenceResult(
+            #     code="final",
+            #     audio=(sample_rate, audio),
+            #     error=None,
+            # )
+            yield InferenceResult(code="final",
+                                  audio=(sample_rate, audio),
+                                  codes=last_codes,
+                                  error=None) #MaSa
 
         return None
 

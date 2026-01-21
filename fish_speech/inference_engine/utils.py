@@ -11,6 +11,7 @@ class InferenceResult:
     code: Literal["header", "segment", "error", "final"]
     audio: Optional[Tuple[int, np.ndarray]]
     error: Optional[Exception]
+    codes: Optional[np.ndarray] = None #MaSa
 
 
 def wav_chunk_header(

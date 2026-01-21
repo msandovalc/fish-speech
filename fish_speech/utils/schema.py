@@ -80,6 +80,8 @@ class ServeReferenceAudio(BaseModel):
 
 class ServeTTSRequest(BaseModel):
     text: str
+    prompt_text: list[str] | None = None #MaSa
+    prompt_tokens: SkipValidation[list] | None = None  #MaSa
     chunk_length: Annotated[int, conint(ge=100, le=300, strict=True)] = 200
     # Audio format
     format: Literal["wav", "pcm", "mp3"] = "wav"

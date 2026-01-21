@@ -29,6 +29,7 @@ try:
     from fish_speech.models.dac.inference import load_model as load_decoder_model
     from fish_speech.models.text2semantic.inference import launch_thread_safe_queue
     from fish_speech.utils.schema import ServeTTSRequest, ServeReferenceAudio
+    from fish_speech.utils import set_seed
 except ImportError:
     # If running from a notebook cell, add root to path
     sys.path.insert(0, str(PROJECT_ROOT))
@@ -36,6 +37,7 @@ except ImportError:
     from fish_speech.models.dac.inference import load_model as load_decoder_model
     from fish_speech.models.text2semantic.inference import launch_thread_safe_queue
     from fish_speech.utils.schema import ServeTTSRequest, ServeReferenceAudio
+    from fish_speech.utils import set_seed
 
 # --- VOICE PRESETS (OPTIMIZED FOR S1-MINI) ---
 # NOTE: Temperatures lowered to ~0.75 and Penalty to ~1.05 to prevent metallic artifacts.
@@ -80,7 +82,7 @@ VOICE_PRESETS = {
     "CAMILA": {
         "temp": 0.70,
         "top_p": 0.70,
-        "chunk": 900,
+        "chunk": 300,
         "penalty": 1.035, #1.035
         "ref_path": str(PROJECT_ROOT / "voices" / "Camila_Sodi.mp3"),
         "prompt": """Todos venimos de un mismo campo fuente, de una misma gran energía, de un mismo Dios, de un mismo 
@@ -331,83 +333,84 @@ class FishTotalLab:
         target_amp = 10 ** (target_db / 20)
         return audio_data * (target_amp / max_val)
 
-    def generate_audio_for_params(self, voice_key, text, temp, top_p, penalty, chunk_size, style_tags):
-        """Core generation logic for a single parameter set."""
+    from fish_speech.utils import set_seed  # mismo helper que usa el engine [file:27]
+
+    def generate_audio_for_params(self, voice_key, text, temp, top_p, penalty, chunk_size, style_tags, seed_base: int = 1234):
         if voice_key not in VOICE_PRESETS:
             logger.error(f"Voice {voice_key} not found.")
             return None
 
         params = VOICE_PRESETS[voice_key]
 
-        # 1. Caching DNA
-        if voice_key in self.vocal_dna_cache:
-            audio_bytes, vq_tokens = self.vocal_dna_cache[voice_key]
-        else:
-            with open(params['ref_path'], "rb") as f:
-                audio_bytes = f.read()
-            with torch.inference_mode():
-                vq_tokens = self.engine.encode_reference(audio_bytes, enable_reference_audio=True)
-            self.vocal_dna_cache[voice_key] = (audio_bytes, vq_tokens)
+        # 1) Seed UNA sola vez por generación completa (no por chunk)
+        set_seed(seed_base)
 
-        # 2. Chunking & Inference
-        text_chunks = self.split_text(text, max_chars=400)
+        # 2) Cache de bytes de referencia (evita I/O repetido)
+        cache_key = (voice_key, params["ref_path"])
+        if cache_key in self.vocal_dna_cache:
+            audio_bytes = self.vocal_dna_cache[cache_key]
+        else:
+            with open(params["ref_path"], "rb") as f:
+                audio_bytes = f.read()
+            self.vocal_dna_cache[cache_key] = audio_bytes
+
+        text_chunks = self.split_text(text, max_chars=550)
+
         raw_parts = []
+        hist_tokens = None
+        hist_text = None
 
         for chunk_text in text_chunks:
-            # INJECTION: Add style tags + trailing dots for natural pauses
-            processed_text = f"{style_tags} {chunk_text.strip()} ..."
+            chunk_text = chunk_text.strip()
+            if not chunk_text:
+                continue
+
+            processed_text = f"{style_tags} {chunk_text}"
 
             req = ServeTTSRequest(
                 text=processed_text,
-                references=[ServeReferenceAudio(
-                    audio=audio_bytes,
-                    tokens=vq_tokens.tolist(),
-                    text=params['prompt']
-                )],
-                max_new_tokens=2048,
-                chunk_length=chunk_size,
+                references=[ServeReferenceAudio(audio=audio_bytes, text=params["prompt"])],
+                use_memory_cache="on",  # activa cache por hash del engine [file:27]
+                chunk_length=chunk_size,  # usa tu preset 300 [file:43][file:11]
+                max_new_tokens=768,
                 top_p=top_p,
                 temperature=temp,
                 repetition_penalty=penalty,
-                format="wav"
+                format="wav",
+                seed=None,  # clave: NO reseed por chunk (fluye más natural) [file:27]
+                prompt_text=[hist_text] if hist_text is not None else None,
+                prompt_tokens=[hist_tokens] if hist_tokens is not None else None,
             )
 
-            results = self.engine.inference(req)
+            final_res = None
+            for res in self.engine.inference(req):
+                if res.code == "error":
+                    logger.error(str(res.error))
+                    final_res = None
+                    break
+                if res.code == "final":
+                    final_res = res
 
-            # Extract numpy arrays
-            chunk_audio = []
-            for res in results:
-                data = res.audio if hasattr(res, 'audio') else res
-                if isinstance(data, np.ndarray):
-                    chunk_audio.append(data)
-                elif isinstance(data, tuple):
-                    for item in data:
-                        if isinstance(item, np.ndarray): chunk_audio.append(item)
+            if final_res is None or final_res.audio is None:
+                continue
 
-            if chunk_audio:
-                # raw_parts.append(np.concatenate(chunk_audio))
-                full_chunk = np.concatenate(chunk_audio)
+            sr, audio_np = final_res.audio
+            raw_parts.append(audio_np)
 
-                breath_pad = np.zeros(int(44100 * 0.5))
-                full_chunk_with_breath = np.concatenate((full_chunk, breath_pad))
+            if final_res.codes is not None:
+                codes = torch.from_numpy(final_res.codes).to(torch.int)
+                keep = 512
+                if codes.shape[1] > keep:
+                    codes = codes[:, -keep:]
+                hist_tokens = codes
+                hist_text = processed_text
 
-                raw_parts.append(full_chunk_with_breath)
+        if not raw_parts:
+            return None
 
-            torch.cuda.empty_cache()
-            gc.collect()
-
-        # 3. Stitching & Normalizing
-        if raw_parts:
-            merged = self._crossfade_chunks(raw_parts, crossfade_ms=50)
-
-            # Normalize
-            final = self._normalize_audio(merged)
-
-            silence_pad = np.zeros(int(44100 * 0.5))
-            final = np.concatenate((final, silence_pad))
-
-            return final
-        return None
+        merged = self._crossfade_chunks(raw_parts, crossfade_ms=10)
+        final = self._normalize_audio(merged)
+        return final
 
     def run_hyper_search(self, text, num_tests=5):
         """
