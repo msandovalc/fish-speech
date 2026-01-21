@@ -192,8 +192,6 @@ def decode_n_tokens(
         device=cur_token.device,
     )
 
-    decay_counter = 0   # <--- 1. INICIALIZAMOS AQUÍ
-
     for i in tqdm(range(num_new_tokens)):
         # We need to get windowed repeat penalty
         win_size = 16
@@ -223,17 +221,8 @@ def decode_n_tokens(
             model.config.num_codebooks + 1, -1
         )
 
-        # if cur_token[0, 0, -1] == model.tokenizer.get_token_id(IM_END_TOKEN):
-        #     break
-        # --- 2. LÓGICA DE SOFT DECAY (REEMPLAZA EL IF ORIGINAL) ---
         if cur_token[0, 0, -1] == model.tokenizer.get_token_id(IM_END_TOKEN):
-            decay_counter += 1
-            if decay_counter > 15:
-                break
-        elif decay_counter > 0:
-            decay_counter += 1
-            if decay_counter > 15:
-                break
+            break
 
     # Only clean up the large tensor
     del cur_token
