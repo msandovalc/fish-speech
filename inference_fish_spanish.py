@@ -75,7 +75,7 @@ VOICE_PRESETS = {
         ¿Cómo voy a poder eliminar la carencia del gusto? Por eso son las líneas, a mí me pasó, te digo tiene poco 
         que saque el crédito.
         """,
-        "style_tags": "(calm) (deep voice) (slow)"
+        "style_tags": "(calm) (deep voice)"
     },
     "CAMILA": {
         "temp": 0.70,
