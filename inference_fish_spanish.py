@@ -320,7 +320,7 @@ class FishTotalLab:
                 )
 
                 if audio is not None:
-                    filename = f"{voice_name}_T{curr_temp}_P{curr_pen}.wav"
+                    filename = f"{voice_name}_Chunk{curr_chunk}_T{curr_temp}.wav"
                     sf.write(str(voice_folder / filename), audio, 44100)
 
             # Zip results
