@@ -183,26 +183,24 @@ class FishTotalLab:
 
     def split_text(self, text, max_chars=2000):
         """
-        ESTRATEGIA NATURAL (PARAGRAPH FLOW):
-        Eliminamos los cortes artificiales. Confiamos en la estructura del autor.
-        Al respetar los párrafos completos, la IA nunca tiene que "adivinar"
-        cómo empezar una frase a medias, eliminando las alucinaciones de arranque.
+        ENFOQUE PURO:
+        No cortamos oraciones. No contamos caracteres.
+        Solo respetamos los párrafos del autor (doble enter).
+        Esto permite que la IA mantenga el flujo natural de la voz.
         """
         text = text.strip()
-
-        # Separamos SOLO por dobles saltos de línea (Párrafos Naturales)
         paragraphs = re.split(r'\n\s*\n', text)
 
         chunks = []
         for para in paragraphs:
-            # Limpiamos saltos internos para crear un bloque fluido
+            # Limpieza básica para que sea un bloque de texto continuo
             clean_para = para.replace('\n', ' ').strip()
             clean_para = re.sub(r'\s+', ' ', clean_para)
-
             if clean_para:
                 chunks.append(clean_para)
 
         return chunks
+
 
     # def split_text(self, text, max_chars=400):
     #     """
@@ -341,7 +339,7 @@ class FishTotalLab:
 
         for chunk_text in text_chunks:
             # INJECTION: Add style tags + trailing dots for natural pauses
-            processed_text = f"{style_tags} . {chunk_text.strip()} ..."
+            processed_text = f"{style_tags}{chunk_text.strip()} ..."
 
             req = ServeTTSRequest(
                 text=processed_text,
