@@ -46,7 +46,17 @@ VOICE_PRESETS = {
     #     "chunk": 807,
     #     "penalty": 1.05,
     #     "ref_path": str(PROJECT_ROOT / "voices" / "ElevenLabs_Marlene.mp3"),
-    #     "prompt": "La mente lo es todo. La causa mental...",
+    #     "prompt": """La mente lo es todo. La causa mental. La causa de todo -absolutamente todo- es mental, es decir,
+    #     la mente es la que produce o causa todo en la vida del individuo.
+    #
+    #     Cuando reconozcamos, entendamos y aceptemos esta verdad, habremos dado un paso muy importante en el progreso del desarrollo.
+    #
+    #     Si todo es mental, este es un universo mental, donde todo funciona por medios mentales. Nosotros somos seres
+    #     mentales, mentalidades buenas, perfectas y eternas.
+    #
+    #     La mente sólo tiene una actividad, pensar. El pensamiento es todo lo de la mente lo único que somos y tenemos es
+    #     pensamiento, por ello, el pensamiento es lo más importante de todo.
+    #     """
     #     "style_tags": "(calm) (narrative)"
     # },
     "MARGARITA": {
@@ -55,16 +65,28 @@ VOICE_PRESETS = {
         "chunk": 807,
         "penalty": 1.05,
         "ref_path": str(PROJECT_ROOT / "voices" / "Margarita_Navarrete.wav"),
-        "prompt": "Mira te comparto, hicimos tres cuartos más...",
+        "prompt": """Mira te comparto, hicimos tres cuartos más y no suelta todavía el sistema y otros detallitos, 
+        pero mira lo que te quiero comentar es que sé que suena raro, sé que se requiere dinero para el intercambio 
+        de lo que se desea, sin embargo todo lo que decidas hacer, hazlo porque deseas hacerlo. Lo común es buscar 
+        hacerlo porque necesitas, y entonces si se empieza a hacer todo desde la necesidad, desde pues es que Magui 
+        si lo requiero para los pagos, quedó bien justito ahorita, entonces te me vas a empezar a estresar más. Haz 
+        las cosas porque te gusta lo que estás haciendo y de lo que te gusta empieza a hacer más, pero porque te gusta.
+
+        ¿Cómo voy a poder eliminar la carencia del gusto? Por eso son las líneas, a mí me pasó, te digo tiene poco 
+        que saque el crédito.
+        """,
         "style_tags": "(calm) (deep voice) (slow)"
     },
     "CAMILA": {
-        "temp": 0.70,  # Optimized for deep voice stability
+        "temp": 0.70,
         "top_p": 0.70,
         "chunk": 807,
         "penalty": 1.05,
         "ref_path": str(PROJECT_ROOT / "voices" / "Camila_Sodi.mp3"),
-        "prompt": "(calm) (deep voice) Todos venimos de un mismo campo fuente...",
+        "prompt": """Todos venimos de un mismo campo fuente, de una misma gran energía, de un mismo Dios, de un mismo 
+        universo, como le quieras llamar. Todos somos parte de eso. Nacemos y nos convertimos en esto por un ratito 
+        muy chiquito, muy chiquitito, que creemos que es muy largo y se nos olvida que vamos a regresar a ese lugar 
+        de donde venimos, que es lo que tú creas, adonde tú creas, pero inevitablemente vas a regresar.""",
         "style_tags": "(calm) (deep voice) (slow)"
     }
     # "CRISTINA": {
