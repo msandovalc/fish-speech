@@ -126,27 +126,58 @@ class FishTTSEngine:
         text = text.replace("\n", " ").replace("\t", " ")
         return re.sub(r'\s+', ' ', text).strip()
 
-    def split_text(self, text, max_chars=600):
+    def split_text(self, text, max_chars=850):
         """
-        Intelligent splitter using Regex.
-        Splits by punctuation (. ! ?) to preserve semantic meaning.
+        HYBRID SPLIT STRATEGY (PARAGRAPHS + SAFETY NET):
+        1. Primary: Splits by natural paragraphs (double newlines).
+        2. Fallback: If a single paragraph is too long (> max_chars),
+           it internally splits that paragraph by sentences.
         """
-        text = self.clean_text(text)
-        # Split by punctuation followed by space
-        sentences = re.split(r'(?<=[.!?]) +', text)
-        chunks, current_chunk = [], ""
+        text = text.strip()
+
+        # 1. Split by Double Enter (Paragraphs)
+        paragraphs = re.split(r'\n\s*\n', text)
+        chunks = []
+
+        for para in paragraphs:
+            # Clean up internal line breaks
+            clean_para = para.replace('\n', ' ').strip()
+            clean_para = re.sub(r'\s+', ' ', clean_para)
+
+            if not clean_para: continue
+
+            # --- SAFETY CHECK ---
+            # If the paragraph is safe (short enough), keep it whole.
+            if len(clean_para) < max_chars:
+                chunks.append(clean_para)
+            else:
+                # 🚨 EMERGENCY SPLIT: The paragraph is too huge!
+                # We apply sentence splitting logic JUST for this block.
+                logger.warning(f"⚠️ Giant paragraph detected ({len(clean_para)} chars). Splitting internally.")
+                sub_chunks = self._split_long_paragraph_by_sentences(clean_para, max_chars)
+                chunks.extend(sub_chunks)
+
+        return chunks
+
+    def _split_long_paragraph_by_sentences(self, text, max_chars):
+        """
+        Helper method to chop a giant paragraph into smaller sentence-based chunks.
+        """
+        # Split by sentences (periods, exclamation, questions)
+        sentences = re.split(r'(?<=[.!?])\s+', text)
+        sub_chunks = []
+        current_chunk = ""
 
         for sentence in sentences:
-            if len(current_chunk) + len(sentence) + 1 < max_chars:
-                current_chunk += (sentence + " ")
+            if len(current_chunk) + len(sentence) < max_chars:
+                current_chunk += sentence + " "
             else:
-                if current_chunk:
-                    chunks.append(current_chunk.strip())
+                if current_chunk: sub_chunks.append(current_chunk.strip())
                 current_chunk = sentence + " "
 
-        if current_chunk:
-            chunks.append(current_chunk.strip())
-        return chunks
+        if current_chunk: sub_chunks.append(current_chunk.strip())
+
+        return sub_chunks
 
     def _crossfade_chunks(self, audio_list, crossfade_ms=50, sample_rate=44100):
         """
