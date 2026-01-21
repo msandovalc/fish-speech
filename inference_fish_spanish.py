@@ -181,7 +181,7 @@ class FishTotalLab:
         """Basic text sanitization."""
         if not text: return ""
         text = re.sub(r'([.!?…])(?=\\S)', r'\\1 ', text)
-        text = text.replace("\n\n", "… ").replace("\n", " ").replace("\t", " ")
+        text = text.replace("\n", " ").replace("\t", " ")
         return re.sub(r'\s+', ' ', text).strip()
 
     def split_text(self, text, max_chars=400):
@@ -371,7 +371,7 @@ class FishTotalLab:
                 references=[ServeReferenceAudio(audio=audio_bytes, text=params["prompt"])],
                 use_memory_cache="on",
                 chunk_length=chunk_size,
-                max_new_tokens=1024,
+                max_new_tokens=768,
                 top_p=top_p,
                 temperature=temp,
                 repetition_penalty=penalty,
@@ -414,7 +414,8 @@ class FishTotalLab:
                 if codes.shape[1] > keep:
                     codes = codes[:, -keep:]
                 hist_tokens = codes
-                hist_text = processed_text
+                # hist_text = processed_text
+                hist_text = chunk_text
 
         if not raw_parts:
             return None
