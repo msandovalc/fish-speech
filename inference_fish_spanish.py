@@ -355,7 +355,7 @@ class FishTotalLab:
 
         for chunk_text in text_chunks:
             # INJECTION: Add style tags + trailing dots for natural pauses
-            processed_text = f"{style_tags} {chunk_text.strip()} ..."
+            processed_text = f"{style_tags} {chunk_text.strip()} ... ."
 
             req = ServeTTSRequest(
                 text=processed_text,
