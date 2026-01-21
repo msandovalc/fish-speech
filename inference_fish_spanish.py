@@ -56,7 +56,7 @@ VOICE_PRESETS = {
         "penalty": 1.05,
         "ref_path": str(PROJECT_ROOT / "voices" / "Margarita_Navarrete.wav"),
         "prompt": "Mira te comparto, hicimos tres cuartos más...",
-        "style_tags": "(casual) (friendly)"
+        "style_tags": "(calm) (deep voice) (slow)"
     },
     "CAMILA": {
         "temp": 0.70,  # Optimized for deep voice stability
@@ -65,7 +65,7 @@ VOICE_PRESETS = {
         "penalty": 1.05,
         "ref_path": str(PROJECT_ROOT / "voices" / "Camila_Sodi.mp3"),
         "prompt": "(calm) (deep voice) Todos venimos de un mismo campo fuente...",
-        "style_tags": "(calm) (deep voice)"
+        "style_tags": "(calm) (deep voice) (slow)"
     }
     # "CRISTINA": {
     #     "temp": 0.75,
@@ -332,7 +332,7 @@ if __name__ == "__main__":
     lab = FishTotalLab()
 
     TEST_TEXT = """
-            (calm) (deep voice) Todos venimos de un mismo campo fuente, de una misma gran energía, de un mismo Dios, de un mismo 
+            Todos venimos de un mismo campo fuente, de una misma gran energía, de un mismo Dios, de un mismo 
             universo, como le quieras llamar... Todos somos parte de eso... Nacemos y nos convertimos en esto por un ratito... 
             muy chiquito..., muy chiquitito, que creemos que es muy largo y se nos olvida que vamos a regresar a ese lugar 
             de donde venimos.
