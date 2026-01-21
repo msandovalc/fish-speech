@@ -350,7 +350,7 @@ class FishTotalLab:
             self.vocal_dna_cache[voice_key] = (audio_bytes, vq_tokens)
 
         # 2. Chunking & Inference
-        text_chunks = self.split_text(text)
+        text_chunks = self.split_text(text, max_chars=400)
         raw_parts = []
 
         for chunk_text in text_chunks:
