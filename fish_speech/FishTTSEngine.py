@@ -32,7 +32,7 @@ VOICE_PRESETS = {
     "MARLENE": {
         "temp": 0.75,
         "top_p": 0.90,
-        "chunk": 807,
+        "chunk": 900,
         "penalty": 1.10,
         "ref_path": str(PROJECT_ROOT / "voices" / "ElevenLabs_Marlene.mp3"),
         "prompt": """La mente lo es todo. La causa mental. La causa de todo -absolutamente todo- es mental, es decir, 
@@ -47,8 +47,8 @@ VOICE_PRESETS = {
     "CAMILA": {
         "temp": 0.70,  # FIXED: Lowered from 0.88 to prevent "shrill" voice
         "top_p": 0.70,  # Tighter control to avoid robotic drifting
-        "chunk": 512,  # Safe size for Quadro T1000
-        "penalty": 1.05,  # Increased to prevent loop/stuttering
+        "chunk": 900,  # Safe size for Quadro T1000
+        "penalty": 1.02,  # Increased to prevent loop/stuttering
         "ref_path": str(PROJECT_ROOT / "voices" / "Camila_Sodi.mp3"),
         "prompt": """Todos venimos de un mismo campo fuente, de una misma gran energía, de un mismo Dios, de un mismo 
         universo, como le quieras llamar. Todos somos parte de eso. Nacemos y nos convertimos en esto por un ratito 

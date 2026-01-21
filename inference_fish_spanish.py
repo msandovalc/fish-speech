@@ -80,8 +80,8 @@ VOICE_PRESETS = {
     "CAMILA": {
         "temp": 0.70,
         "top_p": 0.70,
-        "chunk": 807,
-        "penalty": 1.05,
+        "chunk": 900,
+        "penalty": 1.02,
         "ref_path": str(PROJECT_ROOT / "voices" / "Camila_Sodi.mp3"),
         "prompt": """Todos venimos de un mismo campo fuente, de una misma gran energía, de un mismo Dios, de un mismo 
         universo, como le quieras llamar. Todos somos parte de eso. Nacemos y nos convertimos en esto por un ratito 
@@ -327,7 +327,7 @@ class FishTotalLab:
                 curr_pen = base_params['penalty'] #round(start_pen + (end_pen - start_pen) * progress, 2)
                 # curr_chunk = 512  # Keep fixed to isolate variables
                 chunk_options = [512, 640, 768, 800, 900]
-                curr_chunk = chunk_options[i % len(chunk_options)]
+                curr_chunk = base_params['chunk']#chunk_options[i % len(chunk_options)]
 
                 logger.trace(f"🌀 Test {i + 1}: Chunk Size={curr_chunk} | (T={curr_temp}, P={curr_pen})")
 
@@ -379,4 +379,4 @@ if __name__ == "__main__":
         """
 
     # Run the lab: This will generate 5 variations for EVERY voice in the list.
-    lab.run_hyper_search(TEST_TEXT, num_tests=5)
+    lab.run_hyper_search(TEST_TEXT, num_tests=1)
