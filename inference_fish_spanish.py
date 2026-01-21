@@ -60,10 +60,10 @@ VOICE_PRESETS = {
     #     "style_tags": "(calm) (narrative)"
     # },
     "MARGARITA": {
-        "temp": 0.75,
-        "top_p": 0.90,
+        "temp": 0.82,
+        "top_p": 0.91,
         "chunk": 807,
-        "penalty": 1.05,
+        "penalty": 1.07,
         "ref_path": str(PROJECT_ROOT / "voices" / "Margarita_Navarrete.wav"),
         "prompt": """Mira te comparto, hicimos tres cuartos más y no suelta todavía el sistema y otros detallitos, 
         pero mira lo que te quiero comentar es que sé que suena raro, sé que se requiere dinero para el intercambio 
