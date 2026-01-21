@@ -78,7 +78,7 @@ VOICE_PRESETS = {
     #     "style_tags": "(calm) (deep voice)"
     # },
     "CAMILA": {
-        "temp": 0.60,
+        "temp": 0.70,
         "top_p": 0.70,
         "chunk": 900,
         "penalty": 1.035,
@@ -181,53 +181,76 @@ class FishTotalLab:
         text = text.replace("\n", " ").replace("\t", " ")
         return re.sub(r'\s+', ' ', text).strip()
 
-    def split_text(self, text, max_chars=400):
+    def split_text(self, text, max_chars=2000):
         """
-        HYBRID SPLIT STRATEGY (PARAGRAPHS + FATIGUE CONTROL):
-
-        1. Primary Logic: Split by visual paragraphs (double newlines).
-        2. Secondary Logic (Fatigue Check): If a paragraph is longer than 'max_chars'
-           (e.g., 400), it forces an internal split by sentences.
-
-        Why?
-        Long text blocks cause 'Style Drift' (loss of tone) and hallucinations
-        at the end. By forcing a split on long paragraphs, we refresh the
-        style tags "(calm) (deep voice)" more frequently, keeping the voice stable.
-
-        Args:
-            text (str): Input text.
-            max_chars (int): The safety limit. If a paragraph exceeds this,
-                             it gets chopped. Recommended: 400-450.
+        ESTRATEGIA NATURAL (PARAGRAPH FLOW):
+        Eliminamos los cortes artificiales. Confiamos en la estructura del autor.
+        Al respetar los párrafos completos, la IA nunca tiene que "adivinar"
+        cómo empezar una frase a medias, eliminando las alucinaciones de arranque.
         """
-        # Clean up input text
         text = text.strip()
 
-        # 1. Split by "Double Enter" (Visual Paragraphs)
-        # Regex finds empty lines between blocks of text.
+        # Separamos SOLO por dobles saltos de línea (Párrafos Naturales)
         paragraphs = re.split(r'\n\s*\n', text)
 
         chunks = []
-
         for para in paragraphs:
-            # Internal cleanup: remove line breaks inside the paragraph
+            # Limpiamos saltos internos para crear un bloque fluido
             clean_para = para.replace('\n', ' ').strip()
             clean_para = re.sub(r'\s+', ' ', clean_para)
 
-            if not clean_para: continue
-
-            # --- FATIGUE CHECK ---
-            # If the paragraph fits in the safety zone, keep it whole.
-            if len(clean_para) < max_chars:
+            if clean_para:
                 chunks.append(clean_para)
-            else:
-                # 🚨 SAFETY TRIGGER: The paragraph is too long!
-                # We split it by sentences to prevent the model from "hallucinating"
-                # or rushing the end.
-                logger.info(f"⚠️ Long paragraph detected ({len(clean_para)} chars). Refreshing style by splitting.")
-                sub_chunks = self._split_long_paragraph_by_sentences(clean_para, max_chars)
-                chunks.extend(sub_chunks)
 
         return chunks
+
+    # def split_text(self, text, max_chars=400):
+    #     """
+    #     HYBRID SPLIT STRATEGY (PARAGRAPHS + FATIGUE CONTROL):
+    #
+    #     1. Primary Logic: Split by visual paragraphs (double newlines).
+    #     2. Secondary Logic (Fatigue Check): If a paragraph is longer than 'max_chars'
+    #        (e.g., 400), it forces an internal split by sentences.
+    #
+    #     Why?
+    #     Long text blocks cause 'Style Drift' (loss of tone) and hallucinations
+    #     at the end. By forcing a split on long paragraphs, we refresh the
+    #     style tags "(calm) (deep voice)" more frequently, keeping the voice stable.
+    #
+    #     Args:
+    #         text (str): Input text.
+    #         max_chars (int): The safety limit. If a paragraph exceeds this,
+    #                          it gets chopped. Recommended: 400-450.
+    #     """
+    #     # Clean up input text
+    #     text = text.strip()
+    #
+    #     # 1. Split by "Double Enter" (Visual Paragraphs)
+    #     # Regex finds empty lines between blocks of text.
+    #     paragraphs = re.split(r'\n\s*\n', text)
+    #
+    #     chunks = []
+    #
+    #     for para in paragraphs:
+    #         # Internal cleanup: remove line breaks inside the paragraph
+    #         clean_para = para.replace('\n', ' ').strip()
+    #         clean_para = re.sub(r'\s+', ' ', clean_para)
+    #
+    #         if not clean_para: continue
+    #
+    #         # --- FATIGUE CHECK ---
+    #         # If the paragraph fits in the safety zone, keep it whole.
+    #         if len(clean_para) < max_chars:
+    #             chunks.append(clean_para)
+    #         else:
+    #             # 🚨 SAFETY TRIGGER: The paragraph is too long!
+    #             # We split it by sentences to prevent the model from "hallucinating"
+    #             # or rushing the end.
+    #             logger.info(f"⚠️ Long paragraph detected ({len(clean_para)} chars). Refreshing style by splitting.")
+    #             sub_chunks = self._split_long_paragraph_by_sentences(clean_para, max_chars)
+    #             chunks.extend(sub_chunks)
+    #
+    #     return chunks
 
     def _split_long_paragraph_by_sentences(self, text, max_chars):
         """
