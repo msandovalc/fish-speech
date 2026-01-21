@@ -126,34 +126,49 @@ class FishTTSEngine:
         text = text.replace("\n", " ").replace("\t", " ")
         return re.sub(r'\s+', ' ', text).strip()
 
-    def split_text(self, text, max_chars=850):
+    def split_text(self, text, max_chars=400):
         """
-        HYBRID SPLIT STRATEGY (PARAGRAPHS + SAFETY NET):
-        1. Primary: Splits by natural paragraphs (double newlines).
-        2. Fallback: If a single paragraph is too long (> max_chars),
-           it internally splits that paragraph by sentences.
+        HYBRID SPLIT STRATEGY (PARAGRAPHS + FATIGUE CONTROL):
+
+        1. Primary Logic: Split by visual paragraphs (double newlines).
+        2. Secondary Logic (Fatigue Check): If a paragraph is longer than 'max_chars'
+           (e.g., 400), it forces an internal split by sentences.
+
+        Why?
+        Long text blocks cause 'Style Drift' (loss of tone) and hallucinations
+        at the end. By forcing a split on long paragraphs, we refresh the
+        style tags "(calm) (deep voice)" more frequently, keeping the voice stable.
+
+        Args:
+            text (str): Input text.
+            max_chars (int): The safety limit. If a paragraph exceeds this,
+                             it gets chopped. Recommended: 400-450.
         """
+        # Clean up input text
         text = text.strip()
 
-        # 1. Split by Double Enter (Paragraphs)
+        # 1. Split by "Double Enter" (Visual Paragraphs)
+        # Regex finds empty lines between blocks of text.
         paragraphs = re.split(r'\n\s*\n', text)
+
         chunks = []
 
         for para in paragraphs:
-            # Clean up internal line breaks
+            # Internal cleanup: remove line breaks inside the paragraph
             clean_para = para.replace('\n', ' ').strip()
             clean_para = re.sub(r'\s+', ' ', clean_para)
 
             if not clean_para: continue
 
-            # --- SAFETY CHECK ---
-            # If the paragraph is safe (short enough), keep it whole.
+            # --- FATIGUE CHECK ---
+            # If the paragraph fits in the safety zone, keep it whole.
             if len(clean_para) < max_chars:
                 chunks.append(clean_para)
             else:
-                # 🚨 EMERGENCY SPLIT: The paragraph is too huge!
-                # We apply sentence splitting logic JUST for this block.
-                logger.warning(f"⚠️ Giant paragraph detected ({len(clean_para)} chars). Splitting internally.")
+                # 🚨 SAFETY TRIGGER: The paragraph is too long!
+                # We split it by sentences to prevent the model from "hallucinating"
+                # or rushing the end.
+                logger.info(f"⚠️ Long paragraph detected ({len(clean_para)} chars). Refreshing style by splitting.")
                 sub_chunks = self._split_long_paragraph_by_sentences(clean_para, max_chars)
                 chunks.extend(sub_chunks)
 
@@ -161,21 +176,28 @@ class FishTTSEngine:
 
     def _split_long_paragraph_by_sentences(self, text, max_chars):
         """
-        Helper method to chop a giant paragraph into smaller sentence-based chunks.
+        Helper method to chop a giant paragraph into smaller, sentence-based chunks.
+        This ensures we never cut a word in half.
         """
-        # Split by sentences (periods, exclamation, questions)
+        # Regex: Split after '.', '?', or '!' followed by whitespace.
         sentences = re.split(r'(?<=[.!?])\s+', text)
+
         sub_chunks = []
         current_chunk = ""
 
         for sentence in sentences:
+            # Check if adding the next sentence exceeds the limit
             if len(current_chunk) + len(sentence) < max_chars:
                 current_chunk += sentence + " "
             else:
-                if current_chunk: sub_chunks.append(current_chunk.strip())
+                # Limit reached: Save current block and start a new one (Refreshes Style)
+                if current_chunk:
+                    sub_chunks.append(current_chunk.strip())
                 current_chunk = sentence + " "
 
-        if current_chunk: sub_chunks.append(current_chunk.strip())
+        # Append the last remainder
+        if current_chunk:
+            sub_chunks.append(current_chunk.strip())
 
         return sub_chunks
 
