@@ -482,8 +482,8 @@ if __name__ == "__main__":
             Por lo tanto, el secreto no es el esfuerzo físico ni la lucha externa. El secreto es el cambio interno de estado.
             Moverte, en tu mente, del estado de carencia al estado de posesión. Sentir la textura de la realidad que deseas
             hasta que sea tan natural que ya no la busques, porque sabes que ya la tienes. Y cuando esa certeza interna hace
-            clic, el mundo exterior no tiene más remedio que reorganizarse para reflejar tu nueva verdad... Inevitablemente,
-            vas a regresar a tu poder.
+            clic, el mundo exterior no tiene más remedio que reorganizarse para reflejar tu nueva verdad... e Inevitablemente,
+            vas a regresar a tu poder... .
         """
 
     # TEST_TEXT = """Todos venimos de un mismo campo fuente... de una misma gran energía...
