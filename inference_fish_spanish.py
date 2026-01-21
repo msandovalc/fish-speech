@@ -409,6 +409,8 @@ class FishTotalLab:
                 else:
                     keep = 512
 
+                keep = min(keep, 512)
+
                 if codes.shape[1] > keep:
                     codes = codes[:, -keep:]
                 hist_tokens = codes
