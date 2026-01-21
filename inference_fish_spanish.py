@@ -290,7 +290,7 @@ class FishTotalLab:
                 # raw_parts.append(np.concatenate(chunk_audio))
                 full_chunk = np.concatenate(chunk_audio)
 
-                breath_pad = np.zeros(int(44100 * 0.35))
+                breath_pad = np.zeros(int(44100 * 0.5))
                 full_chunk_with_breath = np.concatenate((full_chunk, breath_pad))
 
                 raw_parts.append(full_chunk_with_breath)
