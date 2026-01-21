@@ -246,7 +246,13 @@ class FishTTSEngine:
                                 chunk_parts.append(item)
 
                 if chunk_parts:
-                    raw_audio_segments.append(np.concatenate(chunk_parts))
+                    # raw_audio_segments.append(np.concatenate(chunk_parts))
+                    full_chunk = np.concatenate(chunk_parts)
+
+                    breath_pad = np.zeros(int(44100 * 0.35))
+                    full_chunk_with_breath = np.concatenate((full_chunk, breath_pad))
+
+                    raw_audio_segments.append(full_chunk_with_breath)
 
                 # Clean VRAM after each chunk
                 torch.cuda.empty_cache()

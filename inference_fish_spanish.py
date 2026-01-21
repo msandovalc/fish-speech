@@ -43,7 +43,7 @@ VOICE_PRESETS = {
     # "MARLENE": {
     #     "temp": 0.75,
     #     "top_p": 0.90,
-    #     "chunk": 807,
+    #     "chunk": 900,
     #     "penalty": 1.05,
     #     "ref_path": str(PROJECT_ROOT / "voices" / "ElevenLabs_Marlene.mp3"),
     #     "prompt": """La mente lo es todo. La causa mental. La causa de todo -absolutamente todo- es mental, es decir,
@@ -62,7 +62,7 @@ VOICE_PRESETS = {
     "MARGARITA": {
         "temp": 0.82,
         "top_p": 0.91,
-        "chunk": 807,
+        "chunk": 900,
         "penalty": 1.07,
         "ref_path": str(PROJECT_ROOT / "voices" / "Margarita_Navarrete.wav"),
         "prompt": """Mira te comparto, hicimos tres cuartos más y no suelta todavía el sistema y otros detallitos, 
@@ -92,7 +92,7 @@ VOICE_PRESETS = {
     # "CRISTINA": {
     #     "temp": 0.75,
     #     "top_p": 0.90,
-    #     "chunk": 807,
+    #     "chunk": 900,
     #     "penalty": 1.05,
     #     "ref_path": str(PROJECT_ROOT / "voices" / "Elevenlabs_Cristina_Campos.wav"),
     #     "prompt": "El agua, la confianza y el miedo...",
@@ -101,7 +101,7 @@ VOICE_PRESETS = {
     # "ROSA": {
     #     "temp": 0.75,
     #     "top_p": 0.90,
-    #     "chunk": 807,
+    #     "chunk": 900,
     #     "penalty": 1.05,
     #     "ref_path": str(PROJECT_ROOT / "voices" / "Elevenlabs_Rosa_Estela.wav"),
     #     "prompt": "El agua, la confianza y el miedo...",
@@ -110,7 +110,7 @@ VOICE_PRESETS = {
     # "ALEJANDRO": {
     #     "temp": 0.75,
     #     "top_p": 0.85,
-    #     "chunk": 512,
+    #     "chunk": 900,
     #     "penalty": 1.10,
     #     "ref_path": str(PROJECT_ROOT / "voices" / "ElevenLabs_Alejandro.mp3"),
     #     "prompt": "(serious) (calm) La mente lo es todo.",
@@ -119,7 +119,7 @@ VOICE_PRESETS = {
     # "ALEJANDRO_BALLESTEROS": {
     #     "temp": 0.75,
     #     "top_p": 0.90,
-    #     "chunk": 785,
+    #     "chunk": 900,
     #     "penalty": 1.05,
     #     "ref_path": str(PROJECT_ROOT / "voices" / "Elevenlabs_Alejandro_Ballesteros.wav"),
     #     "prompt": "El agua, la confianza y el miedo...",
@@ -128,7 +128,7 @@ VOICE_PRESETS = {
     # "ENRIQUE": {
     #     "temp": 0.75,
     #     "top_p": 0.90,
-    #     "chunk": 785,
+    #     "chunk": 900,
     #     "penalty": 1.05,
     #     "ref_path": str(PROJECT_ROOT / "voices" / "Elevenlabs_Enrique_Nieto.wav"),
     #     "prompt": "El agua, la confianza y el miedo...",
@@ -287,7 +287,13 @@ class FishTotalLab:
                         if isinstance(item, np.ndarray): chunk_audio.append(item)
 
             if chunk_audio:
-                raw_parts.append(np.concatenate(chunk_audio))
+                # raw_parts.append(np.concatenate(chunk_audio))
+                full_chunk = np.concatenate(chunk_audio)
+
+                breath_pad = np.zeros(int(44100 * 0.35))
+                full_chunk_with_breath = np.concatenate((full_chunk, breath_pad))
+
+                raw_parts.append(full_chunk_with_breath)
 
             torch.cuda.empty_cache()
             gc.collect()
