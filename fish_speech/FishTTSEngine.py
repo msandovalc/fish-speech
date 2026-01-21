@@ -267,7 +267,7 @@ class FishTTSEngine:
                 logger.debug(f"⏳ Processing chunk {i + 1}/{len(text_chunks)}")
 
                 # Trick: Add trailing dots to let the model trail off naturally
-                processed_text = f"{style_tags}.{chunk_text.strip()} ..."
+                processed_text = f"{style_tags} . {chunk_text.strip()} ..."
 
                 req = ServeTTSRequest(
                     text=processed_text,
