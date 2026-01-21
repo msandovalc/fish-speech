@@ -124,7 +124,7 @@ def decode_one_token_ar(
             top_p=top_p,
             repetition_penalty=repetition_penalty,
             previous_tokens=(
-                previous_tokens[:, 0] if previous_tokens is not None else None
+                previous_tokens[0] if previous_tokens is not None else None
             ),
         )[0]
     ]
