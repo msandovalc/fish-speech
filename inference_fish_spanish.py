@@ -181,26 +181,42 @@ class FishTotalLab:
         text = text.replace("\n", " ").replace("\t", " ")
         return re.sub(r'\s+', ' ', text).strip()
 
-    def split_text(self, text, max_chars=2000):
+    def split_text(self, text, max_chars=450):
         """
-        ENFOQUE PURO:
-        No cortamos oraciones. No contamos caracteres.
-        Solo respetamos los párrafos del autor (doble enter).
-        Esto permite que la IA mantenga el flujo natural de la voz.
+        SMART BATCHING STRATEGY:
+        Splits text by sentences (., !, ?, ...) and groups them into chunks
+        of max 'max_chars'.
+
+        WHY: This ensures the model processes every sentence explicitly,
+        preventing 'Attention Amnesia' (skipping text in long paragraphs).
         """
         text = text.strip()
-        paragraphs = re.split(r'\n\s*\n', text)
+        text = text.replace('\n', ' ')
+        text = re.sub(r'\s+', ' ', text)
+
+        # Regex: Split after punctuation followed by whitespace
+        sentences = re.split(r'(?<=[.!?…])\s+', text)
 
         chunks = []
-        for para in paragraphs:
-            # Limpieza básica para que sea un bloque de texto continuo
-            clean_para = para.replace('\n', ' ').strip()
-            clean_para = re.sub(r'\s+', ' ', clean_para)
-            if clean_para:
-                chunks.append(clean_para)
+        current_chunk = ""
+
+        for sentence in sentences:
+            if not sentence.strip(): continue
+
+            # If adding the next sentence stays within limit, add it
+            if len(current_chunk) + len(sentence) < max_chars:
+                current_chunk += sentence + " "
+            else:
+                # Limit exceeded: save current batch and start new
+                if current_chunk:
+                    chunks.append(current_chunk.strip())
+                current_chunk = sentence + " "
+
+        # Save the final remainder
+        if current_chunk:
+            chunks.append(current_chunk.strip())
 
         return chunks
-
 
     # def split_text(self, text, max_chars=400):
     #     """
