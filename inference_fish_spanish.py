@@ -445,30 +445,53 @@ class FishTotalLab:
 if __name__ == "__main__":
     lab = FishTotalLab()
 
-    TEST_TEXT = """
-            Todos venimos de un mismo campo fuente, de una misma gran energía, de un mismo Dios, de un mismo 
-            universo, como le quieras llamar... Todos somos parte de eso... Nacemos y nos convertimos en esto por un ratito... 
-            muy chiquito..., muy chiquitito, que creemos que es muy largo y se nos olvida que vamos a regresar a ese lugar 
-            de donde venimos.
+    # TEST_TEXT = """
+    #         Todos venimos de un mismo campo fuente, de una misma gran energía, de un mismo Dios, de un mismo
+    #         universo, como le quieras llamar... Todos somos parte de eso... Nacemos y nos convertimos en esto por un ratito...
+    #         muy chiquito..., muy chiquitito, que creemos que es muy largo y se nos olvida que vamos a regresar a ese lugar
+    #         de donde venimos.
+    #
+    #         Escucha bien esto. No eres una gota en el océano, eres el océano entero en una gota. Tu imaginación no es un estado
+    #         de fantasía o ilusión, es la verdadera realidad esperando ser reconocida. Cuando cierras los ojos y asumes el
+    #         sentimiento de tu deseo cumplido, no estás "fingiendo", estás accediendo a la cuarta dimensión, al mundo de las
+    #         causas, donde todo ya existe. Lo que ves afuera, en tu mundo físico, es simplemente una pantalla retrasada, un
+    #         eco de lo que fuiste ayer, de lo que pensaste ayer.
+    #
+    #         Si tu realidad actual no te gusta, deja de pelear con la pantalla. No puedes peinar tu reflejo en el espejo,
+    #         tienes que peinarte tú. Debes cambiar la concepción que tienes de ti mismo. Pregúntate: ¿Quién soy yo ahora?
+    #         Si la respuesta no es "Soy próspero", "Soy amado", "Soy saludable", entonces estás usando tu poder divino en tu
+    #         contra. El universo no te juzga, simplemente te dice "SÍ". Si dices "estoy arruinado", el universo dice "SÍ, lo estás".
+    #         Si dices "Soy abundante", el universo dice "SÍ, lo eres".
+    #
+    #         Por lo tanto, el secreto no es el esfuerzo físico ni la lucha externa. El secreto es el cambio interno de estado.
+    #         Moverte, en tu mente, del estado de carencia al estado de posesión. Sentir la textura de la realidad que deseas
+    #         hasta que sea tan natural que ya no la busques, porque sabes que ya la tienes. Y cuando esa certeza interna hace
+    #         clic, el mundo exterior no tiene más remedio que reorganizarse para reflejar tu nueva verdad... Inevitablemente,
+    #         vas a regresar a tu poder.
+    #     """
 
-            Escucha bien esto. No eres una gota en el océano, eres el océano entero en una gota. Tu imaginación no es un estado 
-            de fantasía o ilusión, es la verdadera realidad esperando ser reconocida. Cuando cierras los ojos y asumes el 
-            sentimiento de tu deseo cumplido, no estás "fingiendo", estás accediendo a la cuarta dimensión, al mundo de las 
-            causas, donde todo ya existe. Lo que ves afuera, en tu mundo físico, es simplemente una pantalla retrasada, un 
-            eco de lo que fuiste ayer, de lo que pensaste ayer.
+    TEST_TEXT = """(calm) (deep voice) (slow) Todos venimos de un mismo campo fuente... de una misma gran energía... 
+    de un mismo Dios... de un mismo universo... como le quieras llamar. Todos somos parte de eso. Nacemos y nos 
+    convertimos en esto por un ratito... muy chiquito... muy chiquitito... que creemos que es muy largo, 
+    y se nos olvida que vamos a regresar a ese lugar de donde venimos.
 
-            Si tu realidad actual no te gusta, deja de pelear con la pantalla. No puedes peinar tu reflejo en el espejo, 
-            tienes que peinarte tú. Debes cambiar la concepción que tienes de ti mismo. Pregúntate: ¿Quién soy yo ahora? 
-            Si la respuesta no es "Soy próspero", "Soy amado", "Soy saludable", entonces estás usando tu poder divino en tu 
-            contra. El universo no te juzga, simplemente te dice "SÍ". Si dices "estoy arruinado", el universo dice "SÍ, lo estás". 
-            Si dices "Soy abundante", el universo dice "SÍ, lo eres".
+    Escucha bien esto. No eres una gota en el océano; eres el océano entero en una gota. Tu imaginación no es un 
+    estado de fantasía o ilusión: es la verdadera realidad esperando ser reconocida. Cuando cierras los ojos y asumes 
+    el sentimiento de tu deseo cumplido, no estás "fingiendo"; estás accediendo a la cuarta dimensión, al mundo de 
+    las causas, donde todo ya existe. Lo que ves afuera, en tu mundo físico, es simplemente una pantalla retrasada... 
+    un eco de lo que fuiste ayer, de lo que pensaste ayer.
 
-            Por lo tanto, el secreto no es el esfuerzo físico ni la lucha externa. El secreto es el cambio interno de estado. 
-            Moverte, en tu mente, del estado de carencia al estado de posesión. Sentir la textura de la realidad que deseas 
-            hasta que sea tan natural que ya no la busques, porque sabes que ya la tienes. Y cuando esa certeza interna hace 
-            clic, el mundo exterior no tiene más remedio que reorganizarse para reflejar tu nueva verdad... Inevitablemente, 
-            vas a regresar a tu poder.
-        """
+    Si tu realidad, actual, no te gusta... deja de pelear con la pantalla. No puedes peinar tu reflejo en el espejo; 
+    tienes que peinarte tú. Debes cambiar la concepción que tienes de ti mismo. Pregúntate: ¿Quién soy yo ahora? Si 
+    la respuesta no es "Soy próspero", "Soy amado", "Soy saludable"... entonces estás usando tu poder divino en tu 
+    contra. El universo no te juzga, simplemente te dice: "¡SÍ!". Si dices "estoy arruinado", el universo dice "SÍ, 
+    lo estás". Si dices "Soy abundante", el universo dice "SÍ, lo eres".
+
+    Por lo tanto... el secreto no es el esfuerzo físico ni la lucha externa. El secreto es el cambio interno de 
+    estado. Moverte, en tu mente, del estado de carencia al estado de posesión. Sentir la textura de la realidad que 
+    deseas, hasta que sea tan natural que ya no la busques, porque sabes que ya la tienes. Y cuando esa certeza 
+    interna hace clic... el mundo exterior no tiene más remedio que reorganizarse para reflejar tu nueva verdad... 
+    e Inevitablemente... vas a regresar a tu poder."""
 
     # Run the lab: This will generate 5 variations for EVERY voice in the list.
     lab.run_hyper_search(TEST_TEXT, num_tests=1)
