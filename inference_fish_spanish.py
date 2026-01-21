@@ -180,6 +180,7 @@ class FishTotalLab:
     def clean_text(self, text):
         """Basic text sanitization."""
         if not text: return ""
+        text = re.sub(r'([.!?…])(?=\\S)', r'\\1 ', text)
         text = text.replace("\n", " ").replace("\t", " ")
         return re.sub(r'\s+', ' ', text).strip()
 
@@ -192,9 +193,7 @@ class FishTotalLab:
         WHY: This ensures the model processes every sentence explicitly,
         preventing 'Attention Amnesia' (skipping text in long paragraphs).
         """
-        text = text.strip()
-        text = text.replace('\n', ' ')
-        text = re.sub(r'\s+', ' ', text)
+        text = self.clean_text(text)
 
         # Regex: Split after punctuation followed by whitespace
         sentences = re.split(r'(?<=[.!?…])\s+', text)
@@ -370,14 +369,13 @@ class FishTotalLab:
             req = ServeTTSRequest(
                 text=processed_text,
                 references=[ServeReferenceAudio(audio=audio_bytes, text=params["prompt"])],
-                use_memory_cache="on",  # activa cache por hash del engine [file:27]
-                chunk_length=chunk_size,  # usa tu preset 300 [file:43][file:11]
+                use_memory_cache="on",
+                chunk_length=chunk_size,
                 max_new_tokens=768,
                 top_p=top_p,
                 temperature=temp,
                 repetition_penalty=penalty,
                 format="wav",
-                seed=None,  # clave: NO reseed por chunk (fluye más natural) [file:27]
                 prompt_text=[hist_text] if hist_text is not None else None,
                 prompt_tokens=[hist_tokens] if hist_tokens is not None else None,
             )
@@ -399,7 +397,18 @@ class FishTotalLab:
 
             if final_res.codes is not None:
                 codes = torch.from_numpy(final_res.codes).to(torch.int)
-                keep = 512
+
+                if torch.cuda.is_available():
+                    vram_gb = torch.cuda.get_device_properties(0).total_memory / (1024 ** 3)
+                    if vram_gb < 6:
+                        keep = 512
+                    elif vram_gb < 12:
+                        keep = 1024
+                    else:
+                        keep = 1536
+                else:
+                    keep = 512
+
                 if codes.shape[1] > keep:
                     codes = codes[:, -keep:]
                 hist_tokens = codes
@@ -454,7 +463,7 @@ class FishTotalLab:
 
                 if audio is not None:
                     filename = f"{voice_name}_Chunk{curr_chunk}_T{curr_temp}.wav"
-                    sf.write(str(voice_folder / filename), audio, 44100)
+                    sf.write(str(voice_folder / filename), audio, 44100, subtype="PCM_16")
 
             # Zip results
             shutil.make_archive(str(PROJECT_ROOT / f"RESULTS_{voice_name}_{timestamp}"), 'zip', voice_folder)
