@@ -181,7 +181,7 @@ class FishTotalLab:
         """Basic text sanitization."""
         if not text: return ""
         text = re.sub(r'([.!?…])(?=\\S)', r'\\1 ', text)
-        text = text.replace("\n", " ").replace("\t", " ")
+        text = text.replace("\n\n", "… ").replace("\n", " ").replace("\t", " ")
         return re.sub(r'\s+', ' ', text).strip()
 
     def split_text(self, text, max_chars=400):
@@ -409,7 +409,7 @@ class FishTotalLab:
                 else:
                     keep = 512
 
-                keep = min(keep, 512)
+                keep = min(keep, 256)
 
                 if codes.shape[1] > keep:
                     codes = codes[:, -keep:]
