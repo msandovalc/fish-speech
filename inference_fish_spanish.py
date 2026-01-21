@@ -78,10 +78,10 @@ VOICE_PRESETS = {
     #     "style_tags": "(calm) (deep voice)"
     # },
     "CAMILA": {
-        "temp": 0.70,
+        "temp": 0.60,
         "top_p": 0.70,
         "chunk": 900,
-        "penalty": 1.02,
+        "penalty": 1.035,
         "ref_path": str(PROJECT_ROOT / "voices" / "Camila_Sodi.mp3"),
         "prompt": """Todos venimos de un mismo campo fuente, de una misma gran energía, de un mismo Dios, de un mismo 
         universo, como le quieras llamar. Todos somos parte de eso. Nacemos y nos convertimos en esto por un ratito 
@@ -318,7 +318,7 @@ class FishTotalLab:
 
         for chunk_text in text_chunks:
             # INJECTION: Add style tags + trailing dots for natural pauses
-            processed_text = f"{style_tags} {chunk_text} ..."
+            processed_text = f"{style_prefix} ... {chunk_text.strip()} ..."
 
             req = ServeTTSRequest(
                 text=processed_text,

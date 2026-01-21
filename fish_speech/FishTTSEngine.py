@@ -48,7 +48,7 @@ VOICE_PRESETS = {
         "temp": 0.70,  # FIXED: Lowered from 0.88 to prevent "shrill" voice
         "top_p": 0.70,  # Tighter control to avoid robotic drifting
         "chunk": 900,  # Safe size for Quadro T1000
-        "penalty": 1.02,  # Increased to prevent loop/stuttering
+        "penalty": 1.035,  # Increased to prevent loop/stuttering
         "ref_path": str(PROJECT_ROOT / "voices" / "Camila_Sodi.mp3"),
         "prompt": """Todos venimos de un mismo campo fuente, de una misma gran energía, de un mismo Dios, de un mismo 
         universo, como le quieras llamar. Todos somos parte de eso. Nacemos y nos convertimos en esto por un ratito 
@@ -267,7 +267,7 @@ class FishTTSEngine:
                 logger.debug(f"⏳ Processing chunk {i + 1}/{len(text_chunks)}")
 
                 # Trick: Add trailing dots to let the model trail off naturally
-                processed_text = f"{style_prefix} {chunk_text.strip()} ..."
+                processed_text = f"{style_prefix} ... {chunk_text.strip()} ..."
 
                 req = ServeTTSRequest(
                     text=processed_text,
