@@ -126,7 +126,7 @@ class FishTTSEngine:
         text = text.replace("\n", " ").replace("\t", " ")
         return re.sub(r'\s+', ' ', text).strip()
 
-    def split_text(self, text, max_chars=450):
+    def split_text(self, text, max_chars=350):
         """
         Intelligent splitter using Regex.
         Splits by punctuation (. ! ?) to preserve semantic meaning.
