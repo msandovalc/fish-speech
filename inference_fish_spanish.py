@@ -81,7 +81,7 @@ VOICE_PRESETS = {
         "temp": 0.70,
         "top_p": 0.70,
         "chunk": 900,
-        "penalty": 1.02,
+        "penalty": 1.01,
         "ref_path": str(PROJECT_ROOT / "voices" / "Camila_Sodi.mp3"),
         "prompt": """Todos venimos de un mismo campo fuente, de una misma gran energía, de un mismo Dios, de un mismo 
         universo, como le quieras llamar. Todos somos parte de eso. Nacemos y nos convertimos en esto por un ratito 
@@ -195,7 +195,7 @@ class FishTotalLab:
         if current_chunk: chunks.append(current_chunk.strip())
         return chunks
 
-    def _crossfade_chunks(self, audio_list, crossfade_ms=50, sample_rate=44100):
+    def _crossfade_chunks(self, audio_list, crossfade_ms=80, sample_rate=44100):
         """
         Applies a linear crossfade between audio segments to remove robotic cuts.
         """
@@ -294,10 +294,14 @@ class FishTotalLab:
 
         # 3. Stitching & Normalizing
         if raw_parts:
-            # Crossfade
-            merged = self._crossfade_chunks(raw_parts, crossfade_ms=50)
+            merged = self._crossfade_chunks(raw_parts, crossfade_ms=80)
+
             # Normalize
             final = self._normalize_audio(merged)
+
+            silence_pad = np.zeros(int(44100 * 0.5))
+            final = np.concatenate((final, silence_pad))
+
             return final
         return None
 

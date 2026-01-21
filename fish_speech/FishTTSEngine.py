@@ -148,7 +148,7 @@ class FishTTSEngine:
             chunks.append(current_chunk.strip())
         return chunks
 
-    def _crossfade_chunks(self, audio_list, crossfade_ms=50, sample_rate=44100):
+    def _crossfade_chunks(self, audio_list, crossfade_ms=80, sample_rate=44100):
         """
         Merges audio chunks using a linear crossfade to eliminate robotic clicks.
         """
@@ -257,13 +257,16 @@ class FishTTSEngine:
                 logger.info("🔧 Applying Crossfade and Normalization...")
 
                 # Apply Crossfade (50ms overlap)
-                final_audio = self._crossfade_chunks(raw_audio_segments, crossfade_ms=50)
+                final_audio = self._crossfade_chunks(raw_audio_segments, crossfade_ms=80)
 
                 # Soft Limiter / Normalization (Target -1.0 dB)
                 max_val = np.abs(final_audio).max()
                 if max_val > 0:
                     # Normalize to 0.95 to avoid clipping
                     final_audio = final_audio / max_val * 0.95
+
+                silence_pad = np.zeros(int(44100 * 0.5))
+                final_audio = np.concatenate((final_audio, silence_pad))
 
                 return final_audio, 44100
 
