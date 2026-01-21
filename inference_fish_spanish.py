@@ -181,7 +181,7 @@ class FishTotalLab:
         text = text.replace("\n", " ").replace("\t", " ")
         return re.sub(r'\s+', ' ', text).strip()
 
-    def split_text(self, text, max_chars=500):
+    def split_text(self, text, max_chars=400):
         """
         SMART BATCHING STRATEGY:
         Splits text by sentences (., !, ?, ...) and groups them into chunks
