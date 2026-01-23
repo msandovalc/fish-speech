@@ -353,7 +353,7 @@ class FishTotalLab:
                 audio_bytes = f.read()
             self.vocal_dna_cache[cache_key] = audio_bytes
 
-        text_chunks = self.split_text(text, max_chars=350)
+        text_chunks = self.split_text(text, max_chars=260)
 
         raw_parts = []
         hist_tokens = None
