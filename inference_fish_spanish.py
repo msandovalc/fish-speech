@@ -184,7 +184,7 @@ class FishTotalLab:
         text = text.replace("\n", " ").replace("\t", " ")
         return re.sub(r'\s+', ' ', text).strip()
 
-    def split_text(self, text, max_chars=400):
+    def split_text(self, text, max_chars=350):
         """
         SMART BATCHING STRATEGY:
         Splits text by sentences (., !, ?, ...) and groups them into chunks
@@ -353,7 +353,7 @@ class FishTotalLab:
                 audio_bytes = f.read()
             self.vocal_dna_cache[cache_key] = audio_bytes
 
-        text_chunks = self.split_text(text, max_chars=550)
+        text_chunks = self.split_text(text, max_chars=350)
 
         raw_parts = []
         hist_tokens = None
@@ -371,7 +371,7 @@ class FishTotalLab:
                 references=[ServeReferenceAudio(audio=audio_bytes, text=params["prompt"])],
                 use_memory_cache="on",
                 chunk_length=chunk_size,
-                max_new_tokens=768,
+                max_new_tokens=1024,
                 top_p=top_p,
                 temperature=temp,
                 repetition_penalty=penalty,
@@ -409,7 +409,7 @@ class FishTotalLab:
                 else:
                     keep = 512
 
-                keep = min(keep, 256)
+                keep = min(keep, 200)
 
                 if codes.shape[1] > keep:
                     codes = codes[:, -keep:]
