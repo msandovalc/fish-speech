@@ -43,48 +43,48 @@ except ImportError:
 # --- VOICE PRESETS (OPTIMIZED FOR S1-MINI) ---
 # NOTE: Temperatures lowered to ~0.75 and Penalty to ~1.05 to prevent metallic artifacts.
 VOICE_PRESETS = {
-    "MARLENE": {
-        "temp": 0.65,
-        "top_p": 0.70,
-        "chunk": 300,
-        "penalty": 1.035,
-        "ref_path": str(PROJECT_ROOT / "voices" / "ElevenLabs_Marlene.mp3"),
-        "prompt": """La mente lo es todo. La causa mental. La causa de todo -absolutamente todo- es mental, es decir,
-        la mente es la que produce o causa todo en la vida del individuo.
-
-        Cuando reconozcamos, entendamos y aceptemos esta verdad, habremos dado un paso muy importante en el progreso del desarrollo.
-
-        Si todo es mental, este es un universo mental, donde todo funciona por medios mentales. Nosotros somos seres
-        mentales, mentalidades buenas, perfectas y eternas.
-
-        La mente sólo tiene una actividad, pensar. El pensamiento es todo lo de la mente lo único que somos y tenemos es
-        pensamiento, por ello, el pensamiento es lo más importante de todo.
-        """,
-        "style_tags": "(calm) (narrator)"
-    },
-    "MARGARITA": {
-        "temp": 0.65,
-        "top_p": 0.70,
-        "chunk": 300,
-        "penalty": 1.035,
-        "ref_path": str(PROJECT_ROOT / "voices" / "Margarita_Navarrete.wav"),
-        "prompt": """Mira te comparto, hicimos tres cuartos más y no suelta todavía el sistema y otros detallitos,
-        pero mira lo que te quiero comentar es que sé que suena raro, sé que se requiere dinero para el intercambio
-        de lo que se desea, sin embargo todo lo que decidas hacer, hazlo porque deseas hacerlo. Lo común es buscar
-        hacerlo porque necesitas, y entonces si se empieza a hacer todo desde la necesidad, desde pues es que Magui
-        si lo requiero para los pagos, quedó bien justito ahorita, entonces te me vas a empezar a estresar más. Haz
-        las cosas porque te gusta lo que estás haciendo y de lo que te gusta empieza a hacer más, pero porque te gusta.
-
-        ¿Cómo voy a poder eliminar la carencia del gusto? Por eso son las líneas, a mí me pasó, te digo tiene poco
-        que saque el crédito.
-        """,
-        "style_tags": "(calm) (narrator)"
-    },
+    # "MARLENE": {
+    #     "temp": 0.65,
+    #     "top_p": 0.70,
+    #     "chunk": 300,
+    #     "penalty": 1.035,
+    #     "ref_path": str(PROJECT_ROOT / "voices" / "ElevenLabs_Marlene.mp3"),
+    #     "prompt": """La mente lo es todo. La causa mental. La causa de todo -absolutamente todo- es mental, es decir,
+    #     la mente es la que produce o causa todo en la vida del individuo.
+    #
+    #     Cuando reconozcamos, entendamos y aceptemos esta verdad, habremos dado un paso muy importante en el progreso del desarrollo.
+    #
+    #     Si todo es mental, este es un universo mental, donde todo funciona por medios mentales. Nosotros somos seres
+    #     mentales, mentalidades buenas, perfectas y eternas.
+    #
+    #     La mente sólo tiene una actividad, pensar. El pensamiento es todo lo de la mente lo único que somos y tenemos es
+    #     pensamiento, por ello, el pensamiento es lo más importante de todo.
+    #     """,
+    #     "style_tags": "(calm) (narrator)"
+    # },
+    # "MARGARITA": {
+    #     "temp": 0.65,
+    #     "top_p": 0.70,
+    #     "chunk": 300,
+    #     "penalty": 1.035,
+    #     "ref_path": str(PROJECT_ROOT / "voices" / "Margarita_Navarrete.wav"),
+    #     "prompt": """Mira te comparto, hicimos tres cuartos más y no suelta todavía el sistema y otros detallitos,
+    #     pero mira lo que te quiero comentar es que sé que suena raro, sé que se requiere dinero para el intercambio
+    #     de lo que se desea, sin embargo todo lo que decidas hacer, hazlo porque deseas hacerlo. Lo común es buscar
+    #     hacerlo porque necesitas, y entonces si se empieza a hacer todo desde la necesidad, desde pues es que Magui
+    #     si lo requiero para los pagos, quedó bien justito ahorita, entonces te me vas a empezar a estresar más. Haz
+    #     las cosas porque te gusta lo que estás haciendo y de lo que te gusta empieza a hacer más, pero porque te gusta.
+    #
+    #     ¿Cómo voy a poder eliminar la carencia del gusto? Por eso son las líneas, a mí me pasó, te digo tiene poco
+    #     que saque el crédito.
+    #     """,
+    #     "style_tags": "(calm) (narrator)"
+    # },
     "CAMILA": {
-        "temp": 0.65,
-        "top_p": 0.70,
+        "temp": 0.70,
+        "top_p": 0.80,
         "chunk": 300,
-        "penalty": 1.035, #1.035
+        "penalty": 1.10, #1.035
         "ref_path": str(PROJECT_ROOT / "voices" / "Camila_Sodi.mp3"),
         "prompt": """Todos venimos de un mismo campo fuente, de una misma gran energía, de un mismo Dios, de un mismo 
         universo, como le quieras llamar. Todos somos parte de eso. Nacemos y nos convertimos en esto por un ratito 
@@ -93,10 +93,10 @@ VOICE_PRESETS = {
         "style_tags": "(calm) (narrator)"
     },
     "ROSA": {
-        "temp": 0.65,
-        "top_p": 0.70,
+        "temp": 0.70,
+        "top_p": 0.80,
         "chunk": 300,
-        "penalty": 1.035,
+        "penalty": 1.10,
         "ref_path": str(PROJECT_ROOT / "voices" / "Elevenlabs_Rosa_Estela.wav"),
         "prompt": """El agua, la confianza y el miedo. Una lección poderosa y reveladora sobre la verdadera 
         protección y el poder de la preparación. Considera la profunda enseñanza que subyace a la instrucción sobre 
@@ -118,76 +118,76 @@ VOICE_PRESETS = {
         basada en el miedo, y sígueme para explorar juntos más analogías reveladoras que iluminan la naturaleza del 
         temor y el camino hacia la liberación.""" ,
         "style_tags": "(calm) (narrator)"
-    },
-    "ALEJANDRO": {
-        "temp": 0.65,
-        "top_p": 0.70,
-        "chunk": 300,
-        "penalty": 1.035,
-        "ref_path": str(PROJECT_ROOT / "voices" / "ElevenLabs_Alejandro.mp3"),
-        "prompt": """(serious) (calm) La mente lo es todo. La causa mental. La causa de todo -absolutamente todo- es mental, es decir, 
-            la mente es la que produce o causa todo en la vida del individuo.
-            Cuando reconozcamos, entendamos y aceptemos esta verdad, habremos dado un paso muy importante en el progreso del desarrollo. 
-            Si todo es mental, este es un universo mental, donde todo funciona por medios mentales. Nosotros somos seres 
-            mentales, mentalidades buenas, perfectas y eternas.
-            La mente sólo tiene una actividad, pensar. El pensamiento es todo lo de la mente lo único que somos y tenemos es 
-            pensamiento, por ello, el pensamiento es lo más importante de todo.""",
-        "style_tags": "(calm) (narrator)"
-    },
-    "ALEJANDRO_BALLESTEROS": {
-        "temp": 0.65,
-        "top_p": 0.70,
-        "chunk": 300,
-        "penalty": 1.035,
-        "ref_path": str(PROJECT_ROOT / "voices" / "Elevenlabs_Alejandro_Ballesteros.wav"),
-        "prompt": """El agua, la confianza y el miedo. Una lección poderosa y reveladora sobre la verdadera 
-        protección y el poder de la preparación. Considera la profunda enseñanza que subyace a la instrucción sobre 
-        el miedo al agua.
-
-        Inbuir en la mente de un niño pequeño un temor paralizante hacia la profundidad, creyendo erróneamente que 
-        así se le protege de un posible ahogamiento, puede paradójicamente paralizarlo por completo en un momento de 
-        peligro real, impidiéndole reaccionar de manera efectiva para salvar su propia vida. En contraste, 
-        enseñar al niño un amor genuino por el agua como una parte esencial y maravillosa de la naturaleza, 
-        inculcarle un respeto saludable por su poder y, lo que es crucial, dotarlo de la habilidad vital de nadar con 
-        confianza, empodera al niño de una manera transformadora. Esta analogía poderosa se extiende a innumerables 
-        otros temores que, con las mejores intenciones pero con resultados a menudo limitantes, se nos transmiten 
-        desde la infancia.
-
-        ¿Cuáles son esas aguas profundas metafóricas que has estado evitando en tu vida por un temor arraigado, 
-        impidiéndote explorar nuevas oportunidades y experiencias enriquecedoras? Comparte tu profunda reflexión en 
-        los comentarios. Dale like a este video si crees firmemente en el poder de la preparación activa y la 
-        confianza cultivada como la verdadera protección contra los desafíos de la vida, en lugar de la evitación 
-        basada en el miedo, y sígueme para explorar juntos más analogías reveladoras que iluminan la naturaleza del 
-        temor y el camino hacia la liberación.""",
-        "style_tags": "(calm) (narrator)"
-    },
-    "ENRIQUE": {
-        "temp": 0.65,
-        "top_p": 0.70,
-        "chunk": 300,
-        "penalty": 1.035,
-        "ref_path": str(PROJECT_ROOT / "voices" / "Elevenlabs_Enrique_Nieto.wav"),
-        "prompt": """El agua, la confianza y el miedo. Una lección poderosa y reveladora sobre la verdadera 
-        protección y el poder de la preparación. Considera la profunda enseñanza que subyace a la instrucción sobre 
-        el miedo al agua.
-
-        Inbuir en la mente de un niño pequeño un temor paralizante hacia la profundidad, creyendo erróneamente que 
-        así se le protege de un posible ahogamiento, puede paradójicamente paralizarlo por completo en un momento de 
-        peligro real, impidiéndole reaccionar de manera efectiva para salvar su propia vida. En contraste, 
-        enseñar al niño un amor genuino por el agua como una parte esencial y maravillosa de la naturaleza, 
-        inculcarle un respeto saludable por su poder y, lo que es crucial, dotarlo de la habilidad vital de nadar con 
-        confianza, empodera al niño de una manera transformadora. Esta analogía poderosa se extiende a innumerables 
-        otros temores que, con las mejores intenciones pero con resultados a menudo limitantes, se nos transmiten 
-        desde la infancia.
-
-        ¿Cuáles son esas aguas profundas metafóricas que has estado evitando en tu vida por un temor arraigado, 
-        impidiéndote explorar nuevas oportunidades y experiencias enriquecedoras? Comparte tu profunda reflexión en 
-        los comentarios. Dale like a este video si crees firmemente en el poder de la preparación activa y la 
-        confianza cultivada como la verdadera protección contra los desafíos de la vida, en lugar de la evitación 
-        basada en el miedo, y sígueme para explorar juntos más analogías reveladoras que iluminan la naturaleza del 
-        temor y el camino hacia la liberación.""",
-        "style_tags": "(calm) (narrator)"
     }
+    # "ALEJANDRO": {
+    #     "temp": 0.65,
+    #     "top_p": 0.70,
+    #     "chunk": 300,
+    #     "penalty": 1.035,
+    #     "ref_path": str(PROJECT_ROOT / "voices" / "ElevenLabs_Alejandro.mp3"),
+    #     "prompt": """(serious) (calm) La mente lo es todo. La causa mental. La causa de todo -absolutamente todo- es mental, es decir,
+    #         la mente es la que produce o causa todo en la vida del individuo.
+    #         Cuando reconozcamos, entendamos y aceptemos esta verdad, habremos dado un paso muy importante en el progreso del desarrollo.
+    #         Si todo es mental, este es un universo mental, donde todo funciona por medios mentales. Nosotros somos seres
+    #         mentales, mentalidades buenas, perfectas y eternas.
+    #         La mente sólo tiene una actividad, pensar. El pensamiento es todo lo de la mente lo único que somos y tenemos es
+    #         pensamiento, por ello, el pensamiento es lo más importante de todo.""",
+    #     "style_tags": "(calm) (narrator)"
+    # },
+    # "ALEJANDRO_BALLESTEROS": {
+    #     "temp": 0.65,
+    #     "top_p": 0.70,
+    #     "chunk": 300,
+    #     "penalty": 1.035,
+    #     "ref_path": str(PROJECT_ROOT / "voices" / "Elevenlabs_Alejandro_Ballesteros.wav"),
+    #     "prompt": """El agua, la confianza y el miedo. Una lección poderosa y reveladora sobre la verdadera
+    #     protección y el poder de la preparación. Considera la profunda enseñanza que subyace a la instrucción sobre
+    #     el miedo al agua.
+    #
+    #     Inbuir en la mente de un niño pequeño un temor paralizante hacia la profundidad, creyendo erróneamente que
+    #     así se le protege de un posible ahogamiento, puede paradójicamente paralizarlo por completo en un momento de
+    #     peligro real, impidiéndole reaccionar de manera efectiva para salvar su propia vida. En contraste,
+    #     enseñar al niño un amor genuino por el agua como una parte esencial y maravillosa de la naturaleza,
+    #     inculcarle un respeto saludable por su poder y, lo que es crucial, dotarlo de la habilidad vital de nadar con
+    #     confianza, empodera al niño de una manera transformadora. Esta analogía poderosa se extiende a innumerables
+    #     otros temores que, con las mejores intenciones pero con resultados a menudo limitantes, se nos transmiten
+    #     desde la infancia.
+    #
+    #     ¿Cuáles son esas aguas profundas metafóricas que has estado evitando en tu vida por un temor arraigado,
+    #     impidiéndote explorar nuevas oportunidades y experiencias enriquecedoras? Comparte tu profunda reflexión en
+    #     los comentarios. Dale like a este video si crees firmemente en el poder de la preparación activa y la
+    #     confianza cultivada como la verdadera protección contra los desafíos de la vida, en lugar de la evitación
+    #     basada en el miedo, y sígueme para explorar juntos más analogías reveladoras que iluminan la naturaleza del
+    #     temor y el camino hacia la liberación.""",
+    #     "style_tags": "(calm) (narrator)"
+    # },
+    # "ENRIQUE": {
+    #     "temp": 0.65,
+    #     "top_p": 0.70,
+    #     "chunk": 300,
+    #     "penalty": 1.035,
+    #     "ref_path": str(PROJECT_ROOT / "voices" / "Elevenlabs_Enrique_Nieto.wav"),
+    #     "prompt": """El agua, la confianza y el miedo. Una lección poderosa y reveladora sobre la verdadera
+    #     protección y el poder de la preparación. Considera la profunda enseñanza que subyace a la instrucción sobre
+    #     el miedo al agua.
+    #
+    #     Inbuir en la mente de un niño pequeño un temor paralizante hacia la profundidad, creyendo erróneamente que
+    #     así se le protege de un posible ahogamiento, puede paradójicamente paralizarlo por completo en un momento de
+    #     peligro real, impidiéndole reaccionar de manera efectiva para salvar su propia vida. En contraste,
+    #     enseñar al niño un amor genuino por el agua como una parte esencial y maravillosa de la naturaleza,
+    #     inculcarle un respeto saludable por su poder y, lo que es crucial, dotarlo de la habilidad vital de nadar con
+    #     confianza, empodera al niño de una manera transformadora. Esta analogía poderosa se extiende a innumerables
+    #     otros temores que, con las mejores intenciones pero con resultados a menudo limitantes, se nos transmiten
+    #     desde la infancia.
+    #
+    #     ¿Cuáles son esas aguas profundas metafóricas que has estado evitando en tu vida por un temor arraigado,
+    #     impidiéndote explorar nuevas oportunidades y experiencias enriquecedoras? Comparte tu profunda reflexión en
+    #     los comentarios. Dale like a este video si crees firmemente en el poder de la preparación activa y la
+    #     confianza cultivada como la verdadera protección contra los desafíos de la vida, en lugar de la evitación
+    #     basada en el miedo, y sígueme para explorar juntos más analogías reveladoras que iluminan la naturaleza del
+    #     temor y el camino hacia la liberación.""",
+    #     "style_tags": "(calm) (narrator)"
+    # }
 }
 
 # Platform detection
@@ -312,27 +312,20 @@ class FishTotalLab:
             audio_bytes = self._load_and_trim_audio(params["ref_path"], max_duration=60)
             self.vocal_dna_cache[cache_key] = audio_bytes
 
-        # --- CHUNKS DE 200 ---
         text_chunks = self.split_text(text, max_chars=200)
 
         raw_parts = []
         hist_tokens = None
         hist_text = None
 
-        # Obtenemos los tags del preset si no se pasaron explícitamente
         current_tags = style_tags if style_tags else params.get("style_tags", "")
 
         for i, chunk_text in enumerate(text_chunks):
             chunk_text = chunk_text.strip()
             if not chunk_text: continue
 
-            # --- ESTRATEGIA: REINYECCIÓN CONSTANTE ---
-            # Volvemos a poner los tags en CADA chunk.
-            # Esto mantiene el ritmo "lento" y "calmado" a la fuerza.
-            # processed_text = f"{current_tags} {chunk_text}"
-            processed_text = f"{current_tags} {chunk_text}" if i == 0 else chunk_text
+            processed_text = f"{current_tags} {chunk_text}..." if i == 0 else f"{chunk_text}..."
 
-            # --- AUTO-RETRY MATEMÁTICO ---
             max_retries = 3
             best_attempt = None
 
@@ -360,7 +353,6 @@ class FishTotalLab:
                         final_res = res
                         break
 
-                # --- EL JUEZ IMPLACABLE ---
                 if final_res and final_res.codes is not None:
                     num_tokens = final_res.codes.shape[1]
 
@@ -382,7 +374,12 @@ class FishTotalLab:
                 continue
 
             sr, audio_np = best_attempt.audio
-            raw_parts.append(audio_np)
+
+            padding_samples = int(sr * 0.25)
+            silence_pad = np.zeros(padding_samples, dtype=audio_np.dtype)
+            audio_padded = np.concatenate((audio_np, silence_pad))
+
+            raw_parts.append(audio_padded)
 
             if best_attempt.codes is not None:
                 codes = torch.from_numpy(best_attempt.codes).to(torch.int)
