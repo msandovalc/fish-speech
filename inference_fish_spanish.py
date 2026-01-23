@@ -81,8 +81,8 @@ VOICE_PRESETS = {
     #     "style_tags": "(calm) (narrator)"
     # },
     "CAMILA": {
-        "temp": 0.60,
-        "top_p": 0.75,
+        "temp": 0.65,
+        "top_p": 0.70,
         "chunk": 300,
         "penalty": 1.035, #1.035
         "ref_path": str(PROJECT_ROOT / "voices" / "Camila_Sodi.mp3"),
@@ -90,11 +90,11 @@ VOICE_PRESETS = {
         universo, como le quieras llamar. Todos somos parte de eso. Nacemos y nos convertimos en esto por un ratito 
         muy chiquito, muy chiquitito, que creemos que es muy largo y se nos olvida que vamos a regresar a ese lugar 
         de donde venimos, que es lo que tú creas, adonde tú creas, pero inevitablemente vas a regresar.""",
-        "style_tags": "(calm) (narrator)"
+        "style_tags": "(calm) (narrator) (deep voice)"
     },
     "ROSA": {
-        "temp": 0.60,
-        "top_p": 0.75,
+        "temp": 0.65,
+        "top_p": 0.70,
         "chunk": 300,
         "penalty": 1.035,
         "ref_path": str(PROJECT_ROOT / "voices" / "Elevenlabs_Rosa_Estela.wav"),
@@ -117,7 +117,7 @@ VOICE_PRESETS = {
         confianza cultivada como la verdadera protección contra los desafíos de la vida, en lugar de la evitación 
         basada en el miedo, y sígueme para explorar juntos más analogías reveladoras que iluminan la naturaleza del 
         temor y el camino hacia la liberación.""" ,
-        "style_tags": "(calm) (narrator)"
+        "style_tags": "(calm) (narrator) (deep voice)"
     }
     # "ALEJANDRO": {
     #     "temp": 0.65,
