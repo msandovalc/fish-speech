@@ -294,7 +294,7 @@ class FishTotalLab:
 
         return sub_chunks
 
-    def _crossfade_chunks(self, audio_list, crossfade_ms=50, sample_rate=44100):
+    def _crossfade_chunks(self, audio_list, crossfade_ms=30, sample_rate=44100):
         """
         Applies a linear crossfade between audio segments to remove robotic cuts.
         """
@@ -361,7 +361,7 @@ class FishTotalLab:
         # --- SAFETY SPLIT ---
         # We force short chunks (140 chars) so the model never gets "tired"
         # or runs out of context window, even with very slow voices.
-        text_chunks = self.split_text(text, max_chars=140)
+        text_chunks = self.split_text(text, max_chars=210)
 
         raw_parts = []
         hist_tokens = None
@@ -374,7 +374,7 @@ class FishTotalLab:
             # --- NO STYLE TAGS ---
             # We pass clean text to allow natural prosody flow from previous chunks.
             # Injecting tags here would cause robotic tone resets.
-            processed_text = chunk_text
+            processed_text = f"{style_tags} {chunk_text}" if i == 0 else chunk_text
 
             # --- AUTO-RETRY MECHANISM ---
             # Models sometimes "give up" early. We detect this and retry up to 3 times.
@@ -413,9 +413,9 @@ class FishTotalLab:
 
                     # Heuristic: Slow voices need ~3+ tokens per character.
                     # If tokens are too low, the model likely skipped text.
-                    expected_min_tokens = len(chunk_text) * 1.5
+                    expected_min_tokens = len(chunk_text) * 1.2
 
-                    if num_tokens < expected_min_tokens and num_tokens < 100:
+                    if num_tokens < expected_min_tokens and num_tokens < 60:
                         logger.warning(
                             f"⚠️ Attempt {attempt + 1}: Audio too short ({num_tokens} tokens vs {len(chunk_text)} chars). Retrying...")
                         continue
@@ -451,10 +451,10 @@ class FishTotalLab:
             return None
 
         # Smoother crossfade (100ms) because we have more cuts now
-        merged = self._crossfade_chunks(raw_parts, crossfade_ms=100)
+        merged = self._crossfade_chunks(raw_parts, crossfade_ms=30)
         final = self._normalize_audio(merged)
         return final
-    
+
     def run_hyper_search(self, text, num_tests=5):
         """
         Runs a hyper-parameter search loop for ALL voices.
