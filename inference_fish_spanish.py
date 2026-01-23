@@ -364,7 +364,8 @@ class FishTotalLab:
             if not chunk_text:
                 continue
 
-            processed_text = f"{style_tags} {chunk_text}"
+            # processed_text = f"{style_tags} {chunk_text}"
+            processed_text =chunk_text
 
             req = ServeTTSRequest(
                 text=processed_text,
@@ -398,23 +399,24 @@ class FishTotalLab:
             if final_res.codes is not None:
                 codes = torch.from_numpy(final_res.codes).to(torch.int)
 
-                if torch.cuda.is_available():
-                    vram_gb = torch.cuda.get_device_properties(0).total_memory / (1024 ** 3)
-                    if vram_gb < 6:
-                        keep = 512
-                    elif vram_gb < 12:
-                        keep = 1024
-                    else:
-                        keep = 1536
-                else:
-                    keep = 512
+                # if torch.cuda.is_available():
+                #     vram_gb = torch.cuda.get_device_properties(0).total_memory / (1024 ** 3)
+                #     if vram_gb < 6:
+                #         keep = 512
+                #     elif vram_gb < 12:
+                #         keep = 1024
+                #     else:
+                #         keep = 1536
+                # else:
+                #     keep = 512
+                #
+                # keep = min(keep, 256)
 
-                keep = min(keep, 256)
+                keep = 200
 
                 if codes.shape[1] > keep:
                     codes = codes[:, -keep:]
                 hist_tokens = codes
-                # hist_text = processed_text
                 hist_text = chunk_text
 
         if not raw_parts:
