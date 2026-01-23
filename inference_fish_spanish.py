@@ -361,7 +361,7 @@ class FishTotalLab:
         # --- SAFETY SPLIT ---
         # We force short chunks (140 chars) so the model never gets "tired"
         # or runs out of context window, even with very slow voices.
-        text_chunks = self.split_text(text, max_chars=140)
+        text_chunks = self.split_text(text, max_chars=200)
 
         raw_parts = []
         hist_tokens = None
@@ -444,7 +444,7 @@ class FishTotalLab:
                 codes = torch.from_numpy(best_attempt.codes).to(torch.int)
 
                 # Keep 200 tokens: Tested "sweet spot" for stability
-                keep = 50
+                keep = 25
                 if codes.shape[1] > keep:
                     codes = codes[:, -keep:]
 
@@ -512,30 +512,30 @@ class FishTotalLab:
 if __name__ == "__main__":
     lab = FishTotalLab()
 
-    # TEST_TEXT = """
-    #         Todos venimos de un mismo campo fuente, de una misma gran energía, de un mismo Dios, de un mismo
-    #         universo, como le quieras llamar.Todos somos parte de eso. Nacemos y nos convertimos en esto por un ratito,
-    #         muy chiquito, muy chiquitito, que creemos que es muy largo y se nos olvida que vamos a regresar a ese lugar
-    #         de donde venimos.
-    #
-    #         Escucha bien esto. No eres una gota en el océano, eres el océano entero en una gota. Tu imaginación no es un estado
-    #         de fantasía o ilusión, es la verdadera realidad esperando ser reconocida. Cuando cierras los ojos y asumes el
-    #         sentimiento de tu deseo cumplido, no estás "fingiendo", estás accediendo a la cuarta dimensión, al mundo de las
-    #         causas, donde todo ya existe. Lo que ves afuera, en tu mundo físico, es simplemente una pantalla retrasada, un
-    #         eco de lo que fuiste ayer, de lo que pensaste ayer.
-    #
-    #         Si tu realidad actual no te gusta, deja de pelear con la pantalla. No puedes peinar tu reflejo en el espejo,
-    #         tienes que peinarte tú. Debes cambiar la concepción que tienes de ti mismo. Pregúntate: ¿Quién soy yo ahora?
-    #         Si la respuesta no es "Soy próspero", "Soy amado", "Soy saludable", entonces estás usando tu poder divino en tu
-    #         contra. El universo no te juzga, simplemente te dice "SÍ". Si dices "estoy arruinado", el universo dice "SÍ, lo estás".
-    #         Si dices "Soy abundante", el universo dice "SÍ, lo eres".
-    #
-    #         Por lo tanto, el secreto no es el esfuerzo físico ni la lucha externa. El secreto es el cambio interno de estado.
-    #         Moverte, en tu mente, del estado de carencia al estado de posesión. Sentir la textura de la realidad que deseas
-    #         hasta que sea tan natural que ya no la busques, porque sabes que ya la tienes. Y cuando esa certeza interna hace
-    #         clic, el mundo exterior no tiene más remedio que reorganizarse para reflejar tu nueva verdad. E inevitablemente,
-    #         vas a regresar a tu poder.
-    #     """
+    TEST_TEXT = """
+            Todos venimos de un mismo campo fuente, de una misma gran energía, de un mismo Dios, de un mismo
+            universo, como le quieras llamar.Todos somos parte de eso. Nacemos y nos convertimos en esto por un ratito,
+            muy chiquito, muy chiquitito, que creemos que es muy largo y se nos olvida que vamos a regresar a ese lugar
+            de donde venimos.
+
+            Escucha bien esto. No eres una gota en el océano, eres el océano entero en una gota. Tu imaginación no es un estado
+            de fantasía o ilusión, es la verdadera realidad esperando ser reconocida. Cuando cierras los ojos y asumes el
+            sentimiento de tu deseo cumplido, no estás "fingiendo", estás accediendo a la cuarta dimensión, al mundo de las
+            causas, donde todo ya existe. Lo que ves afuera, en tu mundo físico, es simplemente una pantalla retrasada, un
+            eco de lo que fuiste ayer, de lo que pensaste ayer.
+
+            Si tu realidad actual no te gusta, deja de pelear con la pantalla. No puedes peinar tu reflejo en el espejo,
+            tienes que peinarte tú. Debes cambiar la concepción que tienes de ti mismo. Pregúntate: ¿Quién soy yo ahora?
+            Si la respuesta no es "Soy próspero", "Soy amado", "Soy saludable", entonces estás usando tu poder divino en tu
+            contra. El universo no te juzga, simplemente te dice "SÍ". Si dices "estoy arruinado", el universo dice "SÍ, lo estás".
+            Si dices "Soy abundante", el universo dice "SÍ, lo eres".
+
+            Por lo tanto, el secreto no es el esfuerzo físico ni la lucha externa. El secreto es el cambio interno de estado.
+            Moverte, en tu mente, del estado de carencia al estado de posesión. Sentir la textura de la realidad que deseas
+            hasta que sea tan natural que ya no la busques, porque sabes que ya la tienes. Y cuando esa certeza interna hace
+            clic, el mundo exterior no tiene más remedio que reorganizarse para reflejar tu nueva verdad. E inevitablemente,
+            vas a regresar a tu poder.
+        """
 
     # TEST_TEXT = """Todos venimos de un mismo campo fuente... de una misma gran energía...
     # de un mismo Dios... de un mismo universo... como le quieras llamar. Todos somos parte de eso. Nacemos y nos
@@ -562,31 +562,31 @@ if __name__ == "__main__":
 
     # Run the lab: This will generate 5 variations for EVERY voice in the list.
 
-    TEST_TEXT = """
-    Hoy vamos a probar una voz que suena serena, profunda y constante, como si estuvieras guiando una meditación íntima.
-    Respira lento. Suelta los hombros. Deja que cada palabra caiga con calma, sin prisa, sin tensión.
-
-    Imagina que tu mente es un lago. Cuando intentas controlar todo, el agua se agita y no ves el fondo.
-    Pero cuando te quedas quieto, el lago se ordena solo. La claridad no se fuerza: se permite.
-
-    Ahora escucha esto con atención: no necesitas convencer a nadie de tu valor.
-    Tu valor no sube ni baja con la opinión de otros. Tu valor es un hecho.
-    Puedes sentir seguridad incluso cuando el mundo afuera esté ruidoso.
-
-    Si aparece un pensamiento de miedo, no luches con él.
-    Solo obsérvalo y di: “Te veo, pero no te sigo”.
-    Luego vuelve a lo simple: inhalar… exhalar… y estar aquí.
-
-    Repite mentalmente, despacio:
-    “Estoy a salvo.”
-    “Estoy presente.”
-    “Estoy en paz.”
-    Y si tu mente duda, contesta con suavidad: “Gracias, pero elijo calma”.
-
-    Para cerrar, imagina que caminas por un pasillo largo y silencioso.
-    Con cada paso, tu voz se vuelve más cálida y más baja.
-    Y cuando llegas al final, solo queda una certeza tranquila:
-    todo lo que buscas empieza dentro de ti.
-    """
-    
+    # TEST_TEXT = """
+    # Hoy vamos a probar una voz que suena serena, profunda y constante, como si estuvieras guiando una meditación íntima.
+    # Respira lento. Suelta los hombros. Deja que cada palabra caiga con calma, sin prisa, sin tensión.
+    #
+    # Imagina que tu mente es un lago. Cuando intentas controlar todo, el agua se agita y no ves el fondo.
+    # Pero cuando te quedas quieto, el lago se ordena solo. La claridad no se fuerza: se permite.
+    #
+    # Ahora escucha esto con atención: no necesitas convencer a nadie de tu valor.
+    # Tu valor no sube ni baja con la opinión de otros. Tu valor es un hecho.
+    # Puedes sentir seguridad incluso cuando el mundo afuera esté ruidoso.
+    #
+    # Si aparece un pensamiento de miedo, no luches con él.
+    # Solo obsérvalo y di: “Te veo, pero no te sigo”.
+    # Luego vuelve a lo simple: inhalar… exhalar… y estar aquí.
+    #
+    # Repite mentalmente, despacio:
+    # “Estoy a salvo.”
+    # “Estoy presente.”
+    # “Estoy en paz.”
+    # Y si tu mente duda, contesta con suavidad: “Gracias, pero elijo calma”.
+    #
+    # Para cerrar, imagina que caminas por un pasillo largo y silencioso.
+    # Con cada paso, tu voz se vuelve más cálida y más baja.
+    # Y cuando llegas al final, solo queda una certeza tranquila:
+    # todo lo que buscas empieza dentro de ti.
+    # """
+    #
     lab.run_hyper_search(TEST_TEXT, num_tests=1)
