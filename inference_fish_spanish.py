@@ -413,9 +413,8 @@ class FishTotalLab:
 
                     # Heuristic: Slow voices need ~3+ tokens per character.
                     # If tokens are too low, the model likely skipped text.
-                    expected_min_tokens = len(chunk_text) * 1.2
-
-                    if num_tokens < expected_min_tokens and num_tokens < 60:
+                    expected_min_chars = len(chunk_text)
+                    if (expected_min_chars >= 80 and num_tokens < 120) or (expected_min_chars < 80 and num_tokens < 35):
                         logger.warning(
                             f"⚠️ Attempt {attempt + 1}: Audio too short ({num_tokens} tokens vs {len(chunk_text)} chars). Retrying...")
                         continue
