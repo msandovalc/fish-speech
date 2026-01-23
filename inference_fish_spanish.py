@@ -324,7 +324,7 @@ class FishTotalLab:
             chunk_text = chunk_text.strip()
             if not chunk_text: continue
 
-            processed_text = f"{current_tags} {chunk_text}..." if i == 0 else f"{chunk_text}..."
+            processed_text = f"{current_tags} {chunk_text}" if i == 0 else f"{chunk_text}"
 
             max_retries = 3
             best_attempt = None
