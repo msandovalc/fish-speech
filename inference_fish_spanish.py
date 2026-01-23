@@ -444,7 +444,7 @@ class FishTotalLab:
                 codes = torch.from_numpy(best_attempt.codes).to(torch.int)
 
                 # Keep 200 tokens: Tested "sweet spot" for stability
-                keep = 25
+                keep = 50
                 if codes.shape[1] > keep:
                     codes = codes[:, -keep:]
 
