@@ -436,7 +436,7 @@ class FishTotalLab:
                 padding_samples = int(sr * 0.25)
                 silence_pad = np.zeros(padding_samples, dtype=audio_np.dtype)
                 audio_padded = np.concatenate((audio_np, silence_pad))
-                raw_audio_segments.append(audio_np)
+                raw_audio_segments.append(audio_padded)
 
                 # --- Context Update (Short Memory) ---
                 # Keep only 50 tokens to maintain flow but prevent artifact accumulation (robotic voice)
