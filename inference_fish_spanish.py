@@ -83,7 +83,7 @@ VOICE_PRESETS = {
         "temp": 0.70,
         "top_p": 0.70,
         "chunk": 300,
-        "penalty": 1.035, #1.035
+        "penalty": 1.05, #1.035
         "ref_path": str(PROJECT_ROOT / "voices" / "Camila_Sodi.mp3"),
         "prompt": """Todos venimos de un mismo campo fuente, de una misma gran energía, de un mismo Dios, de un mismo 
         universo, como le quieras llamar. Todos somos parte de eso. Nacemos y nos convertimos en esto por un ratito 
@@ -145,20 +145,16 @@ should_compile = False if is_windows else True
 
 class FishTotalLab:
     def __init__(self):
-        """Initializes the Inference Engine."""
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.checkpoint_dir = PROJECT_ROOT / "checkpoints" / "openaudio-s1-mini"
         self.precision = torch.half
         self.vocal_dna_cache = {}
-
         logger.info(f"🎯 STARTING FISH LABORATORY | Device: {self.device} | Compile: {should_compile}")
-
         self.engine = self._load_models()
         torch.cuda.empty_cache()
         gc.collect()
 
     def _load_models(self):
-        """Loads Llama (Semantic) and VQ-GAN (Acoustic) models."""
         llama_queue = launch_thread_safe_queue(
             checkpoint_path=self.checkpoint_dir,
             device=self.device,
@@ -178,178 +174,64 @@ class FishTotalLab:
         )
 
     def clean_text(self, text):
-        """Basic text sanitization."""
         if not text: return ""
-        text = re.sub(r'([.!?…])(?=\\S)', r'\\1 ', text)
+        text = re.sub(r'([.!?…])(?=\S)', r'\1 ', text)
         text = text.replace("\n", " ").replace("\t", " ")
         return re.sub(r'\s+', ' ', text).strip()
 
-    def split_text(self, text, max_chars=250):
+    def split_text(self, text, max_chars=200):
         """
-        SMART BATCHING STRATEGY:
-        Splits text by sentences (., !, ?, ...) and groups them into chunks
-        of max 'max_chars'.
-
-        WHY: This ensures the model processes every sentence explicitly,
-        preventing 'Attention Amnesia' (skipping text in long paragraphs).
+        Split en 200.
+        Suficiente para una frase larga, pero seguro para la memoria.
         """
         text = self.clean_text(text)
-
-        # Regex: Split after punctuation followed by whitespace
         sentences = re.split(r'(?<=[.!?…])\s+', text)
-
         chunks = []
         current_chunk = ""
-
         for sentence in sentences:
             if not sentence.strip(): continue
-
-            # If adding the next sentence stays within limit, add it
             if len(current_chunk) + len(sentence) < max_chars:
                 current_chunk += sentence + " "
             else:
-                # Limit exceeded: save current batch and start new
                 if current_chunk:
                     chunks.append(current_chunk.strip())
                 current_chunk = sentence + " "
-
-        # Save the final remainder
         if current_chunk:
             chunks.append(current_chunk.strip())
-
         return chunks
 
-    # def split_text(self, text, max_chars=400):
-    #     """
-    #     HYBRID SPLIT STRATEGY (PARAGRAPHS + FATIGUE CONTROL):
-    #
-    #     1. Primary Logic: Split by visual paragraphs (double newlines).
-    #     2. Secondary Logic (Fatigue Check): If a paragraph is longer than 'max_chars'
-    #        (e.g., 400), it forces an internal split by sentences.
-    #
-    #     Why?
-    #     Long text blocks cause 'Style Drift' (loss of tone) and hallucinations
-    #     at the end. By forcing a split on long paragraphs, we refresh the
-    #     style tags "(calm) (deep voice)" more frequently, keeping the voice stable.
-    #
-    #     Args:
-    #         text (str): Input text.
-    #         max_chars (int): The safety limit. If a paragraph exceeds this,
-    #                          it gets chopped. Recommended: 400-450.
-    #     """
-    #     # Clean up input text
-    #     text = text.strip()
-    #
-    #     # 1. Split by "Double Enter" (Visual Paragraphs)
-    #     # Regex finds empty lines between blocks of text.
-    #     paragraphs = re.split(r'\n\s*\n', text)
-    #
-    #     chunks = []
-    #
-    #     for para in paragraphs:
-    #         # Internal cleanup: remove line breaks inside the paragraph
-    #         clean_para = para.replace('\n', ' ').strip()
-    #         clean_para = re.sub(r'\s+', ' ', clean_para)
-    #
-    #         if not clean_para: continue
-    #
-    #         # --- FATIGUE CHECK ---
-    #         # If the paragraph fits in the safety zone, keep it whole.
-    #         if len(clean_para) < max_chars:
-    #             chunks.append(clean_para)
-    #         else:
-    #             # 🚨 SAFETY TRIGGER: The paragraph is too long!
-    #             # We split it by sentences to prevent the model from "hallucinating"
-    #             # or rushing the end.
-    #             logger.info(f"⚠️ Long paragraph detected ({len(clean_para)} chars). Refreshing style by splitting.")
-    #             sub_chunks = self._split_long_paragraph_by_sentences(clean_para, max_chars)
-    #             chunks.extend(sub_chunks)
-    #
-    #     return chunks
-
-    def _split_long_paragraph_by_sentences(self, text, max_chars):
-        """
-        Helper method to chop a giant paragraph into smaller, sentence-based chunks.
-        This ensures we never cut a word in half.
-        """
-        # Regex: Split after '.', '?', or '!' followed by whitespace.
-        sentences = re.split(r'(?<=[.!?])\s+', text)
-
-        sub_chunks = []
-        current_chunk = ""
-
-        for sentence in sentences:
-            # Check if adding the next sentence exceeds the limit
-            if len(current_chunk) + len(sentence) < max_chars:
-                current_chunk += sentence + " "
-            else:
-                # Limit reached: Save current block and start a new one (Refreshes Style)
-                if current_chunk:
-                    sub_chunks.append(current_chunk.strip())
-                current_chunk = sentence + " "
-
-        # Append the last remainder
-        if current_chunk:
-            sub_chunks.append(current_chunk.strip())
-
-        return sub_chunks
-
     def _crossfade_chunks(self, audio_list, crossfade_ms=30, sample_rate=44100):
-        """
-        Applies a linear crossfade between audio segments to remove robotic cuts.
-        """
         if not audio_list: return None
         if len(audio_list) == 1: return audio_list[0]
-
         fade_samples = int(sample_rate * crossfade_ms / 1000)
         combined = audio_list[0]
-
         for next_chunk in audio_list[1:]:
-            # Skip if chunks are too short
             if len(combined) < fade_samples or len(next_chunk) < fade_samples:
                 combined = np.concatenate((combined, next_chunk))
                 continue
-
-            # Create fade curves
             fade_out = np.linspace(1, 0, fade_samples)
             fade_in = np.linspace(0, 1, fade_samples)
-
-            # Blend
             tail = combined[-fade_samples:] * fade_out
             head = next_chunk[:fade_samples] * fade_in
             overlap = tail + head
-
-            # Stitch
             combined = np.concatenate((combined[:-fade_samples], overlap, next_chunk[fade_samples:]))
-
         return combined
 
     def _normalize_audio(self, audio_data, target_db=-1.0):
-        """Normalizes audio to a standard dB level."""
         max_val = np.abs(audio_data).max()
         if max_val == 0: return audio_data
-
         target_amp = 10 ** (target_db / 20)
         return audio_data * (target_amp / max_val)
 
-    def generate_audio_for_params(self, voice_key, text, temp, top_p, penalty, chunk_size, style_tags, seed_base: int = 1234):
-        """
-        Generates audio using a 'Bulletproof' strategy for slow voices (like Camila).
-        It implements:
-        1. Short text splitting to prevent model fatigue.
-        2. Automatic retry mechanism if the model generates suspiciously short audio.
-        3. Context chaining without style tags for natural flow.
-        """
+    def generate_audio_for_params(self, voice_key, text, temp, top_p, penalty, chunk_size, style_tags,
+                                  seed_base: int = 1234):
         if voice_key not in VOICE_PRESETS:
             logger.error(f"Voice {voice_key} not found.")
             return None
 
         params = VOICE_PRESETS[voice_key]
-
-        # 1) Set global seed once for consistency
         set_seed(seed_base)
 
-        # 2) Load Reference Audio from Cache (avoids repeated I/O)
         cache_key = (voice_key, params["ref_path"])
         if cache_key in self.vocal_dna_cache:
             audio_bytes = self.vocal_dna_cache[cache_key]
@@ -358,37 +240,30 @@ class FishTotalLab:
                 audio_bytes = f.read()
             self.vocal_dna_cache[cache_key] = audio_bytes
 
-        # --- SAFETY SPLIT ---
-        # We force short chunks (140 chars) so the model never gets "tired"
-        # or runs out of context window, even with very slow voices.
-        text_chunks = self.split_text(text, max_chars=150)
+        # --- CHUNKS DE 200 ---
+        text_chunks = self.split_text(text, max_chars=200)
 
         raw_parts = []
         hist_tokens = None
         hist_text = None
-        REINJECT_EVERY = 3
+
+        # Obtenemos los tags del preset si no se pasaron explícitamente
+        current_tags = style_tags if style_tags else params.get("style_tags", "")
 
         for i, chunk_text in enumerate(text_chunks):
             chunk_text = chunk_text.strip()
+            if not chunk_text: continue
 
-            if not chunk_text:
-                continue
+            # --- ESTRATEGIA: REINYECCIÓN CONSTANTE ---
+            # Volvemos a poner los tags en CADA chunk.
+            # Esto mantiene el ritmo "lento" y "calmado" a la fuerza.
+            processed_text = f"{current_tags} {chunk_text}"
 
-            # --- NO STYLE TAGS ---
-            # We pass clean text to allow natural prosody flow from previous chunks.
-            # Injecting tags here would cause robotic tone resets.
-            # processed_text = f"{style_tags} {chunk_text}" if i == 0 else chunk_text
-            # processed_text = f"{style_tags} {chunk_text}" if (i == 0 or i % REINJECT_EVERY == 0) else chunk_text
-            processed_text = chunk_text
-
-            # --- AUTO-RETRY MECHANISM ---
-            # Models sometimes "give up" early. We detect this and retry up to 3 times.
+            # --- AUTO-RETRY MATEMÁTICO ---
             max_retries = 3
             best_attempt = None
 
             for attempt in range(max_retries):
-
-                # Slight seed variation for retries to get a different result
                 if attempt > 0:
                     set_seed(seed_base + i + attempt * 100)
 
@@ -397,7 +272,7 @@ class FishTotalLab:
                     references=[ServeReferenceAudio(audio=audio_bytes, text=params["prompt"])],
                     use_memory_cache="on",
                     chunk_length=chunk_size,
-                    max_new_tokens=1024,  # Large buffer for slow voices
+                    max_new_tokens=1024,
                     top_p=top_p,
                     temperature=temp,
                     repetition_penalty=penalty,
@@ -412,25 +287,25 @@ class FishTotalLab:
                         final_res = res
                         break
 
-                # --- QUALITY CHECK ---
+                # --- EL JUEZ IMPLACABLE ---
                 if final_res and final_res.codes is not None:
                     num_tokens = final_res.codes.shape[1]
 
-                    # Heuristic: Slow voices need ~3+ tokens per character.
-                    # If tokens are too low, the model likely skipped text.
-                    expected_min_chars = len(chunk_text)
-                    if (expected_min_chars >= 80 and num_tokens < 120) or (expected_min_chars < 80 and num_tokens < 35):
+                    # Regla de Oro: En español normal, necesitas al menos 1 token por caracter
+                    # (aunque usualmente es 1.3 - 1.5). Si es menos de 1.0, SE COMIÓ TEXTO.
+                    # Ejemplo: Texto de 100 letras -> Mínimo 100 tokens.
+                    min_tokens_needed = len(chunk_text)
+
+                    if num_tokens < min_tokens_needed:
                         logger.warning(
-                            f"⚠️ Attempt {attempt + 1}: Audio too short ({num_tokens} tokens vs {len(chunk_text)} chars). Retrying...")
+                            f"⚠️ Chunk incompleto ({num_tokens} tokens vs {len(chunk_text)} letras). Reintentando...")
                         continue
 
-                    # If it passes the check, we accept it
                     best_attempt = final_res
                     break
 
-            # Fallback: If all retries fail, use the last result (better than nothing)
             if best_attempt is None and final_res is not None:
-                logger.error(f"❌ All retries failed for chunk: '{chunk_text[:20]}...'. Using last result.")
+                logger.error(f"❌ Falló reintento: '{chunk_text[:15]}...'. Usando último.")
                 best_attempt = final_res
 
             if best_attempt is None or best_attempt.audio is None:
@@ -439,53 +314,36 @@ class FishTotalLab:
             sr, audio_np = best_attempt.audio
             raw_parts.append(audio_np)
 
-            # --- CONTEXT CHAINING UPDATE ---
+            # --- MEMORIA BALANCEADA (50) ---
+            # Mantenemos 50 para limpiar el "ruido" pero permitir la unión.
             if best_attempt.codes is not None:
                 codes = torch.from_numpy(best_attempt.codes).to(torch.int)
-
-                # Keep 200 tokens: Tested "sweet spot" for stability
                 keep = 50
                 if codes.shape[1] > keep:
                     codes = codes[:, -keep:]
-
                 hist_tokens = codes
                 hist_text = chunk_text
 
         if not raw_parts:
             return None
 
-        # Smoother crossfade (100ms) because we have more cuts now
         merged = self._crossfade_chunks(raw_parts, crossfade_ms=30)
         final = self._normalize_audio(merged)
         return final
 
     def run_hyper_search(self, text, num_tests=5):
-        """
-        Runs a hyper-parameter search loop for ALL voices.
-        Sweeps Temperature from 0.65 to 0.85 and Penalty from 1.02 to 1.15.
-        """
         logger.info(f"🧪 Starting Hyper-Search for {len(VOICE_PRESETS)} voices.")
         timestamp = datetime.now().strftime("%H%M%S")
 
         for voice_name, base_params in VOICE_PRESETS.items():
             voice_folder = PROJECT_ROOT / f"LAB_{voice_name}_{timestamp}"
             voice_folder.mkdir(parents=True, exist_ok=True)
-
             logger.info(f"🔬 Testing Voice: {voice_name}")
 
-            # Define search ranges
-            start_temp, end_temp = 0.65, 0.85
-            start_pen, end_pen = 1.02, 1.15
-
             for i in range(num_tests):
-                progress = i / (num_tests - 1) if num_tests > 1 else 0
-
-                # Calculate current params
-                curr_temp = base_params['temp'] #round(start_temp + (end_temp - start_temp) * progress, 2)
-                curr_pen = base_params['penalty'] #round(start_pen + (end_pen - start_pen) * progress, 2)
-                # curr_chunk = 512  # Keep fixed to isolate variables
-                chunk_options = [512, 640, 768, 800, 900]
-                curr_chunk = base_params['chunk']#chunk_options[i % len(chunk_options)]
+                curr_temp = base_params['temp']
+                curr_pen = base_params['penalty']
+                curr_chunk = base_params['chunk']
 
                 logger.trace(f"🌀 Test {i + 1}: Chunk Size={curr_chunk} | (T={curr_temp}, P={curr_pen})")
 
@@ -493,28 +351,28 @@ class FishTotalLab:
                     voice_name,
                     text,
                     temp=curr_temp,
-                    top_p=base_params['top_p'],  # Keep Top_P from preset
+                    top_p=base_params['top_p'],
                     penalty=curr_pen,
                     chunk_size=curr_chunk,
-                    style_tags=base_params.get('style_tags', '')
+                    style_tags=base_params.get("style_tags", "")
                 )
 
                 if audio is not None:
-                    filename = f"{voice_name}_Chunk{curr_chunk}_T{curr_temp}.wav"
+                    filename = f"{voice_name}_FinalFixed_{timestamp}.wav"
                     sf.write(str(voice_folder / filename), audio, 44100, subtype="PCM_16")
-                    logger.success(f"📦 Test pack created for {filename}")
+                    logger.success(f"📦 Test pack created for {voice_name}__{filename}")
 
-            # Zip results
-            file_name_zip = shutil.make_archive(str(PROJECT_ROOT / f"RESULTS_{voice_name}_{timestamp}"), 'zip', voice_folder)
-            logger.success(f"📦 Test pack created for {voice_name}_{file_name_zip}")
+            shutil.make_archive(str(PROJECT_ROOT / f"RESULTS_{voice_name}_{timestamp}"), 'zip', voice_folder)
+            logger.success(f"📦 Test pack created for {voice_name}")
 
 
 if __name__ == "__main__":
     lab = FishTotalLab()
 
+    # TEXTO DE PRUEBA
     TEST_TEXT = """
             Todos venimos de un mismo campo fuente, de una misma gran energía, de un mismo Dios, de un mismo
-            universo, como le quieras llamar.Todos somos parte de eso. Nacemos y nos convertimos en esto por un ratito,
+            universo, como le quieras llamar. Todos somos parte de eso. Nacemos y nos convertimos en esto por un ratito,
             muy chiquito, muy chiquitito, que creemos que es muy largo y se nos olvida que vamos a regresar a ese lugar
             de donde venimos.
 
@@ -537,56 +395,4 @@ if __name__ == "__main__":
             vas a regresar a tu poder.
         """
 
-    # TEST_TEXT = """Todos venimos de un mismo campo fuente... de una misma gran energía...
-    # de un mismo Dios... de un mismo universo... como le quieras llamar. Todos somos parte de eso. Nacemos y nos
-    # convertimos en esto por un ratito... muy chiquito... muy chiquitito... que creemos que es muy largo,
-    # y se nos olvida que vamos a regresar a ese lugar de donde venimos.
-    #
-    # Escucha bien esto. No eres una gota en el océano; eres el océano entero en una gota. Tu imaginación no es un
-    # estado de fantasía o ilusión: es la verdadera realidad esperando ser reconocida. Cuando cierras los ojos y asumes
-    # el sentimiento de tu deseo cumplido, no estás "fingiendo"; estás accediendo a la cuarta dimensión, al mundo de
-    # las causas, donde todo ya existe. Lo que ves afuera, en tu mundo físico, es simplemente una pantalla retrasada...
-    # un eco de lo que fuiste ayer, de lo que pensaste ayer.
-    #
-    # Si tu realidad, actual, no te gusta... deja de pelear con la pantalla. No puedes peinar tu reflejo en el espejo;
-    # tienes que peinarte tú. Debes cambiar la concepción que tienes de ti mismo. Pregúntate: ¿Quién soy yo ahora? Si
-    # la respuesta no es "Soy próspero", "Soy amado", "Soy saludable"... entonces estás usando tu poder divino en tu
-    # contra. El universo no te juzga, simplemente te dice: "¡SÍ!". Si dices "estoy arruinado", el universo dice "SÍ,
-    # lo estás". Si dices "Soy abundante", el universo dice "SÍ, lo eres".
-    #
-    # Por lo tanto... el secreto no es el esfuerzo físico ni la lucha externa. El secreto es el cambio interno de
-    # estado. Moverte, en tu mente, del estado de carencia al estado de posesión. Sentir la textura de la realidad que
-    # deseas, hasta que sea tan natural que ya no la busques, porque sabes que ya la tienes. Y cuando esa certeza
-    # interna hace clic... el mundo exterior no tiene más remedio que reorganizarse para reflejar tu nueva verdad...
-    # e Inevitablemente... vas a regresar a tu poder."""
-
-    # Run the lab: This will generate 5 variations for EVERY voice in the list.
-
-    # TEST_TEXT = """
-    # Hoy vamos a probar una voz que suena serena, profunda y constante, como si estuvieras guiando una meditación íntima.
-    # Respira lento. Suelta los hombros. Deja que cada palabra caiga con calma, sin prisa, sin tensión.
-    #
-    # Imagina que tu mente es un lago. Cuando intentas controlar todo, el agua se agita y no ves el fondo.
-    # Pero cuando te quedas quieto, el lago se ordena solo. La claridad no se fuerza: se permite.
-    #
-    # Ahora escucha esto con atención: no necesitas convencer a nadie de tu valor.
-    # Tu valor no sube ni baja con la opinión de otros. Tu valor es un hecho.
-    # Puedes sentir seguridad incluso cuando el mundo afuera esté ruidoso.
-    #
-    # Si aparece un pensamiento de miedo, no luches con él.
-    # Solo obsérvalo y di: “Te veo, pero no te sigo”.
-    # Luego vuelve a lo simple: inhalar… exhalar… y estar aquí.
-    #
-    # Repite mentalmente, despacio:
-    # “Estoy a salvo.”
-    # “Estoy presente.”
-    # “Estoy en paz.”
-    # Y si tu mente duda, contesta con suavidad: “Gracias, pero elijo calma”.
-    #
-    # Para cerrar, imagina que caminas por un pasillo largo y silencioso.
-    # Con cada paso, tu voz se vuelve más cálida y más baja.
-    # Y cuando llegas al final, solo queda una certeza tranquila:
-    # todo lo que buscas empieza dentro de ti.
-    # """
-    #
     lab.run_hyper_search(TEST_TEXT, num_tests=1)
