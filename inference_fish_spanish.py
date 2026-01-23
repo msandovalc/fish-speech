@@ -257,7 +257,8 @@ class FishTotalLab:
             # --- ESTRATEGIA: REINYECCIÓN CONSTANTE ---
             # Volvemos a poner los tags en CADA chunk.
             # Esto mantiene el ritmo "lento" y "calmado" a la fuerza.
-            processed_text = f"{current_tags} {chunk_text}"
+            # processed_text = f"{current_tags} {chunk_text}"
+            processed_text = f"{current_tags} {chunk_text}" if i == 0 else chunk_text
 
             # --- AUTO-RETRY MATEMÁTICO ---
             max_retries = 3
