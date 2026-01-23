@@ -80,16 +80,16 @@ VOICE_PRESETS = {
     #     "style_tags": "(calm) (deep voice)"
     # },
     "CAMILA": {
-        "temp": 0.70,
+        "temp": 0.65,
         "top_p": 0.70,
         "chunk": 300,
-        "penalty": 1.05, #1.035
+        "penalty": 1.035, #1.035
         "ref_path": str(PROJECT_ROOT / "voices" / "Camila_Sodi.mp3"),
         "prompt": """Todos venimos de un mismo campo fuente, de una misma gran energía, de un mismo Dios, de un mismo 
         universo, como le quieras llamar. Todos somos parte de eso. Nacemos y nos convertimos en esto por un ratito 
         muy chiquito, muy chiquitito, que creemos que es muy largo y se nos olvida que vamos a regresar a ese lugar 
         de donde venimos, que es lo que tú creas, adonde tú creas, pero inevitablemente vas a regresar.""",
-        "style_tags": "(calm) (narrator) (confident)"
+        "style_tags": "(calm) (narrator)"
     }
     # "CRISTINA": {
     #     "temp": 0.75,
