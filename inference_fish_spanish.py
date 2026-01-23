@@ -91,7 +91,7 @@ VOICE_PRESETS = {
         universo, como le quieras llamar. Todos somos parte de eso. Nacemos y nos convertimos en esto por un ratito 
         muy chiquito, muy chiquitito, que creemos que es muy largo y se nos olvida que vamos a regresar a ese lugar 
         de donde venimos, que es lo que tú creas, adonde tú creas, pero inevitablemente vas a regresar.""",
-        "style_tags": "(calm) (narrator) (relaxed)" #(deep voice)
+        "style_tags": "(calm) (narrator)" #(deep voice)
     },
     "ROSA": {
         "temp": 0.65,
@@ -543,7 +543,7 @@ if __name__ == "__main__":
         """
 
     LONG_CHAPTER_2 = """
-            Imagina por un momento que no eres simplemente un cuerpo físico luchando en el espacio, sino una frecuencia vibratoria, 
+            Imagina por un momento que no eres simplemente un cuerpo físico luchando en el espacio, sino una frecuencia vibratoría, 
             una extensión directa de la inteligencia infinita... Nunca has estado separado de la totalidad... Esa sensación de soledad 
             es solo una ilusión óptica de la mente, un olvido temporal de tu verdadera naturaleza ilimitada y eterna que siempre 
             está conectada a la fuente.
