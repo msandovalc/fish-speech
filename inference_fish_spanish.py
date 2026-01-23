@@ -89,7 +89,7 @@ VOICE_PRESETS = {
         universo, como le quieras llamar. Todos somos parte de eso. Nacemos y nos convertimos en esto por un ratito 
         muy chiquito, muy chiquitito, que creemos que es muy largo y se nos olvida que vamos a regresar a ese lugar 
         de donde venimos, que es lo que tú creas, adonde tú creas, pero inevitablemente vas a regresar.""",
-        "style_tags": "(calm) (deep voice)"
+        "style_tags": "(calm) (deep voice) (slow)"
     }
     # "CRISTINA": {
     #     "temp": 0.75,
@@ -378,7 +378,8 @@ class FishTotalLab:
             # We pass clean text to allow natural prosody flow from previous chunks.
             # Injecting tags here would cause robotic tone resets.
             # processed_text = f"{style_tags} {chunk_text}" if i == 0 else chunk_text
-            processed_text = f"{style_tags} {chunk_text}" if (i == 0 or i % REINJECT_EVERY == 0) else chunk_text
+            # processed_text = f"{style_tags} {chunk_text}" if (i == 0 or i % REINJECT_EVERY == 0) else chunk_text
+            processed_text = chunk_text
 
             # --- AUTO-RETRY MECHANISM ---
             # Models sometimes "give up" early. We detect this and retry up to 3 times.
