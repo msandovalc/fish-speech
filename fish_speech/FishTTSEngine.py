@@ -60,7 +60,7 @@ VOICE_PRESETS = {
         "style_tags": "(calm) (deep voice) (slow)"
     },
     "CAMILA": {
-        "temp": 0.65,  # FIXED: Lowered from 0.88 to prevent "shrill" voice
+        "temp": 0.70,  # FIXED: Lowered from 0.88 to prevent "shrill" voice
         "top_p": 0.70,  # Tighter control to avoid robotic drifting
         "chunk": 300,  # Safe size for Quadro T1000
         "penalty": 1.035,  # Increased to prevent loop/stuttering
@@ -69,7 +69,7 @@ VOICE_PRESETS = {
         universo, como le quieras llamar. Todos somos parte de eso. Nacemos y nos convertimos en esto por un ratito 
         muy chiquito, muy chiquitito, que creemos que es muy largo y se nos olvida que vamos a regresar a ese lugar 
         de donde venimos, que es lo que tú creas, adonde tú creas, pero inevitablemente vas a regresar.""",
-        "style_tags": "(calm) (narrator)"
+        "style_tags": "(narrator)"
     },
     "ALEJANDRO": {
         "temp": 0.65,
