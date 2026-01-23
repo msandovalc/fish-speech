@@ -507,7 +507,7 @@ class FishTotalLab:
                     audio, sample_rate = result_tuple
                     filename = f"{voice_name}_FinalFixed_{timestamp}.wav"
                     sf.write(str(voice_folder / filename), audio, sample_rate, subtype="PCM_16")
-                    logger.success(f"📦 Generated: {filename}")
+                    logger.success(f"📦 Audio Successful Generated: {filename}")
 
             shutil.make_archive(str(PROJECT_ROOT / f"RESULTS_{voice_name}_{timestamp}"), 'zip', voice_folder)
             logger.success(f"📦 Test pack created for {voice_name}")
