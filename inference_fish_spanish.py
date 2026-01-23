@@ -361,20 +361,24 @@ class FishTotalLab:
         # --- SAFETY SPLIT ---
         # We force short chunks (140 chars) so the model never gets "tired"
         # or runs out of context window, even with very slow voices.
-        text_chunks = self.split_text(text, max_chars=250)
+        text_chunks = self.split_text(text, max_chars=140)
 
         raw_parts = []
         hist_tokens = None
         hist_text = None
+        REINJECT_EVERY = 3
 
         for i, chunk_text in enumerate(text_chunks):
             chunk_text = chunk_text.strip()
-            if not chunk_text: continue
+
+            if not chunk_text:
+                continue
 
             # --- NO STYLE TAGS ---
             # We pass clean text to allow natural prosody flow from previous chunks.
             # Injecting tags here would cause robotic tone resets.
-            processed_text = f"{style_tags} {chunk_text}" if i == 0 else chunk_text
+            # processed_text = f"{style_tags} {chunk_text}" if i == 0 else chunk_text
+            processed_text = f"{style_tags} {chunk_text}" if (i == 0 or i % REINJECT_EVERY == 0) else chunk_text
 
             # --- AUTO-RETRY MECHANISM ---
             # Models sometimes "give up" early. We detect this and retry up to 3 times.
