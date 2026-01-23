@@ -91,35 +91,35 @@ VOICE_PRESETS = {
         universo, como le quieras llamar. Todos somos parte de eso. Nacemos y nos convertimos en esto por un ratito 
         muy chiquito, muy chiquitito, que creemos que es muy largo y se nos olvida que vamos a regresar a ese lugar 
         de donde venimos, que es lo que tú creas, adonde tú creas, pero inevitablemente vas a regresar.""",
-        "style_tags": "(calm) (narrator)" #(deep voice)
-    },
-    "ROSA": {
-        "temp": 0.65,
-        "top_p": 0.70,
-        "chunk": 300,
-        "penalty": 1.035,
-        "ref_path": str(PROJECT_ROOT / "voices" / "Elevenlabs_Rosa_Estela.wav"),
-        "prompt": """El agua, la confianza y el miedo. Una lección poderosa y reveladora sobre la verdadera 
-        protección y el poder de la preparación. Considera la profunda enseñanza que subyace a la instrucción sobre 
-        el miedo al agua.
-
-        Inbuir en la mente de un niño pequeño un temor paralizante hacia la profundidad, creyendo erróneamente que 
-        así se le protege de un posible ahogamiento, puede paradójicamente paralizarlo por completo en un momento de 
-        peligro real, impidiéndole reaccionar de manera efectiva para salvar su propia vida. En contraste, 
-        enseñar al niño un amor genuino por el agua como una parte esencial y maravillosa de la naturaleza, 
-        inculcarle un respeto saludable por su poder y, lo que es crucial, dotarlo de la habilidad vital de nadar con 
-        confianza, empodera al niño de una manera transformadora. Esta analogía poderosa se extiende a innumerables 
-        otros temores que, con las mejores intenciones pero con resultados a menudo limitantes, se nos transmiten 
-        desde la infancia.
-        
-        ¿Cuáles son esas aguas profundas metafóricas que has estado evitando en tu vida por un temor arraigado, 
-        impidiéndote explorar nuevas oportunidades y experiencias enriquecedoras? Comparte tu profunda reflexión en 
-        los comentarios. Dale like a este video si crees firmemente en el poder de la preparación activa y la 
-        confianza cultivada como la verdadera protección contra los desafíos de la vida, en lugar de la evitación 
-        basada en el miedo, y sígueme para explorar juntos más analogías reveladoras que iluminan la naturaleza del 
-        temor y el camino hacia la liberación.""" ,
-        "style_tags": "(calm) (narrator) (relaxed)" #(deep voice)
+        "style_tags": "(calm) (narrator) (deep voice)" #(deep voice)
     }
+    # "ROSA": {
+    #     "temp": 0.65,
+    #     "top_p": 0.70,
+    #     "chunk": 300,
+    #     "penalty": 1.035,
+    #     "ref_path": str(PROJECT_ROOT / "voices" / "Elevenlabs_Rosa_Estela.wav"),
+    #     "prompt": """El agua, la confianza y el miedo. Una lección poderosa y reveladora sobre la verdadera
+    #     protección y el poder de la preparación. Considera la profunda enseñanza que subyace a la instrucción sobre
+    #     el miedo al agua.
+    #
+    #     Inbuir en la mente de un niño pequeño un temor paralizante hacia la profundidad, creyendo erróneamente que
+    #     así se le protege de un posible ahogamiento, puede paradójicamente paralizarlo por completo en un momento de
+    #     peligro real, impidiéndole reaccionar de manera efectiva para salvar su propia vida. En contraste,
+    #     enseñar al niño un amor genuino por el agua como una parte esencial y maravillosa de la naturaleza,
+    #     inculcarle un respeto saludable por su poder y, lo que es crucial, dotarlo de la habilidad vital de nadar con
+    #     confianza, empodera al niño de una manera transformadora. Esta analogía poderosa se extiende a innumerables
+    #     otros temores que, con las mejores intenciones pero con resultados a menudo limitantes, se nos transmiten
+    #     desde la infancia.
+    #
+    #     ¿Cuáles son esas aguas profundas metafóricas que has estado evitando en tu vida por un temor arraigado,
+    #     impidiéndote explorar nuevas oportunidades y experiencias enriquecedoras? Comparte tu profunda reflexión en
+    #     los comentarios. Dale like a este video si crees firmemente en el poder de la preparación activa y la
+    #     confianza cultivada como la verdadera protección contra los desafíos de la vida, en lugar de la evitación
+    #     basada en el miedo, y sígueme para explorar juntos más analogías reveladoras que iluminan la naturaleza del
+    #     temor y el camino hacia la liberación.""" ,
+    #     "style_tags": "(calm) (narrator) (relaxed)" #(deep voice)
+    # }
     # "ALEJANDRO": {
     #     "temp": 0.65,
     #     "top_p": 0.70,
@@ -476,41 +476,107 @@ class FishTotalLab:
             traceback.print_exc()
             return None, None
 
+    # def run_hyper_search(self, text, num_tests=5):
+    #     logger.info(f"🧪 Starting Hyper-Search for {len(VOICE_PRESETS)} voices.")
+    #     timestamp = datetime.now().strftime("%H%M%S")
+    #
+    #     for voice_name, base_params in VOICE_PRESETS.items():
+    #         voice_folder = PROJECT_ROOT / f"LAB_{voice_name}_{timestamp}"
+    #         voice_folder.mkdir(parents=True, exist_ok=True)
+    #         logger.info(f"🔬 Testing Voice: {voice_name}")
+    #
+    #         for i in range(num_tests):
+    #             curr_temp = base_params['temp']
+    #             curr_pen = base_params['penalty']
+    #             curr_chunk = base_params['chunk']
+    #
+    #             logger.trace(f"🌀 Test {i + 1}: Chunk Size={curr_chunk} | (T={curr_temp}, P={curr_pen})")
+    #
+    #             result_tuple = self.generate_audio_for_params(
+    #                 voice_name,
+    #                 text,
+    #                 temp=curr_temp,
+    #                 top_p=base_params['top_p'],
+    #                 penalty=curr_pen,
+    #                 chunk_size=curr_chunk,
+    #                 style_tags=base_params.get("style_tags", "")
+    #             )
+    #
+    #             if result_tuple is not None and result_tuple[0] is not None:
+    #                 audio, sample_rate = result_tuple
+    #                 filename = f"{voice_name}_FinalFixed_{timestamp}.wav"
+    #                 sf.write(str(voice_folder / filename), audio, sample_rate, subtype="PCM_16")
+    #                 logger.success(f"📦 Audio Successful Generated: {filename}")
+    #
+    #         shutil.make_archive(str(PROJECT_ROOT / f"RESULTS_{voice_name}_{timestamp}"), 'zip', voice_folder)
+    #         logger.success(f"📦 Test pack created for {voice_name}")
 
-    def run_hyper_search(self, text, num_tests=5):
+    def run_hyper_search(self, text, num_tests=1):
+        """
+        LABORATORIO MATRICIAL:
+        Itera sobre Rango de Temperaturas x Variaciones de Tags.
+        """
         logger.info(f"🧪 Starting Hyper-Search for {len(VOICE_PRESETS)} voices.")
         timestamp = datetime.now().strftime("%H%M%S")
 
+        # --- 🎛️ CONFIGURACIÓN DEL LABORATORIO ---
+        # 1. Barrido de Temperaturas (Estabilidad vs Creatividad)
+        test_temps = [0.65, 0.66, 0.67, 0.68, 0.69, 0.70]
+
+        # 2. Parámetros Fijos (Ganadores)
+        fixed_top_p = 0.70
+        fixed_penalty = 1.035
+
+        # 3. Variaciones de Tags a probar por cada temperatura
+        tag_variations = [
+            "(calm)",
+            "(calm) (narrator)",
+            "(narrator)",
+            "(calm) (narrator) (deep voice)"
+        ]
+        # ------------------------------------------
+
         for voice_name, base_params in VOICE_PRESETS.items():
+            if voice_name != "CAMILA": continue
+
             voice_folder = PROJECT_ROOT / f"LAB_{voice_name}_{timestamp}"
             voice_folder.mkdir(parents=True, exist_ok=True)
             logger.info(f"🔬 Testing Voice: {voice_name}")
 
-            for i in range(num_tests):
-                curr_temp = base_params['temp']
-                curr_pen = base_params['penalty']
-                curr_chunk = base_params['chunk']
+            # Bucle 1: Temperaturas
+            for curr_temp in test_temps:
 
-                logger.trace(f"🌀 Test {i + 1}: Chunk Size={curr_chunk} | (T={curr_temp}, P={curr_pen})")
+                # Bucle 2: Variaciones de Tags
+                for i, current_tags in enumerate(tag_variations):
+                    curr_chunk = base_params['chunk']
 
-                result_tuple = self.generate_audio_for_params(
-                    voice_name,
-                    text,
-                    temp=curr_temp,
-                    top_p=base_params['top_p'],
-                    penalty=curr_pen,
-                    chunk_size=curr_chunk,
-                    style_tags=base_params.get("style_tags", "")
-                )
+                    # Crear nombre limpio para el archivo (ej: calm_narrator)
+                    tag_suffix = current_tags.replace("(", "").replace(")", "").replace(" ", "_").strip("_")
 
-                if result_tuple is not None and result_tuple[0] is not None:
-                    audio, sample_rate = result_tuple
-                    filename = f"{voice_name}_FinalFixed_{timestamp}.wav"
-                    sf.write(str(voice_folder / filename), audio, sample_rate, subtype="PCM_16")
-                    logger.success(f"📦 Audio Successful Generated: {filename}")
+                    logger.trace(f"🌀 Test T={curr_temp} | Tags='{current_tags}'")
+
+                    result_tuple = self.generate_audio_for_params(
+                        voice_name,
+                        text,
+                        temp=curr_temp,
+                        top_p=fixed_top_p,
+                        penalty=fixed_penalty,
+                        chunk_size=curr_chunk,
+                        style_tags=current_tags,
+                        seed_base=1234 + i  # Variar semilla ligeramente por cada tag
+                    )
+
+                    if result_tuple is not None and result_tuple[0] is not None:
+                        audio, sample_rate = result_tuple
+
+                        # Nombre descriptivo: CAMILA_T0.65_calm_narrator.wav
+                        filename = f"{voice_name}_T{curr_temp}_{tag_suffix}_{timestamp}.wav"
+
+                        sf.write(str(voice_folder / filename), audio, sample_rate, subtype="PCM_16")
+                        logger.success(f"📦 Generated: {filename}")
 
             shutil.make_archive(str(PROJECT_ROOT / f"RESULTS_{voice_name}_{timestamp}"), 'zip', voice_folder)
-            logger.success(f"📦 Test pack created for {voice_name}")
+            logger.success(f"📦 ZIP ready for {voice_name}")
 
 
 if __name__ == "__main__":
