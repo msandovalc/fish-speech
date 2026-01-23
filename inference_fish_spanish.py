@@ -493,7 +493,7 @@ class FishTotalLab:
 
                 logger.trace(f"🌀 Test {i + 1}: Chunk Size={curr_chunk} | (T={curr_temp}, P={curr_pen})")
 
-                audio = self.generate_audio_for_params(
+                result_tuple = self.generate_audio_for_params(
                     voice_name,
                     text,
                     temp=curr_temp,
@@ -503,10 +503,11 @@ class FishTotalLab:
                     style_tags=base_params.get("style_tags", "")
                 )
 
-                if audio is not None:
+                if result_tuple is not None and result_tuple[0] is not None:
+                    audio, sample_rate = result_tuple
                     filename = f"{voice_name}_FinalFixed_{timestamp}.wav"
-                    sf.write(str(voice_folder / filename), audio, 44100, subtype="PCM_16")
-                    logger.success(f"📦 Test pack created for {voice_name}__{filename}")
+                    sf.write(str(voice_folder / filename), audio, sample_rate, subtype="PCM_16")
+                    logger.success(f"📦 Generated: {filename}")
 
             shutil.make_archive(str(PROJECT_ROOT / f"RESULTS_{voice_name}_{timestamp}"), 'zip', voice_folder)
             logger.success(f"📦 Test pack created for {voice_name}")
