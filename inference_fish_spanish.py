@@ -361,7 +361,7 @@ class FishTotalLab:
         # --- SAFETY SPLIT ---
         # We force short chunks (140 chars) so the model never gets "tired"
         # or runs out of context window, even with very slow voices.
-        text_chunks = self.split_text(text, max_chars=180)
+        text_chunks = self.split_text(text, max_chars=150)
 
         raw_parts = []
         hist_tokens = None
