@@ -80,7 +80,7 @@ VOICE_PRESETS = {
     #     "style_tags": "(calm) (deep voice)"
     # },
     "CAMILA": {
-        "temp": 0.60,
+        "temp": 0.70,
         "top_p": 0.70,
         "chunk": 300,
         "penalty": 1.035, #1.035
@@ -444,7 +444,7 @@ class FishTotalLab:
                 codes = torch.from_numpy(best_attempt.codes).to(torch.int)
 
                 # Keep 200 tokens: Tested "sweet spot" for stability
-                keep = 384
+                keep = 50
                 if codes.shape[1] > keep:
                     codes = codes[:, -keep:]
 
