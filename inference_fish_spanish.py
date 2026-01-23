@@ -89,7 +89,7 @@ VOICE_PRESETS = {
         universo, como le quieras llamar. Todos somos parte de eso. Nacemos y nos convertimos en esto por un ratito 
         muy chiquito, muy chiquitito, que creemos que es muy largo y se nos olvida que vamos a regresar a ese lugar 
         de donde venimos, que es lo que tú creas, adonde tú creas, pero inevitablemente vas a regresar.""",
-        "style_tags": "(calm) (deep voice) (slow)"
+        "style_tags": "(calm) (deep voice)"
     }
     # "CRISTINA": {
     #     "temp": 0.75,
@@ -361,7 +361,7 @@ class FishTotalLab:
         # --- SAFETY SPLIT ---
         # We force short chunks (140 chars) so the model never gets "tired"
         # or runs out of context window, even with very slow voices.
-        text_chunks = self.split_text(text, max_chars=210)
+        text_chunks = self.split_text(text, max_chars=350)
 
         raw_parts = []
         hist_tokens = None
@@ -374,7 +374,7 @@ class FishTotalLab:
             # --- NO STYLE TAGS ---
             # We pass clean text to allow natural prosody flow from previous chunks.
             # Injecting tags here would cause robotic tone resets.
-            processed_text = f"{style_tags} {chunk_text}" if i == 0 else chunk_text
+            processed_text = f"{style_tags} {chunk_text}" # if i == 0 else chunk_text
 
             # --- AUTO-RETRY MECHANISM ---
             # Models sometimes "give up" early. We detect this and retry up to 3 times.
@@ -439,7 +439,7 @@ class FishTotalLab:
                 codes = torch.from_numpy(best_attempt.codes).to(torch.int)
 
                 # Keep 200 tokens: Tested "sweet spot" for stability
-                keep = 200
+                keep = 512
                 if codes.shape[1] > keep:
                     codes = codes[:, -keep:]
 
