@@ -82,9 +82,9 @@ VOICE_PRESETS = {
     # },
     "CAMILA": {
         "temp": 0.70,
-        "top_p": 0.80,
+        "top_p": 0.70,
         "chunk": 300,
-        "penalty": 1.10, #1.035
+        "penalty": 1.035, #1.035
         "ref_path": str(PROJECT_ROOT / "voices" / "Camila_Sodi.mp3"),
         "prompt": """Todos venimos de un mismo campo fuente, de una misma gran energía, de un mismo Dios, de un mismo 
         universo, como le quieras llamar. Todos somos parte de eso. Nacemos y nos convertimos en esto por un ratito 
@@ -94,9 +94,9 @@ VOICE_PRESETS = {
     },
     "ROSA": {
         "temp": 0.70,
-        "top_p": 0.80,
+        "top_p": 0.70,
         "chunk": 300,
-        "penalty": 1.10,
+        "penalty": 1.035,
         "ref_path": str(PROJECT_ROOT / "voices" / "Elevenlabs_Rosa_Estela.wav"),
         "prompt": """El agua, la confianza y el miedo. Una lección poderosa y reveladora sobre la verdadera 
         protección y el poder de la preparación. Considera la profunda enseñanza que subyace a la instrucción sobre 
