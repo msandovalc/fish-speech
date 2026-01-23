@@ -1,3 +1,4 @@
+import io
 import os
 import sys
 import torch
@@ -274,6 +275,27 @@ class FishTotalLab:
         target_amp = 10 ** (target_db / 20)
         return audio_data * (target_amp / max_val)
 
+    def _load_and_trim_audio(self, file_path, max_duration=60):
+        """
+        Carga y recorta el audio automáticamente si es muy largo para salvar la VRAM.
+        """
+        try:
+            data, sr = sf.read(file_path)
+
+            if len(data) > sr * max_duration:
+                logger.warning(
+                    f"✂️ Audio too long ({len(data) / sr:.1f}s). Trimming to {max_duration}s to prevent OOM.")
+                data = data[:int(sr * max_duration)]
+
+            buffer = io.BytesIO()
+            sf.write(buffer, data, sr, format='WAV')
+            return buffer.getvalue()
+
+        except Exception as e:
+            logger.error(f"Error loading audio {file_path}: {e}")
+            with open(file_path, "rb") as f:
+                return f.read()
+
     def generate_audio_for_params(self, voice_key, text, temp, top_p, penalty, chunk_size, style_tags, seed_base: int = 1234):
         if voice_key not in VOICE_PRESETS:
             logger.error(f"Voice {voice_key} not found.")
@@ -283,11 +305,11 @@ class FishTotalLab:
         set_seed(seed_base)
 
         cache_key = (voice_key, params["ref_path"])
+
         if cache_key in self.vocal_dna_cache:
             audio_bytes = self.vocal_dna_cache[cache_key]
         else:
-            with open(params["ref_path"], "rb") as f:
-                audio_bytes = f.read()
+            audio_bytes = self._load_and_trim_audio(params["ref_path"], max_duration=60)
             self.vocal_dna_cache[cache_key] = audio_bytes
 
         # --- CHUNKS DE 200 ---
@@ -342,9 +364,6 @@ class FishTotalLab:
                 if final_res and final_res.codes is not None:
                     num_tokens = final_res.codes.shape[1]
 
-                    # Regla de Oro: En español normal, necesitas al menos 1 token por caracter
-                    # (aunque usualmente es 1.3 - 1.5). Si es menos de 1.0, SE COMIÓ TEXTO.
-                    # Ejemplo: Texto de 100 letras -> Mínimo 100 tokens.
                     min_tokens_needed = len(chunk_text)
 
                     if num_tokens < min_tokens_needed:
@@ -365,8 +384,6 @@ class FishTotalLab:
             sr, audio_np = best_attempt.audio
             raw_parts.append(audio_np)
 
-            # --- MEMORIA BALANCEADA (50) ---
-            # Mantenemos 50 para limpiar el "ruido" pero permitir la unión.
             if best_attempt.codes is not None:
                 codes = torch.from_numpy(best_attempt.codes).to(torch.int)
                 keep = 50
@@ -374,6 +391,9 @@ class FishTotalLab:
                     codes = codes[:, -keep:]
                 hist_tokens = codes
                 hist_text = chunk_text
+
+            torch.cuda.empty_cache()
+            gc.collect()
 
         if not raw_parts:
             return None
