@@ -1,3 +1,4 @@
+import io
 import os
 import re
 import sys
@@ -11,6 +12,7 @@ from pathlib import Path
 from loguru import logger
 from datetime import datetime
 
+
 # --- SYSTEM CONFIGURATION ---
 logger.remove()
 logger.add(sys.stdout, colorize=True, level="TRACE",
@@ -20,14 +22,27 @@ logger.add(sys.stdout, colorize=True, level="TRACE",
 os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True,max_split_size_mb:128"
 
 # --- Constants for Directory Paths ---
+# Auto-detect project root
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
-from fish_speech.inference_engine import TTSInferenceEngine
-from fish_speech.models.dac.inference import load_model as load_decoder_model
-from fish_speech.models.text2semantic.inference import launch_thread_safe_queue
-from fish_speech.utils.schema import ServeTTSRequest, ServeReferenceAudio
+# --- IMPORTS WITH FALLBACK ---
+try:
+    from fish_speech.inference_engine import TTSInferenceEngine
+    from fish_speech.models.dac.inference import load_model as load_decoder_model
+    from fish_speech.models.text2semantic.inference import launch_thread_safe_queue
+    from fish_speech.utils.schema import ServeTTSRequest, ServeReferenceAudio
+    from fish_speech.utils import set_seed
+except ImportError:
+    # If running from a notebook cell, add root to path
+    sys.path.insert(0, str(PROJECT_ROOT))
+    from fish_speech.inference_engine import TTSInferenceEngine
+    from fish_speech.models.dac.inference import load_model as load_decoder_model
+    from fish_speech.models.text2semantic.inference import launch_thread_safe_queue
+    from fish_speech.utils.schema import ServeTTSRequest, ServeReferenceAudio
+    from fish_speech.utils import set_seed
 
-# --- PRODUCTION PRESETS (YOUR WINNING PARAMETERS) ---
+# --- VOICE PRESETS (OPTIMIZED FOR S1-MINI) ---
+# NOTE: Temperatures lowered to ~0.75 and Penalty to ~1.05 to prevent metallic artifacts.
 VOICE_PRESETS = {
     "MARLENE": {
         "temp": 0.65,
@@ -73,6 +88,9 @@ VOICE_PRESETS = {
     }
 }
 
+# Platform detection
+is_windows = platform.system() == "Windows"
+should_compile = False if is_windows else True
 
 class FishTTSEngine:
     def __init__(self, checkpoint_path=None):
@@ -126,10 +144,11 @@ class FishTTSEngine:
     def clean_text(self, text):
         """Sanitizes input text."""
         if not text: return ""
+        text = re.sub(r'([.!?…])(?=\S)', r'\1 ', text)
         text = text.replace("\n", " ").replace("\t", " ")
         return re.sub(r'\s+', ' ', text).strip()
 
-    def split_text(self, text, max_chars=400):
+    def split_text(self, text, max_chars=200):
         """
         HYBRID SPLIT STRATEGY (PARAGRAPHS + FATIGUE CONTROL):
 
@@ -164,7 +183,7 @@ class FishTTSEngine:
             chunks.append(current_chunk.strip())
         return chunks
 
-    def _crossfade_chunks(self, audio_list, crossfade_ms=50, sample_rate=44100):
+    def _crossfade_chunks(self, audio_list, crossfade_ms=30, sample_rate=44100):
         """
         Merges audio chunks using a linear crossfade to eliminate robotic clicks.
         """
@@ -190,6 +209,27 @@ class FishTTSEngine:
         target_amp = 10 ** (target_db / 20)
         return audio_data * (target_amp / max_val)
 
+    def _load_and_trim_audio(self, file_path, max_duration=60):
+        """
+        Carga y recorta el audio automáticamente si es muy largo para salvar la VRAM.
+        """
+        try:
+            data, sr = sf.read(file_path)
+
+            if len(data) > sr * max_duration:
+                logger.warning(
+                    f"✂️ Audio too long ({len(data) / sr:.1f}s). Trimming to {max_duration}s to prevent OOM.")
+                data = data[:int(sr * max_duration)]
+
+            buffer = io.BytesIO()
+            sf.write(buffer, data, sr, format='WAV')
+            return buffer.getvalue()
+
+        except Exception as e:
+            logger.error(f"Error loading audio {file_path}: {e}")
+            with open(file_path, "rb") as f:
+                return f.read()
+
     def process_narration(self, voice_key, raw_text, seed_base: int = 1234):
         """
         Main API method. Optimized for stability using presets.
@@ -200,15 +240,14 @@ class FishTTSEngine:
 
         # Load parameters from the preset
         params = VOICE_PRESETS[voice_key]
+        set_seed(seed_base)
 
         # --- 1. Vocal DNA Caching (Load Reference) ---
         cache_key = (voice_key, params["ref_path"])
         if cache_key in self.vocal_dna_cache:
             audio_bytes = self.vocal_dna_cache[cache_key]
         else:
-            logger.info(f"🧬 Encoding DNA for: {voice_key}")
-            with open(params["ref_path"], "rb") as f:
-                audio_bytes = f.read()
+            audio_bytes = self._load_and_trim_audio(params["ref_path"], max_duration=60)
             self.vocal_dna_cache[cache_key] = audio_bytes
 
         # --- 2. Text Preparation ---
@@ -220,9 +259,8 @@ class FishTTSEngine:
         hist_text = None
 
         # Determine tags
-        style_tags = params.get("style_tags", "")
+        current_tags = params.get("style_tags", "")
 
-        set_seed(seed_base)
 
         try:
             for i, chunk_text in enumerate(text_chunks):
@@ -234,7 +272,7 @@ class FishTTSEngine:
                 # --- Strategy: Initial Tag Injection Only ---
                 # Inject tags only on the first chunk to set the tone, then rely on context.
                 # If you prefer constant injection, remove the 'if i == 0 else chunk_text' logic.
-                processed_text = f"{style_tags} {chunk_text}" if (i == 0 and style_tags) else chunk_text
+                processed_text = f"{current_tags} {chunk_text}" if (i == 0 and current_tags) else chunk_text
 
                 # --- Auto-Retry Mechanism (The Judge) ---
                 max_retries = 3
@@ -291,6 +329,9 @@ class FishTTSEngine:
                 sr, audio_np = best_attempt.audio
 
                 # Append audio segment
+                padding_samples = int(sr * 0.25)
+                silence_pad = np.zeros(padding_samples, dtype=audio_np.dtype)
+                audio_padded = np.concatenate((audio_np, silence_pad))
                 raw_audio_segments.append(audio_np)
 
                 # --- Context Update (Short Memory) ---
@@ -335,28 +376,29 @@ class FishTTSEngine:
 if __name__ == "__main__":
     engine = FishTTSEngine()
 
+    # TEXTO DE PRUEBA
     LONG_CHAPTER = """
-            Todos venimos de un mismo campo fuente, de una misma gran energía, de un mismo Dios, de un mismo 
-            universo, como le quieras llamar... Todos somos parte de eso... Nacemos y nos convertimos en esto por un ratito... 
-            muy chiquito..., muy chiquitito, que creemos que es muy largo y se nos olvida que vamos a regresar a ese lugar 
+            Todos venimos de un mismo campo fuente, de una misma gran energía, de un mismo Dios, de un mismo
+            universo, como le quieras llamar. Todos somos parte de eso. Nacemos y nos convertimos en esto por un ratito,
+            muy chiquito, muy chiquitito, que creemos que es muy largo y se nos olvida que vamos a regresar a ese lugar
             de donde venimos.
 
-            Escucha bien esto. No eres una gota en el océano, eres el océano entero en una gota. Tu imaginación no es un estado 
-            de fantasía o ilusión, es la verdadera realidad esperando ser reconocida. Cuando cierras los ojos y asumes el 
-            sentimiento de tu deseo cumplido, no estás "fingiendo", estás accediendo a la cuarta dimensión, al mundo de las 
-            causas, donde todo ya existe. Lo que ves afuera, en tu mundo físico, es simplemente una pantalla retrasada, un 
+            Escucha bien esto. No eres una gota en el océano, eres el océano entero en una gota. Tu imaginación no es un estado
+            de fantasía o ilusión, es la verdadera realidad esperando ser reconocida. Cuando cierras los ojos y asumes el
+            sentimiento de tu deseo cumplido, no estás "fingiendo", estás accediendo a la cuarta dimensión, al mundo de las
+            causas, donde todo ya existe. Lo que ves afuera, en tu mundo físico, es simplemente una pantalla retrasada, un
             eco de lo que fuiste ayer, de lo que pensaste ayer.
 
-            Si tu realidad actual no te gusta, deja de pelear con la pantalla. No puedes peinar tu reflejo en el espejo, 
-            tienes que peinarte tú. Debes cambiar la concepción que tienes de ti mismo. Pregúntate: ¿Quién soy yo ahora? 
-            Si la respuesta no es "Soy próspero", "Soy amado", "Soy saludable", entonces estás usando tu poder divino en tu 
-            contra. El universo no te juzga, simplemente te dice "SÍ". Si dices "estoy arruinado", el universo dice "SÍ, lo estás". 
+            Si tu realidad actual no te gusta, deja de pelear con la pantalla. No puedes peinar tu reflejo en el espejo,
+            tienes que peinarte tú. Debes cambiar la concepción que tienes de ti mismo. Pregúntate: ¿Quién soy yo ahora?
+            Si la respuesta no es "Soy próspero", "Soy amado", "Soy saludable", entonces estás usando tu poder divino en tu
+            contra. El universo no te juzga, simplemente te dice "SÍ". Si dices "estoy arruinado", el universo dice "SÍ, lo estás".
             Si dices "Soy abundante", el universo dice "SÍ, lo eres".
 
-            Por lo tanto, el secreto no es el esfuerzo físico ni la lucha externa. El secreto es el cambio interno de estado. 
-            Moverte, en tu mente, del estado de carencia al estado de posesión. Sentir la textura de la realidad que deseas 
-            hasta que sea tan natural que ya no la busques, porque sabes que ya la tienes. Y cuando esa certeza interna hace 
-            clic, el mundo exterior no tiene más remedio que reorganizarse para reflejar tu nueva verdad... Inevitablemente, 
+            Por lo tanto, el secreto no es el esfuerzo físico ni la lucha externa. El secreto es el cambio interno de estado.
+            Moverte, en tu mente, del estado de carencia al estado de posesión. Sentir la textura de la realidad que deseas
+            hasta que sea tan natural que ya no la busques, porque sabes que ya la tienes. Y cuando esa certeza interna hace
+            clic, el mundo exterior no tiene más remedio que reorganizarse para reflejar tu nueva verdad. E inevitablemente,
             vas a regresar a tu poder.
         """
 

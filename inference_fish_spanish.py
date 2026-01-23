@@ -1,24 +1,25 @@
 import io
 import os
+import re
 import sys
 import torch
 import gc
 import shutil
-import re
 import numpy as np
 import soundfile as sf
+import platform
 from pathlib import Path
 from loguru import logger
 from datetime import datetime
-import platform
+
 
 # --- SYSTEM CONFIGURATION ---
 logger.remove()
 logger.add(sys.stdout, colorize=True, level="TRACE",
            format="<green>{time:HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{message}</cyan>")
 
-# Optimize Memory Fragmentation
-os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
+# Performance optimization for Windows/Linux
+os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True,max_split_size_mb:128"
 
 # --- CONSTANTS ---
 # Auto-detect project root
@@ -196,22 +197,41 @@ should_compile = False if is_windows else True
 
 
 class FishTotalLab:
-    def __init__(self):
+    def __init__(self, checkpoint_path=None):
+        """
+        Initializes the S1-Mini engine with memory safeguards.
+        """
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        self.checkpoint_dir = PROJECT_ROOT / "checkpoints" / "openaudio-s1-mini"
+        self.vocal_dna_cache = {}  # Cache for encoded references
+
+        # Default path to the S1-Mini model (~3.36 GB)
+        self.checkpoint_dir = checkpoint_path or (PROJECT_ROOT / "checkpoints" / "openaudio-s1-mini")
+
+        # Use half precision (FP16) for speed and memory efficiency
         self.precision = torch.half
-        self.vocal_dna_cache = {}
-        logger.info(f"🎯 STARTING FISH LABORATORY | Device: {self.device} | Compile: {should_compile}")
-        self.engine = self._load_models()
+
+        # Compile only on Linux (Kaggle), disable on Windows to avoid errors
+        self.should_compile = False if platform.system() == "Windows" else True
+
+        logger.info(f"🚀 Initializing S1-Mini Engine | Device: {self.device} | Compile: {self.should_compile}")
+
+        try:
+            self.engine = self._load_models()
+            logger.success("✅ Models loaded successfully.")
+        except Exception as e:
+            logger.error(f"❌ Failed to load models: {e}")
+            raise e
+
         torch.cuda.empty_cache()
         gc.collect()
 
     def _load_models(self):
+        """Loads the Llama queue and VQ-GAN Decoder."""
         llama_queue = launch_thread_safe_queue(
             checkpoint_path=self.checkpoint_dir,
             device=self.device,
             precision=self.precision,
-            compile=should_compile
+            compile=self.should_compile
         )
         decoder_model = load_decoder_model(
             config_name="modded_dac_vq",
@@ -222,10 +242,11 @@ class FishTotalLab:
             llama_queue=llama_queue,
             decoder_model=decoder_model,
             precision=self.precision,
-            compile=should_compile
+            compile=self.should_compile
         )
 
     def clean_text(self, text):
+        """Sanitizes input text."""
         if not text: return ""
         text = re.sub(r'([.!?…])(?=\S)', r'\1 ', text)
         text = text.replace("\n", " ").replace("\t", " ")
@@ -233,9 +254,23 @@ class FishTotalLab:
 
     def split_text(self, text, max_chars=200):
         """
-        Split en 200.
-        Suficiente para una frase larga, pero seguro para la memoria.
+        HYBRID SPLIT STRATEGY (PARAGRAPHS + FATIGUE CONTROL):
+
+        1. Primary Logic: Split by visual paragraphs (double newlines).
+        2. Secondary Logic (Fatigue Check): If a paragraph is longer than 'max_chars'
+           (e.g., 400), it forces an internal split by sentences.
+
+        Why?
+        Long text blocks cause 'Style Drift' (loss of tone) and hallucinations
+        at the end. By forcing a split on long paragraphs, we refresh the
+        style tags "(calm) (deep voice)" more frequently, keeping the voice stable.
+
+        Args:
+            text (str): Input text.
+            max_chars (int): The safety limit. If a paragraph exceeds this,
+                             it gets chopped. Recommended: 400-450.
         """
+        # Clean up input text
         text = self.clean_text(text)
         sentences = re.split(r'(?<=[.!?…])\s+', text)
         chunks = []
@@ -253,6 +288,9 @@ class FishTotalLab:
         return chunks
 
     def _crossfade_chunks(self, audio_list, crossfade_ms=30, sample_rate=44100):
+        """
+        Merges audio chunks using a linear crossfade to eliminate robotic clicks.
+        """
         if not audio_list: return None
         if len(audio_list) == 1: return audio_list[0]
         fade_samples = int(sample_rate * crossfade_ms / 1000)
@@ -296,108 +334,148 @@ class FishTotalLab:
             with open(file_path, "rb") as f:
                 return f.read()
 
-    def generate_audio_for_params(self, voice_key, text, temp, top_p, penalty, chunk_size, style_tags, seed_base: int = 1234):
+    def generate_audio_for_params(self, voice_key, raw_text, temp, top_p, penalty, chunk_size, style_tags, seed_base: int = 1234):
+        """
+        Main API method. Optimized for stability using presets.
+        """
         if voice_key not in VOICE_PRESETS:
-            logger.error(f"Voice {voice_key} not found.")
-            return None
+            logger.error(f"❌ Voice key '{voice_key}' not found.")
+            return None, None
 
+        # Load parameters from the preset
         params = VOICE_PRESETS[voice_key]
         set_seed(seed_base)
 
+        # --- 1. Vocal DNA Caching (Load Reference) ---
         cache_key = (voice_key, params["ref_path"])
-
         if cache_key in self.vocal_dna_cache:
             audio_bytes = self.vocal_dna_cache[cache_key]
         else:
             audio_bytes = self._load_and_trim_audio(params["ref_path"], max_duration=60)
             self.vocal_dna_cache[cache_key] = audio_bytes
 
-        text_chunks = self.split_text(text, max_chars=200)
+        # --- 2. Text Preparation ---
+        # Clean and split text into manageable chunks (200 chars optimal)
+        text_chunks = self.split_text(raw_text, max_chars=200)
 
-        raw_parts = []
+        raw_audio_segments = []
         hist_tokens = None
         hist_text = None
 
+        # Determine tags
         current_tags = style_tags if style_tags else params.get("style_tags", "")
 
-        for i, chunk_text in enumerate(text_chunks):
-            chunk_text = chunk_text.strip()
-            if not chunk_text: continue
 
-            processed_text = f"{current_tags} {chunk_text}" if i == 0 else f"{chunk_text}"
+        try:
+            for i, chunk_text in enumerate(text_chunks):
+                chunk_text = chunk_text.strip()
+                if not chunk_text: continue
 
-            max_retries = 3
-            best_attempt = None
+                logger.debug(f"⏳ Processing chunk {i + 1}/{len(text_chunks)}")
 
-            for attempt in range(max_retries):
-                if attempt > 0:
-                    set_seed(seed_base + i + attempt * 100)
+                # --- Strategy: Initial Tag Injection Only ---
+                # Inject tags only on the first chunk to set the tone, then rely on context.
+                # If you prefer constant injection, remove the 'if i == 0 else chunk_text' logic.
+                processed_text = f"{current_tags} {chunk_text}" if (i == 0 and current_tags) else chunk_text
 
-                req = ServeTTSRequest(
-                    text=processed_text,
-                    references=[ServeReferenceAudio(audio=audio_bytes, text=params["prompt"])],
-                    use_memory_cache="on",
-                    chunk_length=chunk_size,
-                    max_new_tokens=1024,
-                    top_p=top_p,
-                    temperature=temp,
-                    repetition_penalty=penalty,
-                    format="wav",
-                    prompt_text=[hist_text] if hist_text is not None else None,
-                    prompt_tokens=[hist_tokens] if hist_tokens is not None else None,
-                )
+                # --- Auto-Retry Mechanism (The Judge) ---
+                max_retries = 3
+                best_attempt = None
 
-                final_res = None
-                for res in self.engine.inference(req):
-                    if res.code == "final":
-                        final_res = res
+                for attempt in range(max_retries):
+                    # Slight seed variation for retries
+                    if attempt > 0:
+                        set_seed(seed_base + i + attempt * 100)
+
+                    req = ServeTTSRequest(
+                        text=processed_text,
+                        references=[ServeReferenceAudio(audio=audio_bytes, text=params["prompt"])],
+                        use_memory_cache="on",
+                        chunk_length=params['chunk'],  # Use chunk size from preset (e.g., 300)
+                        max_new_tokens=1024,  # Large buffer to prevent cuts
+                        top_p=params['top_p'],
+                        temperature=params['temp'],
+                        repetition_penalty=params['penalty'],
+                        format="wav",
+                        prompt_text=[hist_text] if hist_text is not None else None,
+                        prompt_tokens=[hist_tokens] if hist_tokens is not None else None,
+                    )
+
+                    final_res = None
+                    for res in self.engine.inference(req):
+                        if res.code == "final":
+                            final_res = res
+                            break
+
+                    # --- Quality Check ---
+                    if final_res and final_res.codes is not None:
+                        num_tokens = final_res.codes.shape[1]
+
+                        # Rule: Minimum 1 token per character (approx).
+                        # Adjust based on language speed. Spanish usually ~1.2-1.4 tokens/char.
+                        min_tokens_needed = len(chunk_text)
+
+                        if num_tokens < min_tokens_needed:
+                            logger.warning(f"⚠️ Chunk too short ({num_tokens} vs {len(chunk_text)} chars). Retrying...")
+                            continue
+
+                        best_attempt = final_res
                         break
 
-                if final_res and final_res.codes is not None:
-                    num_tokens = final_res.codes.shape[1]
-
-                    min_tokens_needed = len(chunk_text)
-
-                    if num_tokens < min_tokens_needed:
-                        logger.warning(
-                            f"⚠️ Chunk incompleto ({num_tokens} tokens vs {len(chunk_text)} letras). Reintentando...")
-                        continue
-
+                # If all retries fail, use the last result
+                if best_attempt is None and final_res is not None:
+                    logger.error(f"❌ Retries failed for chunk {i}. Using fallback.")
                     best_attempt = final_res
-                    break
 
-            if best_attempt is None and final_res is not None:
-                logger.error(f"❌ Falló reintento: '{chunk_text[:15]}...'. Usando último.")
-                best_attempt = final_res
+                if best_attempt is None or best_attempt.audio is None:
+                    continue
 
-            if best_attempt is None or best_attempt.audio is None:
-                continue
+                sr, audio_np = best_attempt.audio
 
-            sr, audio_np = best_attempt.audio
+                # Append audio segment
+                padding_samples = int(sr * 0.25)
+                silence_pad = np.zeros(padding_samples, dtype=audio_np.dtype)
+                audio_padded = np.concatenate((audio_np, silence_pad))
+                raw_audio_segments.append(audio_np)
 
-            padding_samples = int(sr * 0.25)
-            silence_pad = np.zeros(padding_samples, dtype=audio_np.dtype)
-            audio_padded = np.concatenate((audio_np, silence_pad))
+                # --- Context Update (Short Memory) ---
+                # Keep only 50 tokens to maintain flow but prevent artifact accumulation (robotic voice)
+                if best_attempt.codes is not None:
+                    codes = torch.from_numpy(best_attempt.codes).to(torch.int)
+                    keep = 50
+                    if codes.shape[1] > keep:
+                        codes = codes[:, -keep:]
+                    hist_tokens = codes
+                    hist_text = chunk_text
 
-            raw_parts.append(audio_padded)
+                # Clean VRAM
+                torch.cuda.empty_cache()
+                gc.collect()
 
-            if best_attempt.codes is not None:
-                codes = torch.from_numpy(best_attempt.codes).to(torch.int)
-                keep = 50
-                if codes.shape[1] > keep:
-                    codes = codes[:, -keep:]
-                hist_tokens = codes
-                hist_text = chunk_text
+            # --- 3. Post-Processing ---
+            if raw_audio_segments:
+                logger.info("🔧 Applying Crossfade and Normalization...")
 
-            torch.cuda.empty_cache()
-            gc.collect()
+                # Apply Crossfade (30ms for smoother transitions)
+                merged = self._crossfade_chunks(raw_audio_segments, crossfade_ms=30)
 
-        if not raw_parts:
-            return None
+                # Normalize
+                final_audio = self._normalize_audio(merged)
 
-        merged = self._crossfade_chunks(raw_parts, crossfade_ms=30)
-        final = self._normalize_audio(merged)
-        return final
+                # Optional: Add silence padding at the end
+                silence_pad = np.zeros(int(44100 * 0.5))
+                final_audio = np.concatenate((final_audio, silence_pad))
+
+                return final_audio, 44100
+
+            return None, None
+
+        except Exception as e:
+            logger.error(f"🔥 Engine Error: {e}")
+            import traceback
+            traceback.print_exc()
+            return None, None
+
 
     def run_hyper_search(self, text, num_tests=5):
         logger.info(f"🧪 Starting Hyper-Search for {len(VOICE_PRESETS)} voices.")
