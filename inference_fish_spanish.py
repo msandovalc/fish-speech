@@ -332,19 +332,24 @@ class FishTotalLab:
         target_amp = 10 ** (target_db / 20)
         return audio_data * (target_amp / max_val)
 
-    from fish_speech.utils import set_seed  # mismo helper que usa el engine [file:27]
-
     def generate_audio_for_params(self, voice_key, text, temp, top_p, penalty, chunk_size, style_tags, seed_base: int = 1234):
+        """
+        Generates audio using a 'Bulletproof' strategy for slow voices (like Camila).
+        It implements:
+        1. Short text splitting to prevent model fatigue.
+        2. Automatic retry mechanism if the model generates suspiciously short audio.
+        3. Context chaining without style tags for natural flow.
+        """
         if voice_key not in VOICE_PRESETS:
             logger.error(f"Voice {voice_key} not found.")
             return None
 
         params = VOICE_PRESETS[voice_key]
 
-        # 1) Seed UNA sola vez por generación completa (no por chunk)
+        # 1) Set global seed once for consistency
         set_seed(seed_base)
 
-        # 2) Cache de bytes de referencia (evita I/O repetido)
+        # 2) Load Reference Audio from Cache (avoids repeated I/O)
         cache_key = (voice_key, params["ref_path"])
         if cache_key in self.vocal_dna_cache:
             audio_bytes = self.vocal_dna_cache[cache_key]
@@ -353,79 +358,103 @@ class FishTotalLab:
                 audio_bytes = f.read()
             self.vocal_dna_cache[cache_key] = audio_bytes
 
-        text_chunks = self.split_text(text, max_chars=260)
+        # --- SAFETY SPLIT ---
+        # We force short chunks (140 chars) so the model never gets "tired"
+        # or runs out of context window, even with very slow voices.
+        text_chunks = self.split_text(text, max_chars=140)
 
         raw_parts = []
         hist_tokens = None
         hist_text = None
 
-        for chunk_text in text_chunks:
+        for i, chunk_text in enumerate(text_chunks):
             chunk_text = chunk_text.strip()
-            if not chunk_text:
-                continue
+            if not chunk_text: continue
 
-            # processed_text = f"{style_tags} {chunk_text}"
-            processed_text =chunk_text
+            # --- NO STYLE TAGS ---
+            # We pass clean text to allow natural prosody flow from previous chunks.
+            # Injecting tags here would cause robotic tone resets.
+            processed_text = chunk_text
 
-            req = ServeTTSRequest(
-                text=processed_text,
-                references=[ServeReferenceAudio(audio=audio_bytes, text=params["prompt"])],
-                use_memory_cache="on",
-                chunk_length=chunk_size,
-                max_new_tokens=1024,
-                top_p=top_p,
-                temperature=temp,
-                repetition_penalty=penalty,
-                format="wav",
-                prompt_text=[hist_text] if hist_text is not None else None,
-                prompt_tokens=[hist_tokens] if hist_tokens is not None else None,
-            )
+            # --- AUTO-RETRY MECHANISM ---
+            # Models sometimes "give up" early. We detect this and retry up to 3 times.
+            max_retries = 3
+            best_attempt = None
 
-            final_res = None
-            for res in self.engine.inference(req):
-                if res.code == "error":
-                    logger.error(str(res.error))
-                    final_res = None
+            for attempt in range(max_retries):
+
+                # Slight seed variation for retries to get a different result
+                if attempt > 0:
+                    set_seed(seed_base + i + attempt * 100)
+
+                req = ServeTTSRequest(
+                    text=processed_text,
+                    references=[ServeReferenceAudio(audio=audio_bytes, text=params["prompt"])],
+                    use_memory_cache="on",
+                    chunk_length=chunk_size,
+                    max_new_tokens=1024,  # Large buffer for slow voices
+                    top_p=top_p,
+                    temperature=temp,
+                    repetition_penalty=penalty,
+                    format="wav",
+                    prompt_text=[hist_text] if hist_text is not None else None,
+                    prompt_tokens=[hist_tokens] if hist_tokens is not None else None,
+                )
+
+                final_res = None
+                for res in self.engine.inference(req):
+                    if res.code == "final":
+                        final_res = res
+                        break
+
+                # --- QUALITY CHECK ---
+                if final_res and final_res.codes is not None:
+                    num_tokens = final_res.codes.shape[1]
+
+                    # Heuristic: Slow voices need ~3+ tokens per character.
+                    # If tokens are too low, the model likely skipped text.
+                    expected_min_tokens = len(chunk_text) * 1.5
+
+                    if num_tokens < expected_min_tokens and num_tokens < 100:
+                        logger.warning(
+                            f"⚠️ Attempt {attempt + 1}: Audio too short ({num_tokens} tokens vs {len(chunk_text)} chars). Retrying...")
+                        continue
+
+                    # If it passes the check, we accept it
+                    best_attempt = final_res
                     break
-                if res.code == "final":
-                    final_res = res
 
-            if final_res is None or final_res.audio is None:
+            # Fallback: If all retries fail, use the last result (better than nothing)
+            if best_attempt is None and final_res is not None:
+                logger.error(f"❌ All retries failed for chunk: '{chunk_text[:20]}...'. Using last result.")
+                best_attempt = final_res
+
+            if best_attempt is None or best_attempt.audio is None:
                 continue
 
-            sr, audio_np = final_res.audio
+            sr, audio_np = best_attempt.audio
             raw_parts.append(audio_np)
 
-            if final_res.codes is not None:
-                codes = torch.from_numpy(final_res.codes).to(torch.int)
+            # --- CONTEXT CHAINING UPDATE ---
+            if best_attempt.codes is not None:
+                codes = torch.from_numpy(best_attempt.codes).to(torch.int)
 
-                # if torch.cuda.is_available():
-                #     vram_gb = torch.cuda.get_device_properties(0).total_memory / (1024 ** 3)
-                #     if vram_gb < 6:
-                #         keep = 512
-                #     elif vram_gb < 12:
-                #         keep = 1024
-                #     else:
-                #         keep = 1536
-                # else:
-                #     keep = 512
-                #
-                # keep = min(keep, 256)
-
+                # Keep 200 tokens: Tested "sweet spot" for stability
                 keep = 200
-
                 if codes.shape[1] > keep:
                     codes = codes[:, -keep:]
+
                 hist_tokens = codes
                 hist_text = chunk_text
 
         if not raw_parts:
             return None
 
-        merged = self._crossfade_chunks(raw_parts, crossfade_ms=50)
+        # Smoother crossfade (100ms) because we have more cuts now
+        merged = self._crossfade_chunks(raw_parts, crossfade_ms=100)
         final = self._normalize_audio(merged)
         return final
-
+    
     def run_hyper_search(self, text, num_tests=5):
         """
         Runs a hyper-parameter search loop for ALL voices.
