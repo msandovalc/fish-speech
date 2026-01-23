@@ -409,7 +409,7 @@ class FishTotalLab:
                 else:
                     keep = 512
 
-                keep = min(keep, 200)
+                keep = min(keep, 256)
 
                 if codes.shape[1] > keep:
                     codes = codes[:, -keep:]
@@ -467,10 +467,11 @@ class FishTotalLab:
                 if audio is not None:
                     filename = f"{voice_name}_Chunk{curr_chunk}_T{curr_temp}.wav"
                     sf.write(str(voice_folder / filename), audio, 44100, subtype="PCM_16")
+                    logger.success(f"📦 Test pack created for {filename}")
 
             # Zip results
-            shutil.make_archive(str(PROJECT_ROOT / f"RESULTS_{voice_name}_{timestamp}"), 'zip', voice_folder)
-            logger.success(f"📦 Test pack created for {voice_name}")
+            file_name_zip = shutil.make_archive(str(PROJECT_ROOT / f"RESULTS_{voice_name}_{timestamp}"), 'zip', voice_folder)
+            logger.success(f"📦 Test pack created for {voice_name}_{file_name_zip}")
 
 
 if __name__ == "__main__":
