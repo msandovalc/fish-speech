@@ -81,8 +81,8 @@ VOICE_PRESETS = {
     #     "style_tags": "(calm) (narrator)"
     # },
     "CAMILA": {
-        "temp": 0.70,
-        "top_p": 0.70,
+        "temp": 0.60,
+        "top_p": 0.75,
         "chunk": 300,
         "penalty": 1.035, #1.035
         "ref_path": str(PROJECT_ROOT / "voices" / "Camila_Sodi.mp3"),
@@ -93,8 +93,8 @@ VOICE_PRESETS = {
         "style_tags": "(calm) (narrator)"
     },
     "ROSA": {
-        "temp": 0.70,
-        "top_p": 0.70,
+        "temp": 0.60,
+        "top_p": 0.75,
         "chunk": 300,
         "penalty": 1.035,
         "ref_path": str(PROJECT_ROOT / "voices" / "Elevenlabs_Rosa_Estela.wav"),
