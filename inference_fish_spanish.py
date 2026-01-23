@@ -90,7 +90,7 @@ VOICE_PRESETS = {
         universo, como le quieras llamar. Todos somos parte de eso. Nacemos y nos convertimos en esto por un ratito 
         muy chiquito, muy chiquitito, que creemos que es muy largo y se nos olvida que vamos a regresar a ese lugar 
         de donde venimos, que es lo que tú creas, adonde tú creas, pero inevitablemente vas a regresar.""",
-        "style_tags": "(calm) (narrator) (deep voice)"
+        "style_tags": "(calm) (narrator) (relaxed)" #(deep voice)
     },
     "ROSA": {
         "temp": 0.65,
@@ -117,7 +117,7 @@ VOICE_PRESETS = {
         confianza cultivada como la verdadera protección contra los desafíos de la vida, en lugar de la evitación 
         basada en el miedo, y sígueme para explorar juntos más analogías reveladoras que iluminan la naturaleza del 
         temor y el camino hacia la liberación.""" ,
-        "style_tags": "(calm) (narrator) (deep voice)"
+        "style_tags": "(calm) (narrator) (relaxed)" #(deep voice)
     }
     # "ALEJANDRO": {
     #     "temp": 0.65,
