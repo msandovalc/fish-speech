@@ -80,7 +80,7 @@ VOICE_PRESETS = {
     #     "style_tags": "(calm) (deep voice)"
     # },
     "CAMILA": {
-        "temp": 0.70,
+        "temp": 0.60,
         "top_p": 0.70,
         "chunk": 300,
         "penalty": 1.035, #1.035
