@@ -15,13 +15,14 @@ logger = logging.getLogger(__name__)
 
 
 class FishTrainer:
-    def __init__(self, project_root: Path, project_name: str, base_model_path: Path):
+    def __init__(self, project_root: Path, project_name: str, base_model_path: Path = None):
         self.root = project_root
         self.project_name = project_name
         self.checkpoints_dir = self.root / "checkpoints"
         self.data_protos = self.root / "fish_training_data" / "protos"
         self.train_script = self.root / "fish_speech" / "train.py"
-        self.base_model_path = base_model_path
+        # Default path to the S1-Mini model (~3.36 GB)
+        self.base_model_path = base_model_path or (PROJECT_ROOT / "checkpoints" / "openaudio-s1-mini")
 
         print(f"{Fore.CYAN}🚀 Initializing Kaggle Trainer for: {self.project_name}")
         print(f"   🧠 Base Model Path: {self.base_model_path}")
@@ -85,7 +86,7 @@ if __name__ == "__main__":
     PROJECT_ROOT = Path(__file__).resolve().parent
     # Define your project name (Folder name for results)
     PROJECT_NAME = "speaker_03_lora_v1"
-    KAGGLE_INPUT_MODEL = Path("/kaggle/working/fish-speech/checkpoints/openaudio-s1-mini")
+    # KAGGLE_INPUT_MODEL = Path("/kaggle/working/fish-speech/checkpoints/openaudio-s1-mini")
 
-    trainer = FishTrainer(PROJECT_ROOT, PROJECT_NAME, KAGGLE_INPUT_MODEL)
+    trainer = FishTrainer(PROJECT_ROOT, PROJECT_NAME)
     trainer.train()
