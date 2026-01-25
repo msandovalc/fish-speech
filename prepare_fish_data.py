@@ -6,7 +6,7 @@ import shutil
 import torch
 from pathlib import Path
 from colorama import init, Fore, Style
-from huggingface_hub import hf_hub_download  # Requires: pip install huggingface_hub
+from huggingface_hub import hf_hub_download
 
 # --- SETUP ---
 init(autoreset=True)
@@ -38,7 +38,7 @@ class FishDataBuilder:
         self.proto_output = self.output_dir / "protos"
         self.proto_output.mkdir(parents=True, exist_ok=True)
 
-        self._log(f"{Fore.CYAN}🚀 Initializing Fish Data Builder (v5.0 Official Docs)...")
+        self._log(f"{Fore.CYAN}🚀 Initializing Fish Data Builder (v5.1 Kaggle Fix)...")
         self._validate_paths()
 
     def _log(self, message: str, level="info"):
@@ -66,10 +66,7 @@ class FishDataBuilder:
             self._log(f"{Fore.RED}   ⚠️ NO GPU DETECTED. Running on CPU (Very Slow).")
 
     def _ensure_checkpoint(self):
-        """
-        Downloads the OFFICIAL checkpoint: fishaudio/openaudio-s1-mini/codec.pth
-        This matches 'modded_dac_vq' config (1024 dimensions).
-        """
+        """Downloads the OFFICIAL checkpoint: fishaudio/openaudio-s1-mini/codec.pth"""
         model_id = "fishaudio/openaudio-s1-mini"
         filename = "codec.pth"
 
@@ -79,7 +76,9 @@ class FishDataBuilder:
         if not local_model_path.exists():
             self._log(f"{Fore.YELLOW}⚠️  Official checkpoint not found. Downloading '{filename}'...")
             try:
-                # Use HuggingFace Hub to download
+                # Ensure directory exists
+                local_model_path.parent.mkdir(parents=True, exist_ok=True)
+
                 downloaded_path = hf_hub_download(
                     repo_id=model_id,
                     filename=filename,
@@ -95,11 +94,23 @@ class FishDataBuilder:
             return local_model_path
 
     def _run_subprocess_interactive(self, cmd, description):
+        """
+        Runs a subprocess injecting PYTHONPATH so it can find the 'fish_speech' module.
+        """
         self._log(f"{Fore.MAGENTA}⚙️  Running: {description}...")
+
+        # 1. Copiamos el entorno actual
         env = os.environ.copy()
+
+        # 2. FIX CRÍTICO: Inyectamos la ruta del proyecto en PYTHONPATH
+        # Esto le dice al subproceso: "Busca librerías también en la carpeta raíz del proyecto"
+        current_pythonpath = env.get("PYTHONPATH", "")
+        env["PYTHONPATH"] = f"{str(self.fish_root)}{os.pathsep}{current_pythonpath}"
+
         env["PYTHONUNBUFFERED"] = "1"
 
         try:
+            # check_call lanzará excepción si el código de salida no es 0
             subprocess.check_call(cmd, cwd=str(self.fish_root), env=env)
             self._log(f"{Fore.GREEN}✅ {description} finished successfully.")
         except subprocess.CalledProcessError as e:
@@ -133,32 +144,32 @@ class FishDataBuilder:
         checkpoint_path = self._ensure_checkpoint()
 
         # 2. CONFIGURATION FROM DOCS
-        # Docs say: --config-name "modded_dac_vq"
         config_name = "modded_dac_vq"
 
-        workers = "2" if os.name == 'nt' else "4"
+        # Kaggle tiene 2 cores potentes, 2 workers es seguro.
+        workers = "2" if os.name == 'nt' else "2"
 
         cmd = [
             sys.executable, str(self.extract_script),
             str(self.dataset_root),
             "--num-workers", workers,
-            "--batch-size", "4",
-            "--config-name", config_name,  # <--- CORRECT CONFIG
-            "--checkpoint-path", str(checkpoint_path)  # <--- CORRECT CHECKPOINT
+            "--batch-size", "16",  # En Kaggle T4 puedes subir el batch size a 16 sin miedo
+            "--config-name", config_name,
+            "--checkpoint-path", str(checkpoint_path)
         ]
 
         self._run_subprocess_interactive(cmd, "VQGAN Token Extraction")
 
     def pack_dataset(self):
         """Step 2: Pack Dataset"""
-        workers = "2" if os.name == 'nt' else "4"
+        workers = "2" if os.name == 'nt' else "2"
 
         cmd = [
             sys.executable, str(self.build_script),
             "--input", str(self.dataset_root),
             "--output", str(self.proto_output),
             "--num-workers", workers,
-            "--text-extension", ".lab"  # Explicitly state .lab
+            "--text-extension", ".lab"
         ]
 
         self._run_subprocess_interactive(cmd, "Dataset Packing")
@@ -171,16 +182,15 @@ class FishDataBuilder:
 
 if __name__ == "__main__":
     # --- DYNAMIC CONFIGURATION ---
+    # En Kaggle, este script suele estar en /kaggle/working/fish-speech/
+    # .parent = fish-speech (ROOT)
     PROJECT_ROOT = Path(__file__).resolve().parent
-
     REPO_DIR = PROJECT_ROOT
     DATASET_DIR = PROJECT_ROOT / "dataset_final"
     OUTPUT_DIR = PROJECT_ROOT / "fish_training_data"
-
-    # We point to the main checkpoints folder. The script handles the subfolder "openaudio-s1-mini"
     CHECKPOINTS_DIR = PROJECT_ROOT / "checkpoints"
 
-    print(f"{Style.BRIGHT}--- FISH DATA PREP (Official v5.0) ---\n")
+    print(f"{Style.BRIGHT}--- FISH DATA PREP (Official v5.1) ---\n")
     print(f"📂 PROJECT ROOT: {PROJECT_ROOT}")
     print(f"📂 DATASET:      {DATASET_DIR}")
     print(f"💾 OUTPUT:       {OUTPUT_DIR}\n")
