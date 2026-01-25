@@ -2,7 +2,6 @@ import os
 import logging
 import subprocess
 import sys
-import torch
 from pathlib import Path
 from colorama import init, Fore, Style
 
@@ -43,11 +42,10 @@ class FishTrainer:
         print(f"{Fore.GREEN}   ✅ Base model validated.")
 
     def train(self):
-        # Limpieza preventiva de memoria
         torch.cuda.empty_cache()
 
-        print(f"{Fore.MAGENTA}🔥 Starting LoRA Fine-Tuning (Safe Mode)...")
-        print(f"{Fore.YELLOW}⚠️  Reduced Batch Size to 2 (Prevents OOM)")
+        print(f"{Fore.MAGENTA}🔥 Starting LoRA Fine-Tuning (Dual GPU Mode)...")
+        print(f"{Fore.YELLOW}⚠️  Strategy: Batch Size 1 per GPU x 2 GPUs = Effective Batch 2")
 
         cmd = [
             sys.executable, str(self.train_script),
@@ -60,23 +58,26 @@ class FishTrainer:
 
             # --- MODELO ---
             f"pretrained_ckpt_path={str(self.base_model_path)}",
-
-            # Output Dir
             f"trainer.default_root_dir={self.root}/results/{self.project_name}",
 
             # --- LORA ---
             "+lora@model.model.lora_config=r_8_alpha_16",
 
-            # --- AJUSTES DE MEMORIA (SAFE MODE) ---
-            "data.batch_size=2",  # <--- BAJAMOS A 2 (Crítico)
-            "trainer.accumulate_grad_batches=8",  # <--- SUBIMOS A 8 (Compensación)
+            # --- AJUSTES DUAL GPU (La Clave) ---
+            "data.batch_size=1",  # 1 clip por tarjeta (Muy ligero en memoria)
+            "trainer.devices=2",  # Usar las 2 GPUs
+            "trainer.strategy=ddp_find_unused_parameters_true",  # Estrategia multi-gpu estándar
+
+            # Como tenemos 2 GPUs procesando 1 clip cada una, el batch real es 2.
+            # Acumulamos 8 veces: 2 * 8 = 16 (Batch Efectivo Total)
+            "trainer.accumulate_grad_batches=8",
 
             "trainer.precision=16-mixed",
-            "data.num_workers=2",
+            "data.num_workers=2",  # 1 worker por GPU para cargar datos
 
-            # Epochs
+            # Duración
             "+trainer.max_epochs=15",
-            "trainer.val_check_interval=50",
+            "trainer.val_check_interval=100",
         ]
 
         # Environment Fix
@@ -85,7 +86,7 @@ class FishTrainer:
         env["PYTHONPATH"] = f"{str(self.root)}{os.pathsep}{current_pythonpath}"
         env["PYTHONUNBUFFERED"] = "1"
 
-        # Opcional: Ayuda a reducir fragmentación de memoria
+        # Optimizador de memoria para PyTorch
         env["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
 
         try:
