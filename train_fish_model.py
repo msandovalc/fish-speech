@@ -46,22 +46,24 @@ class FishTrainer:
             f"val_dataset.proto_files=['{str(self.data_protos)}']",
             f"pretrained_ckpt_path={str(self.base_model_path)}",
             f"trainer.default_root_dir={self.root}/results/{self.project_name}",
+
+            # --- LORA (Esto es nuevo, lleva +) ---
             "+lora@model.model.lora_config=r_8_alpha_16",
 
             # --- AJUSTES DE PODER ---
             "data.batch_size=2",
             "trainer.devices=1",
-            "trainer.accumulate_grad_batches=8",  # Batch efectivo = 16
-            "trainer.precision=bf16-mixed",
+            "++trainer.accumulate_grad_batches=8",
+            "++trainer.precision=bf16-mixed",
 
-            # --- CONTROL DE TIEMPO (Aquí está la clave) ---
-            "+trainer.max_steps=5000",  # Límite total de pasos
-            "trainer.limit_train_batches=500",  # Cada época durará solo 500 pasos
-            "+trainer.max_epochs=-1",  # Desactivamos el límite por épocas
+            # --- CONTROL DE TIEMPO (Cambiado a ++ para sobreescribir) ---
+            "++trainer.max_steps=5000",  # Objetivo final
+            "++trainer.limit_train_batches=500",  # "Épocas" de 500 pasos
+            "++trainer.max_epochs=-1",  # Ignorar límite de épocas
 
             # Frecuencia de Checkpoints y Validación
-            "trainer.val_check_interval=250",  # Validar cada 250 pasos
-            "trainer.limit_val_batches=1",
+            "++trainer.val_check_interval=250",
+            "++trainer.limit_val_batches=1",
         ]
 
         env = os.environ.copy()
