@@ -34,6 +34,15 @@ class FishTrainer:
             sys.exit(1)
 
     def train(self):
+
+        # --- ESTO ES LO QUE CAMBIA: AUTORIZAR A PYTORCH ---
+        import torch
+        from omegaconf.listconfig import ListConfig
+        from omegaconf.dictconfig import DictConfig
+        # Le decimos a PyTorch: "Confía en estos archivos, son míos"
+        torch.serialization.add_safe_globals([ListConfig, DictConfig])
+        # --------------------------------------------------
+
         torch.cuda.empty_cache()
         print(f"{Fore.MAGENTA}🔥 Starting Stable LoRA (Batch 2 - RTX 4090)...")
         print(f"{Fore.MAGENTA}🔥 Configuración de Experto: Objetivo 5000 Pasos...")
