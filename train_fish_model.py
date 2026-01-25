@@ -53,7 +53,7 @@ class FishTrainer:
         print(f"{Fore.GREEN}   ✅ Base model validated successfully.")
 
     def train(self):
-        print(f"{Fore.MAGENTA}🔥 Starting LoRA Fine-Tuning (Hydra Fixed)...")
+        print(f"{Fore.MAGENTA}🔥 Starting LoRA Fine-Tuning (Fix v5.7)...")
         print(f"{Fore.YELLOW}⚠️  Using Tesla T4 Settings (Batch Size 4)")
 
         cmd = [
@@ -61,20 +61,17 @@ class FishTrainer:
             "--config-name", "text2semantic_finetune",
             f"project={self.project_name}",
 
-            # --- 1. DATASET (Corregido según YAML) ---
-            # En tu YAML es una lista 'proto_files', no un string 'proto_path'
+            # --- 1. DATASET (Lista explícita) ---
             f"train_dataset.proto_files=['{str(self.data_protos)}']",
             f"val_dataset.proto_files=['{str(self.data_protos)}']",
 
-            # --- 2. MODELO (Corregido según YAML) ---
-            # En tu YAML la variable maestra es 'pretrained_ckpt_path'
+            # --- 2. MODELO ---
             f"pretrained_ckpt_path={str(self.base_model_path)}",
 
             # Output Dir
             f"trainer.default_root_dir={self.root}/results/{self.project_name}",
 
-            # --- 3. LORA (Inyección) ---
-            # En tu YAML lora_config es null. Usamos '+' para inyectar la configuración predefinida
+            # --- 3. LORA (Inyección con +) ---
             "+lora@model.model.lora_config=r_8_alpha_16",
 
             # --- AJUSTES KAGGLE T4 ---
@@ -82,8 +79,13 @@ class FishTrainer:
             "trainer.accumulate_grad_batches=4",
             "trainer.precision=16-mixed",
             "data.num_workers=2",
-            "trainer.max_epochs=15",
-            "trainer.val_check_interval=0.5",
+
+            # --- ARREGLO DE ERROR 'max_epochs' ---
+            # Usamos '+' porque max_epochs no existe en el yaml original (que usa max_steps)
+            "+trainer.max_epochs=15",
+
+            # Validamos cada 50 pasos (batches) para evitar errores de tipo float
+            "trainer.val_check_interval=50",
         ]
 
         # Fix de entorno para PYTHONPATH
@@ -105,16 +107,8 @@ class FishTrainer:
 
 
 if __name__ == "__main__":
-    # --- AUTO-DETECT ROOT ---
     PROJECT_ROOT = Path(__file__).resolve().parent
-
-    # Nombre de tu proyecto
     PROJECT_NAME = "speaker_03_lora_v1"
 
-    # Si estás en Kaggle, define manualmente la ruta del input aquí si falla la detección
-    # KAGGLE_INPUT_MODEL = Path("/kaggle/input/openaudio-s1-mini")
-    # trainer = FishTrainer(PROJECT_ROOT, PROJECT_NAME, base_model_path=KAGGLE_INPUT_MODEL)
-
-    # Por defecto usa la detección automática:
     trainer = FishTrainer(PROJECT_ROOT, PROJECT_NAME)
     trainer.train()
