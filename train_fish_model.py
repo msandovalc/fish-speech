@@ -26,7 +26,7 @@ class FishTrainer:
         self.checkpoints_dir = self.root / "checkpoints"
 
         # Define data and script paths
-        self.data_protos = self.root / "voices" / "fish_training_data" / "protos"
+        self.data_protos = self.root / "fish_training_data" / "protos"
         self.train_script = self.root / "fish_speech" / "train.py"
 
         # Define where the base model (LLAMA/S1-Mini) should live

@@ -174,8 +174,8 @@ if __name__ == "__main__":
     PROJECT_ROOT = Path(__file__).resolve().parent
 
     REPO_DIR = PROJECT_ROOT
-    DATASET_DIR = PROJECT_ROOT / "voices" / "dataset_final"
-    OUTPUT_DIR = PROJECT_ROOT / "voices" / "fish_training_data"
+    DATASET_DIR = PROJECT_ROOT / "dataset_final"
+    OUTPUT_DIR = PROJECT_ROOT / "fish_training_data"
 
     # We point to the main checkpoints folder. The script handles the subfolder "openaudio-s1-mini"
     CHECKPOINTS_DIR = PROJECT_ROOT / "checkpoints"
