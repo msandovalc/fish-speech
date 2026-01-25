@@ -4,6 +4,7 @@ import subprocess
 import sys
 from pathlib import Path
 from colorama import init, Fore, Style
+import torch
 
 # --- SETUP ---
 init(autoreset=True)
@@ -42,11 +43,10 @@ class FishTrainer:
         print(f"{Fore.GREEN}   ✅ Base model validated.")
 
     def train(self):
-        # Forzar limpieza de memoria antes de empezar
         torch.cuda.empty_cache()
 
-        print(f"{Fore.MAGENTA}🔥 Starting LoRA Fine-Tuning (ULTRA-SAFE Mode)...")
-        print(f"{Fore.YELLOW}⚠️  Batch Size: 1 | Accumulation: 16")
+        print(f"{Fore.MAGENTA}🔥 Starting LoRA Fine-Tuning (Dual GPU Mode)...")
+        print(f"{Fore.YELLOW}⚠️  Strategy: Batch Size 1 per GPU x 2 GPUs = Effective Batch 2")
 
         cmd = [
             sys.executable, str(self.train_script),
@@ -64,25 +64,30 @@ class FishTrainer:
             # --- LORA ---
             "+lora@model.model.lora_config=r_8_alpha_16",
 
-            # --- AJUSTES CRÍTICOS DE MEMORIA (v5.9) ---
-            "data.batch_size=1",  # <--- EL MÍNIMO ABSOLUTO
-            "trainer.accumulate_grad_batches=16",  # <--- COMPENSACIÓN ALTA
+            # --- AJUSTES DUAL GPU (La Clave) ---
+            "data.batch_size=1",  # 1 clip por tarjeta (Muy ligero en memoria)
+            "trainer.devices=2",  # Usar las 2 GPUs
+            "trainer.strategy=ddp_find_unused_parameters_true",  # Estrategia multi-gpu estándar
 
-            "trainer.precision=16-mixed",  # Ahorra VRAM
-            "data.num_workers=2",  # CPUs de Kaggle
+            # Como tenemos 2 GPUs procesando 1 clip cada una, el batch real es 2.
+            # Acumulamos 8 veces: 2 * 8 = 16 (Batch Efectivo Total)
+            "trainer.accumulate_grad_batches=8",
 
-            # Epochs y validación
+            "trainer.precision=16-mixed",
+            "data.num_workers=2",  # 1 worker por GPU para cargar datos
+
+            # Duración
             "+trainer.max_epochs=15",
-            "trainer.val_check_interval=100",  # Validar menos frecuente para no estresar la GPU
+            "trainer.val_check_interval=100",
         ]
 
-        # Environment Fix + Memory Fixes
+        # Environment Fix
         env = os.environ.copy()
         current_pythonpath = env.get("PYTHONPATH", "")
         env["PYTHONPATH"] = f"{str(self.root)}{os.pathsep}{current_pythonpath}"
         env["PYTHONUNBUFFERED"] = "1"
 
-        # Variable mágica para reducir fragmentación de memoria en PyTorch
+        # Optimizador de memoria para PyTorch
         env["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
 
         try:
