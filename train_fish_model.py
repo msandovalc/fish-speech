@@ -15,24 +15,16 @@ logger = logging.getLogger(__name__)
 
 
 class FishTrainer:
-    def __init__(self, project_root: Path, project_name: str):
-        """
-        Initializes the trainer with correct paths relative to the project root.
-        """
+    def __init__(self, project_root: Path, project_name: str, base_model_path: Path):
         self.root = project_root
         self.project_name = project_name
-
-        # Define the target checkpoints directory
         self.checkpoints_dir = self.root / "checkpoints"
-
-        # Define data and script paths
         self.data_protos = self.root / "fish_training_data" / "protos"
         self.train_script = self.root / "fish_speech" / "train.py"
+        self.base_model_path = base_model_path
 
-        # Define where the base model (LLAMA/S1-Mini) should live
-        self.base_model_path = self.checkpoints_dir / "openaudio-s1-mini"
-
-        print(f"{Fore.CYAN}🚀 Initializing Trainer for project: {self.project_name}")
+        print(f"{Fore.CYAN}🚀 Initializing Kaggle Trainer for: {self.project_name}")
+        print(f"   🧠 Base Model Path: {self.base_model_path}")
         self._validate_paths()
 
     def _validate_paths(self):
@@ -133,9 +125,9 @@ class FishTrainer:
 if __name__ == "__main__":
     # Auto-detect Project Root (Assuming this script is in /voices/)
     PROJECT_ROOT = Path(__file__).resolve().parent
-
     # Define your project name (Folder name for results)
     PROJECT_NAME = "speaker_03_lora_v1"
+    KAGGLE_INPUT_MODEL = Path("/kaggle/input/openaudio-s1-min")
 
-    trainer = FishTrainer(PROJECT_ROOT, PROJECT_NAME)
+    trainer = FishTrainer(PROJECT_ROOT, PROJECT_NAME, KAGGLE_INPUT_MODEL)
     trainer.train()
