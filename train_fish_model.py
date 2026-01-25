@@ -85,7 +85,7 @@ if __name__ == "__main__":
     PROJECT_ROOT = Path(__file__).resolve().parent
     # Define your project name (Folder name for results)
     PROJECT_NAME = "speaker_03_lora_v1"
-    KAGGLE_INPUT_MODEL = Path("/kaggle/input/openaudio-s1-min")
+    KAGGLE_INPUT_MODEL = Path("/kaggle/working/fish-speech/checkpoints/openaudio-s1-mini")
 
     trainer = FishTrainer(PROJECT_ROOT, PROJECT_NAME, KAGGLE_INPUT_MODEL)
     trainer.train()
