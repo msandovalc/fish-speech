@@ -30,15 +30,13 @@ class FishDataBuilder:
         self.checkpoints_dir = checkpoints_dir
         self.output_dir = output_dir
 
-        # Paths based on OFFICIAL DOCS
         self.extract_script = self.fish_root / "tools" / "vqgan" / "extract_vq.py"
         self.build_script = self.fish_root / "tools" / "llama" / "build_dataset.py"
 
-        # Creates output folder
         self.proto_output = self.output_dir / "protos"
         self.proto_output.mkdir(parents=True, exist_ok=True)
 
-        self._log(f"{Fore.CYAN}🚀 Initializing Fish Data Builder (v5.1 Kaggle Fix)...")
+        self._log(f"{Fore.CYAN}🚀 Initializing Fish Data Builder (v6.0 RunPod Fix)...")
         self._validate_paths()
 
     def _log(self, message: str, level="info"):
@@ -53,8 +51,6 @@ class FishDataBuilder:
             raise FileNotFoundError(f"{Fore.RED}❌ Dataset not found at: {self.dataset_root}")
         if not self.fish_root.exists():
             raise FileNotFoundError(f"{Fore.RED}❌ Repo Root not found at: {self.fish_root}")
-        if not self.extract_script.exists():
-            raise FileNotFoundError(f"{Fore.RED}❌ Script 'extract_vq.py' not found in tools/vqgan/")
 
     def _check_gpu_status(self):
         self._log(f"{Fore.YELLOW}🔍 Checking Hardware Acceleration...")
@@ -62,62 +58,43 @@ class FishDataBuilder:
             gpu_name = torch.cuda.get_device_name(0)
             vram = torch.cuda.get_device_properties(0).total_memory / 1e9
             self._log(f"{Fore.GREEN}   ✅ CUDA DETECTED: {gpu_name} ({vram:.1f} GB VRAM)")
+            # Liberar basura previa
+            torch.cuda.empty_cache()
         else:
-            self._log(f"{Fore.RED}   ⚠️ NO GPU DETECTED. Running on CPU (Very Slow).")
+            self._log(f"{Fore.RED}   ⚠️ NO GPU DETECTED.")
 
     def _ensure_checkpoint(self):
-        """Downloads the OFFICIAL checkpoint: fishaudio/openaudio-s1-mini/codec.pth"""
-        model_id = "fishaudio/openaudio-s1-mini"
+        """Usa el checkpoint que ya descargamos en la carpeta de openaudio-s1-mini"""
         filename = "codec.pth"
-
-        # Expected path: checkpoints/openaudio-s1-mini/codec.pth
         local_model_path = self.checkpoints_dir / "openaudio-s1-mini" / filename
 
         if not local_model_path.exists():
-            self._log(f"{Fore.YELLOW}⚠️  Official checkpoint not found. Downloading '{filename}'...")
-            try:
-                # Ensure directory exists
-                local_model_path.parent.mkdir(parents=True, exist_ok=True)
+            self._log(f"{Fore.YELLOW}⚠️ Checkpoint no encontrado en {local_model_path}. Descargando...")
+            local_model_path.parent.mkdir(parents=True, exist_ok=True)
+            downloaded_path = hf_hub_download(
+                repo_id="fishaudio/openaudio-s1-mini",
+                filename=filename,
+                local_dir=self.checkpoints_dir / "openaudio-s1-mini"
+            )
+            return Path(downloaded_path)
 
-                downloaded_path = hf_hub_download(
-                    repo_id=model_id,
-                    filename=filename,
-                    local_dir=self.checkpoints_dir / "openaudio-s1-mini"
-                )
-                self._log(f"{Fore.GREEN}   ✅ Downloaded: {downloaded_path}")
-                return Path(downloaded_path)
-            except Exception as e:
-                self._log(f"{Fore.RED}❌ Download failed: {e}", level="error")
-                sys.exit(1)
-        else:
-            self._log(f"{Fore.GREEN}   ✅ Checkpoint found: {local_model_path}")
-            return local_model_path
+        self._log(f"{Fore.GREEN}   ✅ Checkpoint found: {local_model_path}")
+        return local_model_path
 
     def _run_subprocess_interactive(self, cmd, description):
-        """
-        Runs a subprocess injecting PYTHONPATH so it can find the 'fish_speech' module.
-        """
         self._log(f"{Fore.MAGENTA}⚙️  Running: {description}...")
-
-        # 1. Copiamos el entorno actual
         env = os.environ.copy()
 
-        # 2. FIX CRÍTICO: Inyectamos la ruta del proyecto en PYTHONPATH
-        # Esto le dice al subproceso: "Busca librerías también en la carpeta raíz del proyecto"
-        current_pythonpath = env.get("PYTHONPATH", "")
-        env["PYTHONPATH"] = f"{str(self.fish_root)}{os.pathsep}{current_pythonpath}"
-
-        env["PYTHONUNBUFFERED"] = "1"
+        # FIX PARA MEMORIA EN RUNPOD
+        env["PYTHONPATH"] = f"{str(self.fish_root)}{os.pathsep}{env.get('PYTHONPATH', '')}"
+        env["PYDEVD_DISABLE_FILE_VALIDATION"] = "1"
+        env["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"  # Evita fragmentación
 
         try:
-            # check_call lanzará excepción si el código de salida no es 0
             subprocess.check_call(cmd, cwd=str(self.fish_root), env=env)
             self._log(f"{Fore.GREEN}✅ {description} finished successfully.")
         except subprocess.CalledProcessError as e:
-            self._log(f"{Fore.RED}❌ {description} Failed with exit code {e.returncode}.", level="error")
-            sys.exit(1)
-        except Exception as e:
-            self._log(f"{Fore.RED}❌ Execution error: {e}", level="error")
+            self._log(f"{Fore.RED}❌ {description} Failed (Exit code {e.returncode}).", level="error")
             sys.exit(1)
 
     def convert_txt_to_lab(self):
@@ -126,52 +103,33 @@ class FishDataBuilder:
         for txt_file in self.dataset_root.rglob("*.txt"):
             lab_file = txt_file.with_suffix(".lab")
             if not lab_file.exists():
-                try:
-                    shutil.copy2(txt_file, lab_file)
-                    count += 1
-                except:
-                    pass
-        if count > 0:
-            self._log(f"{Fore.GREEN}✅ Generated {count} .lab files.")
-        else:
-            self._log(f"{Fore.BLUE}ℹ️ .lab files already exist.")
+                shutil.copy2(txt_file, lab_file)
+                count += 1
+        self._log(f"{Fore.BLUE}ℹ️ Normalización terminada.")
 
     def extract_vqgan_tokens(self):
-        """Step 1: Extract VQ Tokens using Official Config"""
         self._check_gpu_status()
-
-        # 1. GET CORRECT CHECKPOINT
         checkpoint_path = self._ensure_checkpoint()
 
-        # 2. CONFIGURATION FROM DOCS
-        config_name = "modded_dac_vq"
-
-        # Kaggle tiene 2 cores potentes, 2 workers es seguro.
-        workers = "2" if os.name == 'nt' else "2"
-
+        # CAMBIO CLAVE: workers=1 y batch=8 para evitar OOM
         cmd = [
             sys.executable, str(self.extract_script),
             str(self.dataset_root),
-            "--num-workers", workers,
-            "--batch-size", "16",  # En Kaggle T4 puedes subir el batch size a 16 sin miedo
-            "--config-name", config_name,
+            "--num-workers", "1",
+            "--batch-size", "8",
+            "--config-name", "modded_dac_vq",
             "--checkpoint-path", str(checkpoint_path)
         ]
-
         self._run_subprocess_interactive(cmd, "VQGAN Token Extraction")
 
     def pack_dataset(self):
-        """Step 2: Pack Dataset"""
-        workers = "2" if os.name == 'nt' else "2"
-
         cmd = [
             sys.executable, str(self.build_script),
             "--input", str(self.dataset_root),
             "--output", str(self.proto_output),
-            "--num-workers", workers,
+            "--num-workers", "1",
             "--text-extension", ".lab"
         ]
-
         self._run_subprocess_interactive(cmd, "Dataset Packing")
 
     def run(self):
@@ -181,19 +139,13 @@ class FishDataBuilder:
 
 
 if __name__ == "__main__":
-    # --- DYNAMIC CONFIGURATION ---
-    # En Kaggle, este script suele estar en /kaggle/working/fish-speech/
-    # .parent = fish-speech (ROOT)
-    PROJECT_ROOT = Path(__file__).resolve().parent
+    PROJECT_ROOT = Path("/workspace/fish-speech")
     REPO_DIR = PROJECT_ROOT
     DATASET_DIR = PROJECT_ROOT / "dataset_final"
     OUTPUT_DIR = PROJECT_ROOT / "fish_training_data"
     CHECKPOINTS_DIR = PROJECT_ROOT / "checkpoints"
 
-    print(f"{Style.BRIGHT}--- FISH DATA PREP (Official v5.1) ---\n")
-    print(f"📂 PROJECT ROOT: {PROJECT_ROOT}")
-    print(f"📂 DATASET:      {DATASET_DIR}")
-    print(f"💾 OUTPUT:       {OUTPUT_DIR}\n")
+    print(f"{Style.BRIGHT}--- FISH DATA PREP (RunPod v6.0) ---\n")
 
     try:
         builder = FishDataBuilder(DATASET_DIR, REPO_DIR, CHECKPOINTS_DIR, OUTPUT_DIR)
