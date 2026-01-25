@@ -36,6 +36,7 @@ class FishTrainer:
     def train(self):
         torch.cuda.empty_cache()
         print(f"{Fore.MAGENTA}🔥 Starting Stable LoRA (Batch 2 - RTX 4090)...")
+        print(f"{Fore.MAGENTA}🔥 Configuración de Experto: Objetivo 5000 Pasos...")
 
         cmd = [
             sys.executable, str(self.train_script),
@@ -47,17 +48,20 @@ class FishTrainer:
             f"trainer.default_root_dir={self.root}/results/{self.project_name}",
             "+lora@model.model.lora_config=r_8_alpha_16",
 
-            # --- AJUSTES DE ESTABILIDAD ---
-            "data.batch_size=2",  # Bajamos de 4 a 2 para evitar el OOM inicial
+            # --- AJUSTES DE PODER ---
+            "data.batch_size=2",
             "trainer.devices=1",
-            "trainer.accumulate_grad_batches=8",  # Batch efectivo de 16 (2x8)
-            "trainer.precision=bf16-mixed",  # Mantenemos BF16 por velocidad
-            "data.num_workers=2",  # Bajamos workers para liberar RAM de sistema
+            "trainer.accumulate_grad_batches=8",  # Batch efectivo = 16
+            "trainer.precision=bf16-mixed",
 
-            # --- DURACIÓN ---
-            "+trainer.max_epochs=20",
-            "trainer.val_check_interval=50",
-            "trainer.limit_val_batches=1",  # Solo procesa 1 batch de validación (ahorra mucha memoria)
+            # --- CONTROL DE TIEMPO (Aquí está la clave) ---
+            "+trainer.max_steps=5000",  # Límite total de pasos
+            "trainer.limit_train_batches=500",  # Cada época durará solo 500 pasos
+            "+trainer.max_epochs=-1",  # Desactivamos el límite por épocas
+
+            # Frecuencia de Checkpoints y Validación
+            "trainer.val_check_interval=250",  # Validar cada 250 pasos
+            "trainer.limit_val_batches=1",
         ]
 
         env = os.environ.copy()
