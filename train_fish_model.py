@@ -16,13 +16,12 @@ class FishTrainer:
         self.root = project_root
         self.project_name = project_name
 
-        # Define paths relative to the project root
+        # Paths
         self.checkpoints_dir = self.root / "checkpoints"
         self.data_protos = self.root / "fish_training_data" / "protos"
         self.train_script = self.root / "fish_speech" / "train.py"
 
-        # Default path to the S1-Mini model (~3.36 GB).
-        # Falls back to the standard checkpoints directory if not provided.
+        # Model Path (Default or Custom)
         self.base_model_path = base_model_path or (self.checkpoints_dir / "openaudio-s1-mini")
 
         print(f"{Fore.CYAN}🚀 Initializing Kaggle Trainer for: {self.project_name}")
@@ -31,21 +30,16 @@ class FishTrainer:
         self._validate_paths()
 
     def _validate_paths(self):
-        """
-        Ensures that training data exists and that the base model
-        contains valid weight files (safetensors, bin, or pth).
-        """
         # 1. Check Data
         if not self.data_protos.exists():
             print(f"{Fore.RED}❌ Training data not found at: {self.data_protos}")
             print(f"   👉 Run 'prepare_fish_data.py' first.")
             sys.exit(1)
 
-        # 2. Check Model Weights
-        # We check for multiple formats because the model might be .safetensors, .bin, or .pth
+        # 2. Check Model Weights (Support .safetensors, .bin, and .pth)
         has_safetensors = (self.base_model_path / "model.safetensors").exists()
         has_bin = (self.base_model_path / "pytorch_model.bin").exists()
-        has_pth = (self.base_model_path / "model.pth").exists()  # <--- ADDED THIS
+        has_pth = (self.base_model_path / "model.pth").exists()
 
         if not (has_safetensors or has_bin or has_pth):
             print(f"{Fore.RED}❌ Base model weights NOT found at: {self.base_model_path}")
@@ -59,41 +53,43 @@ class FishTrainer:
         print(f"{Fore.GREEN}   ✅ Base model validated successfully.")
 
     def train(self):
-        """
-        Executes the training subprocess with Kaggle-optimized settings.
-        """
-        print(f"{Fore.MAGENTA}🔥 Starting LoRA Fine-Tuning (Direct Input Mode)...")
+        print(f"{Fore.MAGENTA}🔥 Starting LoRA Fine-Tuning (Hydra Fixed)...")
         print(f"{Fore.YELLOW}⚠️  Using Tesla T4 Settings (Batch Size 4)")
 
-        # Construct the command
+        # --- ARREGLO DE HYDRA ---
+        # En lugar de usar data.root (que ya no existe), apuntamos directo a proto_path
+
         cmd = [
             sys.executable, str(self.train_script),
             "--config-name", "text2semantic_finetune",
             f"project={self.project_name}",
 
-            # Paths
-            f"data.root={self.data_protos}",
-            f"data.val_root={self.data_protos}",
+            # --- RUTAS CORREGIDAS ---
+            f"data.train_dataset.proto_path={self.data_protos}",
+            f"data.val_dataset.proto_path={self.data_protos}",
+
+            # Modelo base
             f"model.model.base_checkpoint_path={self.base_model_path}",
             f"trainer.default_root_dir={self.root}/results/{self.project_name}",
 
-            # --- Kaggle T4 Optimizations ---
-            "data.batch_size=4",  # Balanced for T4 VRAM
-            "trainer.accumulate_grad_batches=4",  # Effective batch size = 16
-            "model.model.lora_config.r=8",  # Standard rank
-            "trainer.precision=16-mixed",  # FP16 to save memory
-            "data.num_workers=2",  # Use Kaggle CPUs
-            "trainer.max_epochs=15",  # Standard run
-            "trainer.val_check_interval=0.5",  # Check validation twice per epoch
+            # --- AJUSTES KAGGLE T4 ---
+            "data.batch_size=4",
+            "trainer.accumulate_grad_batches=4",
+            "model.model.lora_config.r=8",
+            "trainer.precision=16-mixed",
+            "data.num_workers=2",
+            "trainer.max_epochs=15",
+            "trainer.val_check_interval=0.5",
         ]
 
-        # Environment Fix: Add project root to PYTHONPATH so 'fish_speech' module is found
+        # Fix de entorno para PYTHONPATH
         env = os.environ.copy()
         current_pythonpath = env.get("PYTHONPATH", "")
         env["PYTHONPATH"] = f"{str(self.root)}{os.pathsep}{current_pythonpath}"
         env["PYTHONUNBUFFERED"] = "1"
 
         try:
+            # Ejecutar entrenamiento
             subprocess.check_call(cmd, cwd=str(self.root), env=env)
             print(f"\n{Fore.GREEN}✨ TRAINING FINISHED SUCCESSFULLY!")
             print(f"   💾 Checkpoints: {self.root}/results/{self.project_name}")
@@ -106,14 +102,14 @@ class FishTrainer:
 
 if __name__ == "__main__":
     # --- AUTO-DETECT ROOT ---
-    # If this file is in /kaggle/working/fish-speech/train_fish_model.py
+    # Asumiendo que el script corre en /kaggle/working/fish-speech/train_fish_model.py
     # .parent = voices
-    # .parent.parent = fish-speech (The Project Root)
+    # .parent.parent = fish-speech (Project Root)
     PROJECT_ROOT = Path(__file__).resolve().parent
 
-    # Define your project name (Folder name for results)
+    # Nombre de tu proyecto
     PROJECT_NAME = "speaker_03_lora_v1"
 
-    # Initialize and Train
+    # Inicializar y Entrenar
     trainer = FishTrainer(PROJECT_ROOT, PROJECT_NAME)
     trainer.train()
