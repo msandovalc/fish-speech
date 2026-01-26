@@ -42,58 +42,49 @@ class FishTrainer:
         from omegaconf.listconfig import ListConfig
         from omegaconf.dictconfig import DictConfig
 
-        # 1. Autorización de seguridad y limpieza profunda
+        # 1. Autorización y limpieza de la RTX 4090
         torch.serialization.add_safe_globals([ListConfig, DictConfig])
-        # os.system("pkill -9 python")  # Limpieza total de procesos fantasma
+        # os.system("pkill -9 python")
         torch.cuda.empty_cache()
         gc.collect()
 
-        print(f"🚀 Iniciando entrenamiento directo (Modo: Fuerza Bruta)...")
-
-        # Ruta persistente garantizada
-        project_path = f"/workspace/fish-speech/results/{self.project_name}"
-        checkpoint_path = f"{project_path}/checkpoints"
-
-        print(f"📍 Los archivos aparecerán en: {checkpoint_path}")
+        print(f"🚀 Iniciando entrenamiento directo...")
+        print(f"📍 Ruta de raíz: /workspace/fish-speech/results/camila_voice_v1_stable")
 
         cmd = [
             sys.executable, str(self.train_script),
             "--config-name", "text2semantic_finetune",
-            f"project={self.project_name}",
+            "project=camila_voice_v1_stable",
             f"train_dataset.proto_files=['{str(self.data_protos)}']",
             f"val_dataset.proto_files=['{str(self.data_protos)}']",
             f"pretrained_ckpt_path={str(self.base_model_path)}",
 
-            # --- LORA SETUP ---
+            # LoRA Config
             "+lora@model.model.lora_config=r_8_alpha_16",
 
-            # --- CONFIGURACIÓN DE PODER (RTX 4090) ---
+            # Ajustes de rendimiento (Batch 1 para evitar OOM)
             "data.batch_size=1",
             "trainer.devices=1",
             "++trainer.accumulate_grad_batches=16",
             "++trainer.precision=bf16-mixed",
             "++trainer.max_steps=5000",
 
-            # --- LAS 2 LÍNEAS MÁGICAS + EL KILLER DEL MONITOR ---
-            f"++trainer.default_root_dir={project_path}",
-            "++callbacks.model_checkpoint.dirpath={checkpoint_path}",
-            "++callbacks.model_checkpoint.save_top_k=-1",  # Guarda TODO
-            "++callbacks.model_checkpoint.every_n_train_steps=250",  # Cada 250 exactos
-            "++callbacks.model_checkpoint.monitor=null",  # Matamos al monitor problemático
-
+            # --- LAS LÍNEAS QUE ASEGURAN EL GUARDADO ---
+            "trainer.default_root_dir=/workspace/fish-speech/results/camila_voice_v1_stable",
+            "++callbacks.model_checkpoint.save_top_k=-1",
+            "++callbacks.model_checkpoint.every_n_train_steps=250",
+            "++callbacks.model_checkpoint.monitor=null",
             "++trainer.val_check_interval=250",
         ]
 
         env = os.environ.copy()
         env["PYTHONPATH"] = f"{str(self.root)}{os.pathsep}{env.get('PYTHONPATH', '')}"
-        env["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
 
         try:
             subprocess.check_call(cmd, cwd=str(self.root), env=env)
-            print("\n✅ ENTRENAMIENTO FINALIZADO. VERIFICANDO DISCO...")
-            os.system(f"ls -lh {checkpoint_path}")
         except Exception as e:
-            print(f"\n❌ Error durante el entrenamiento: {e}")
+            print(f"\n❌ Error: {e}")
+
 
 if __name__ == "__main__":
     PROJECT_ROOT = Path("/workspace/fish-speech")
