@@ -46,7 +46,7 @@ class FishTrainer:
         torch.cuda.empty_cache()
 
         # 1. Matamos cualquier proceso previo para limpiar la 4090
-        os.system("pkill -9 python")
+        # os.system("pkill -9 python")
 
         # DEBUG: Verificamos dónde estamos y persistencia
         print(f"🚀 Iniciando entrenamiento directo...")
