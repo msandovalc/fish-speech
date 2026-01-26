@@ -46,7 +46,7 @@ class FishTrainer:
         torch.cuda.empty_cache()
 
         # 1. Matamos cualquier proceso previo para limpiar la 4090
-        os.system("pkill -9 python")
+        # os.system("pkill -9 python")
 
         print(f"🚀 Iniciando entrenamiento directo...")
         print(f"📍 Los archivos aparecerán en: fish-speech/results/camila_voice_v1_stable/checkpoints/")
