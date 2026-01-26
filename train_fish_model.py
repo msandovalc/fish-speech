@@ -39,13 +39,14 @@ class FishTrainer:
         from omegaconf.dictconfig import DictConfig
         torch.serialization.add_safe_globals([ListConfig, DictConfig])
 
+        # Limpieza de seguridad
         torch.cuda.empty_cache()
 
-        # --- RUTA DE HIERRO ---
+        # RUTA ABSOLUTA Y LIMPIA
         abs_ckpt_dir = "/workspace/camila_entrenamiento_final"
 
-        print(f"🔥 MODO RESCATE ACTIVADO")
-        print(f"📍 Forzando guardado en: {abs_ckpt_dir}")
+        print(f"🔥 LANZAMIENTO BLINDADO - MODO BATCH 1")
+        print(f"📍 Guardando CADA 250 PASOS en: {abs_ckpt_dir}")
 
         cmd = [
             sys.executable, str(self.train_script),
@@ -57,25 +58,29 @@ class FishTrainer:
             f"trainer.default_root_dir={self.root}/results/{self.project_name}",
 
             "+lora@model.model.lora_config=r_8_alpha_16",
-            "data.batch_size=2",
+
+            # --- AJUSTE DE MEMORIA (BATCH 1 + ACC 16 = CALIDAD DE 16) ---
+            "data.batch_size=1",
             "trainer.devices=1",
-            "++trainer.accumulate_grad_batches=8",
+            "++trainer.accumulate_grad_batches=16",
             "++trainer.precision=bf16-mixed",
+
             "++trainer.max_steps=5000",
             "++trainer.limit_train_batches=500",
             "++trainer.max_epochs=-1",
 
-            # --- SOBREESCRITURA TOTAL: CERO CONDICIONES ---
+            # --- CONFIGURACIÓN DE GUARDADO SIN FILTROS ---
             f"++callbacks.model_checkpoint.dirpath={abs_ckpt_dir}",
             "++callbacks.model_checkpoint.every_n_train_steps=250",
-            "++callbacks.model_checkpoint.save_top_k=-1",  # Guarda todos los archivos
-            "++callbacks.model_checkpoint.monitor=null",  # Desactivamos el monitor que falla
+            "++callbacks.model_checkpoint.save_top_k=-1",
+            "++callbacks.model_checkpoint.monitor=null",
             "++callbacks.model_checkpoint.save_last=True",
             "++trainer.val_check_interval=250",
         ]
 
         env = os.environ.copy()
         env["PYTHONPATH"] = f"{str(self.root)}{os.pathsep}{env.get('PYTHONPATH', '')}"
+        env["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
 
         try:
             subprocess.check_call(cmd, cwd=str(self.root), env=env)
