@@ -38,8 +38,10 @@ class FishTrainer:
         torch.cuda.empty_cache()
 
         abs_root = "/workspace/fish-speech/results/camila_voice_v1_stable"
+        os.makedirs(abs_root, exist_ok=True)
 
-        print(f"🚀 MODO 'BALA': 1.15 it/s + Saltando validación (Legalmente)")
+        print(f"🚀 MODO 'BALA': 1.15 it/s + Saltando validación")
+        print(f"📁 Guardando en: {abs_root}/lightning_logs/version_X/checkpoints/")
 
         cmd = [
             sys.executable, str(self.train_script),
@@ -50,20 +52,20 @@ class FishTrainer:
             f"pretrained_ckpt_path={str(self.base_model_path)}",
             "+lora@model.model.lora_config=r_8_alpha_16",
 
-            # --- PARÁMETROS DE VELOCIDAD ÓPTIMA ---
+            # PARÁMETROS DE VELOCIDAD ÓPTIMA
             "data.batch_size=1",
             "trainer.devices=1",
             "++trainer.accumulate_grad_batches=16",
             "++trainer.precision=bf16-mixed",
             "++trainer.max_steps=5000",
 
-            # --- EL FIX PARA EL ERROR DE DIVISIÓN POR CERO ---
-            "++trainer.val_check_interval=1000",  # Ponemos un número alto para que no moleste
-            "++trainer.limit_val_batches=0",  # <--- ESTA ES LA MAGIA: 0 datos para validar
+            # NO VALIDACIÓN = MÁXIMA VELOCIDAD
+            "++trainer.val_check_interval=1000",
+            "++trainer.limit_val_batches=0",
             "++trainer.num_sanity_val_steps=0",
 
-            # --- GUARDADO FORZADO CADA 250 PASOS ---
-            f"++trainer.default_root_dir={abs_root}",
+            # GUARDADO FORZADO (SINTAXIS CORREGIDA)
+            f"trainer.default_root_dir={abs_root}",
             "++callbacks.model_checkpoint.every_n_train_steps=250",
             "++callbacks.model_checkpoint.save_top_k=-1",
         ]
@@ -74,9 +76,11 @@ class FishTrainer:
 
         try:
             subprocess.check_call(cmd, cwd=str(self.root), env=env)
+            print("✅ VERIFICANDO:")
+            os.system(f"find {abs_root} -name '*.ckpt'")
+            os.system(f"ls -la {abs_root}/lightning_logs/")
         except Exception as e:
             print(f"\n❌ Error: {e}")
-
 
 if __name__ == "__main__":
     PROJECT_ROOT = Path("/workspace/fish-speech")
