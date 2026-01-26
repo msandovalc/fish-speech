@@ -71,7 +71,7 @@ class FishTrainer:
             "++callbacks.model_checkpoint.save_top_k=-1",
             "++callbacks.model_checkpoint.every_n_train_steps=10",
             f"++callbacks.model_checkpoint.dirpath={ckpt_dir}",
-            "++callbacks.model_checkpoint.filename=step_{step:09d}",
+            "++callbacks.model_checkpoint.filename=step",
             "++callbacks.model_checkpoint.auto_insert_metric_name=false",
         ]
 
