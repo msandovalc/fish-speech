@@ -33,58 +33,70 @@ class FishTrainer:
             print(f"{Fore.RED}❌ Base model weights NOT found.")
             sys.exit(1)
 
-    def train(self):
 
-        # --- ESTO ES LO QUE CAMBIA: AUTORIZAR A PYTORCH ---
-        import torch
-        from omegaconf.listconfig import ListConfig
-        from omegaconf.dictconfig import DictConfig
-        # Le decimos a PyTorch: "Confía en estos archivos, son míos"
-        torch.serialization.add_safe_globals([ListConfig, DictConfig])
-        # --------------------------------------------------
+def train(self):
+    # --- FIX PARA PYTORCH 2.6 (Seguridad de carga) ---
+    import torch
+    from omegaconf.listconfig import ListConfig
+    from omegaconf.dictconfig import DictConfig
+    torch.serialization.add_safe_globals([ListConfig, DictConfig])
+    # --------------------------------------------------
 
-        torch.cuda.empty_cache()
-        print(f"{Fore.MAGENTA}🔥 Starting Stable LoRA (Batch 2 - RTX 4090)...")
-        print(f"{Fore.MAGENTA}🔥 Configuración de Experto: Objetivo 5000 Pasos...")
+    torch.cuda.empty_cache()
 
-        cmd = [
-            sys.executable, str(self.train_script),
-            "--config-name", "text2semantic_finetune",
-            f"project={self.project_name}",
-            f"train_dataset.proto_files=['{str(self.data_protos)}']",
-            f"val_dataset.proto_files=['{str(self.data_protos)}']",
-            f"pretrained_ckpt_path={str(self.base_model_path)}",
-            f"trainer.default_root_dir={self.root}/results/{self.project_name}",
+    # Definimos la ruta absoluta para los checkpoints
+    abs_ckpt_dir = f"{self.root}/results/{self.project_name}/checkpoints"
 
-            # --- LORA (Esto es nuevo, lleva +) ---
-            "+lora@model.model.lora_config=r_8_alpha_16",
+    print(f"{Fore.MAGENTA}🔥 Starting Stable LoRA (Batch 2 - RTX 4090)...")
+    print(f"{Fore.MAGENTA}🔥 Configuración de Experto: Objetivo 5000 Pasos...")
+    print(f"{Fore.CYAN}📍 Checkpoints se guardarán en: {abs_ckpt_dir}")
 
-            # --- AJUSTES DE PODER ---
-            "data.batch_size=2",
-            "trainer.devices=1",
-            "++trainer.accumulate_grad_batches=8",
-            "++trainer.precision=bf16-mixed",
+    cmd = [
+        sys.executable, str(self.train_script),
+        "--config-name", "text2semantic_finetune",
+        f"project={self.project_name}",
+        f"train_dataset.proto_files=['{str(self.data_protos)}']",
+        f"val_dataset.proto_files=['{str(self.data_protos)}']",
+        f"pretrained_ckpt_path={str(self.base_model_path)}",
+        f"trainer.default_root_dir={self.root}/results/{self.project_name}",
 
-            # --- CONTROL DE TIEMPO (Cambiado a ++ para sobreescribir) ---
-            "++trainer.max_steps=5000",  # Objetivo final
-            "++trainer.limit_train_batches=500",  # "Épocas" de 500 pasos
-            "++trainer.max_epochs=-1",  # Ignorar límite de épocas
+        # --- LORA ---
+        "+lora@model.model.lora_config=r_8_alpha_16",
 
-            # Frecuencia de Checkpoints y Validación
-            "++trainer.val_check_interval=250",
-            "++trainer.limit_val_batches=1",
-        ]
+        # --- AJUSTES DE PODER ---
+        "data.batch_size=2",
+        "trainer.devices=1",
+        "++trainer.accumulate_grad_batches=8",
+        "++trainer.precision=bf16-mixed",
 
-        env = os.environ.copy()
-        env["PYTHONPATH"] = f"{str(self.root)}{os.pathsep}{env.get('PYTHONPATH', '')}"
-        env["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
+        # --- CONTROL DE TIEMPO ---
+        "++trainer.max_steps=5000",
+        "++trainer.limit_train_batches=500",
+        "++trainer.max_epochs=-1",
 
-        try:
-            subprocess.check_call(cmd, cwd=str(self.root), env=env)
-            print(f"\n{Fore.GREEN}✨ ENTRENAMIENTO EXITOSO!")
-        except Exception as e:
-            print(f"\n{Fore.RED}❌ Falló de nuevo. Si esto pasa, baja data.batch_size a 1.")
+        # --- FIX CRÍTICO DE GUARDADO (Checkpoints cada 250 pasos) ---
+        f"++callbacks.model_checkpoint.dirpath={abs_ckpt_dir}",
+        "++callbacks.model_checkpoint.every_n_train_steps=250",
+        "++callbacks.model_checkpoint.monitor=train/loss",
+        "++callbacks.model_checkpoint.mode=min",
+        "++callbacks.model_checkpoint.save_top_k=5",
+        "++callbacks.model_checkpoint.auto_insert_metric_name=False",
 
+        # Validación
+        "++trainer.val_check_interval=250",
+        "++trainer.limit_val_batches=1",
+    ]
+
+    env = os.environ.copy()
+    env["PYTHONPATH"] = f"{str(self.root)}{os.pathsep}{env.get('PYTHONPATH', '')}"
+    env["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
+
+    try:
+        subprocess.check_call(cmd, cwd=str(self.root), env=env)
+        print(f"\n{Fore.GREEN}✨ ENTRENAMIENTO EXITOSO!")
+    except Exception as e:
+        print(f"\n{Fore.RED}❌ El proceso se detuvo o falló. Revisa los logs arriba.")
+        
 
 if __name__ == "__main__":
     PROJECT_ROOT = Path("/workspace/fish-speech")

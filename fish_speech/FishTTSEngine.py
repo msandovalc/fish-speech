@@ -372,66 +372,178 @@ class FishTTSEngine:
             traceback.print_exc()
             return None, None
 
+    def apply_custom_lora(self, lora_path):
+        """
+        Reemplaza el motor Llama actual con una versión que usa los pesos entrenados (LoRA).
+        Mantiene el decodificador original (codec.pth) intacto.
+        """
+        lora_path = Path(lora_path)
+        if not lora_path.exists():
+            logger.error(f"❌ No se encontró el checkpoint LoRA en: {lora_path}")
+            return False
+
+        logger.info(f"🔄 Cargando Pesos Entrenados (LoRA): {lora_path.name}")
+
+        try:
+            # Re-lanzamos la cola de inferencia apuntando al archivo .ckpt
+            # Fish Speech cargará el modelo base y le aplicará el parche LoRA automáticamente.
+            new_llama_queue = launch_thread_safe_queue(
+                checkpoint_path=lora_path,
+                device=self.device,
+                precision=self.precision,
+                compile=self.should_compile
+            )
+
+            # Actualizamos la cola en el motor existente
+            self.engine.llama_queue = new_llama_queue
+
+            logger.success(f"✅ LoRA '{lora_path.name}' aplicado con éxito al motor.")
+            torch.cuda.empty_cache()
+            return True
+        except Exception as e:
+            logger.error(f"❌ Error al aplicar LoRA: {e}")
+            return False
+
+    def load_latest_camila_checkpoint(self, results_dir=PROJECT_ROOT / "checkpoints" / "camila_voice_v1_stable"):
+        """
+        Función de conveniencia para buscar y aplicar el checkpoint más nuevo de Camila.
+        """
+
+        checkpoints_path = Path(results_dir)
+        if not checkpoints_path.exists():
+            logger.error("❌ No existe la carpeta de checkpoints de Camila.")
+            return False
+
+        # Buscamos todos los archivos .ckpt y elegimos el de fecha de modificación más reciente
+        list_of_files = list(checkpoints_path.glob("*.ckpt"))
+        if not list_of_files:
+            logger.warning("⚠️ No se encontraron archivos .ckpt todavía.")
+            return False
+
+        latest_file = max(list_of_files, key=os.path.getmtime)
+        return self.apply_custom_lora(latest_file)
+
+    def apply_lora(self, checkpoint_path):
+        """
+        Carga los pesos entrenados (.ckpt) en el motor actual.
+        """
+        path = Path(checkpoint_path)
+        if not path.exists():
+            logger.error(f"❌ No se encontró el checkpoint en: {path}")
+            return False
+
+        logger.info(f"🔄 Aplicando conocimiento entrenado (LoRA): {path.name}")
+        try:
+            # Re-lanzamos la cola de inferencia con el nuevo checkpoint
+            self.engine.llama_queue = launch_thread_safe_queue(
+                checkpoint_path=path,
+                device=self.device,
+                precision=self.precision,
+                compile=self.should_compile
+            )
+            logger.success("✅ Pesos LoRA cargados correctamente.")
+            torch.cuda.empty_cache()
+            return True
+        except Exception as e:
+            logger.error(f"❌ Error al cargar LoRA: {e}")
+            return False
+
+    def speak_camila(self, text, seed=42):
+        """
+        FUNCIÓN SIMPLIFICADA:
+        Solo pasas el texto. Usa automáticamente el preset de Camila y el
+        LoRA que esté cargado en el motor.
+        """
+        logger.info(f"🎙️ Generando voz entrenada de Camila...")
+        # Simplemente reutilizamos la lógica de narración pero fijando el preset
+        return self.process_narration(voice_key="CAMILA", raw_text=text, seed_base=seed)
+
+
 # --- TESTING BLOCK ---
 if __name__ == "__main__":
     engine = FishTTSEngine()
 
-    # TEXTO DE PRUEBA
-    LONG_CHAPTER = """
-            Todos venimos de un mismo campo fuente, de una misma gran energía, de un mismo Dios, de un mismo
-            universo, como le quieras llamar. Todos somos parte de eso. Nacemos y nos convertimos en esto por un ratito,
-            muy chiquito, muy chiquitito, que creemos que es muy largo y se nos olvida que vamos a regresar a ese lugar
-            de donde venimos.
+    # # TEXTO DE PRUEBA
+    # LONG_CHAPTER = """
+    #         Todos venimos de un mismo campo fuente, de una misma gran energía, de un mismo Dios, de un mismo
+    #         universo, como le quieras llamar. Todos somos parte de eso. Nacemos y nos convertimos en esto por un ratito,
+    #         muy chiquito, muy chiquitito, que creemos que es muy largo y se nos olvida que vamos a regresar a ese lugar
+    #         de donde venimos.
+    #
+    #         Escucha bien esto. No eres una gota en el océano, eres el océano entero en una gota. Tu imaginación no es un estado
+    #         de fantasía o ilusión, es la verdadera realidad esperando ser reconocida. Cuando cierras los ojos y asumes el
+    #         sentimiento de tu deseo cumplido, no estás "fingiendo", estás accediendo a la cuarta dimensión, al mundo de las
+    #         causas, donde todo ya existe. Lo que ves afuera, en tu mundo físico, es simplemente una pantalla retrasada, un
+    #         eco de lo que fuiste ayer, de lo que pensaste ayer.
+    #
+    #         Si tu realidad actual no te gusta, deja de pelear con la pantalla. No puedes peinar tu reflejo en el espejo,
+    #         tienes que peinarte tú. Debes cambiar la concepción que tienes de ti mismo. Pregúntate: ¿Quién soy yo ahora?
+    #         Si la respuesta no es "Soy próspero", "Soy amado", "Soy saludable", entonces estás usando tu poder divino en tu
+    #         contra. El universo no te juzga, simplemente te dice "SÍ". Si dices "estoy arruinado", el universo dice "SÍ, lo estás".
+    #         Si dices "Soy abundante", el universo dice "SÍ, lo eres".
+    #
+    #         Por lo tanto, el secreto no es el esfuerzo físico ni la lucha externa. El secreto es el cambio interno de estado.
+    #         Moverte, en tu mente, del estado de carencia al estado de posesión. Sentir la textura de la realidad que deseas
+    #         hasta que sea tan natural que ya no la busques, porque sabes que ya la tienes. Y cuando esa certeza interna hace
+    #         clic, el mundo exterior no tiene más remedio que reorganizarse para reflejar tu nueva verdad. E inevitablemente,
+    #         vas a regresar a tu poder.
+    #     """
+    #
+    # LONG_CHAPTER_2 = """
+    #         Imagina por un momento que no eres simplemente un cuerpo físico luchando en el espacio, sino una frecuencia vibratoria,
+    #         una extensión directa de la inteligencia infinita... Nunca has estado separado de la totalidad... Esa sensación de soledad
+    #         es solo una ilusión óptica de la mente, un olvido temporal de tu verdadera naturaleza ilimitada y eterna que siempre
+    #         está conectada a la fuente.
+    #
+    #         Entiende bien esto. El tiempo no es una línea recta hacia el futuro, es un vasto océano de posibilidades ocurriendo ahora mismo.
+    #         Tu deseo no está en un "mañana" lejano esperando ser alcanzado; está aquí, en una frecuencia paralela que aún no has
+    #         sintonizado. Al igual que una radio no crea la música, tú no "creas" tu realidad desde la nada, simplemente sintonizas
+    #         la versión de ti mismo que ya la está viviendo. La realidad física es solo el residuo de tus frecuencias pasadas.
+    #
+    #         Si sigues observando lo que te falta, estás perpetuando la escasez. La realidad es arcilla fresca en manos de tu consciencia.
+    #         No puedes moldear una nueva figura si sigues aferrado a la forma antigua. Pregúntate: ¿Qué sentiría si mi deseo ya fuera un hecho?
+    #         El universo no entiende de súplicas, entiende de resonancia. Si vibras en "necesidad", atraerás más necesidad.
+    #         Si vibras en "gratitud", atraerás motivos infinitos para agradecer.
+    #
+    #         Así pues, la maestría no reside en manipular el mundo externo, sino en conquistar tu diálogo interno. Se trata de
+    #         habitar el estado del deseo cumplido con tanta convicción que la evidencia física se vuelva irrelevante. Camina con
+    #         la certeza absoluta de quien ya posee el tesoro. Cuando esa paz inquebrantable se instala en tu pecho, el mundo físico
+    #         no tiene otra opción que ceder y moldearse a tu nueva frecuencia... Inevitablemente, te convertirás en lo que sientes que eres.
+    #     """
+    #
+    # audio_data, sample_rate = engine.process_narration(
+    #     voice_key="CAMILA",
+    #     raw_text=LONG_CHAPTER_2
+    # )
+    #
+    # if audio_data is not None:
+    #     output_path = "output_camila_optimized.wav"
+    #     sf.write(output_path, audio_data, sample_rate, subtype="PCM_16")
+    #     logger.success(f"🏆 Audio generated successfully: {output_path}")
+    # else:
+    #     logger.error("❌ Audio generation failed.")
 
-            Escucha bien esto. No eres una gota en el océano, eres el océano entero en una gota. Tu imaginación no es un estado
-            de fantasía o ilusión, es la verdadera realidad esperando ser reconocida. Cuando cierras los ojos y asumes el
-            sentimiento de tu deseo cumplido, no estás "fingiendo", estás accediendo a la cuarta dimensión, al mundo de las
-            causas, donde todo ya existe. Lo que ves afuera, en tu mundo físico, es simplemente una pantalla retrasada, un
-            eco de lo que fuiste ayer, de lo que pensaste ayer.
+    # 2. CARGAR TU ENTRENAMIENTO (El archivo .ckpt que bajaste)
+    # Reemplaza con la ruta real de tu archivo
+    checkpoint_camila = "/workspace/fish-speech/results/camila_voice_v1_stable/checkpoints/step_000000500.ckpt"
 
-            Si tu realidad actual no te gusta, deja de pelear con la pantalla. No puedes peinar tu reflejo en el espejo,
-            tienes que peinarte tú. Debes cambiar la concepción que tienes de ti mismo. Pregúntate: ¿Quién soy yo ahora?
-            Si la respuesta no es "Soy próspero", "Soy amado", "Soy saludable", entonces estás usando tu poder divino en tu
-            contra. El universo no te juzga, simplemente te dice "SÍ". Si dices "estoy arruinado", el universo dice "SÍ, lo estás".
-            Si dices "Soy abundante", el universo dice "SÍ, lo eres".
+    if engine.apply_lora(checkpoint_camila):
 
-            Por lo tanto, el secreto no es el esfuerzo físico ni la lucha externa. El secreto es el cambio interno de estado.
-            Moverte, en tu mente, del estado de carencia al estado de posesión. Sentir la textura de la realidad que deseas
-            hasta que sea tan natural que ya no la busques, porque sabes que ya la tienes. Y cuando esa certeza interna hace
-            clic, el mundo exterior no tiene más remedio que reorganizarse para reflejar tu nueva verdad. E inevitablemente,
-            vas a regresar a tu poder.
-        """
+        # 3. GENERACIÓN SIMPLIFICADA (Solo pasas el texto)
+        texto_a_decir = """
+                Hola, soy Camila. Esta es una prueba usando mi entrenamiento personalizado.
+                Como puedes ver, ahora el código es mucho más limpio. Solo me pasas el texto
+                y yo me encargo de sonar exactamente como tú esperas.
+            """
 
-    LONG_CHAPTER_2 = """
-            Imagina por un momento que no eres simplemente un cuerpo físico luchando en el espacio, sino una frecuencia vibratoria, 
-            una extensión directa de la inteligencia infinita... Nunca has estado separado de la totalidad... Esa sensación de soledad 
-            es solo una ilusión óptica de la mente, un olvido temporal de tu verdadera naturaleza ilimitada y eterna que siempre 
-            está conectada a la fuente.
+        audio, sr = engine.speak_camila(texto_a_decir)
 
-            Entiende bien esto. El tiempo no es una línea recta hacia el futuro, es un vasto océano de posibilidades ocurriendo ahora mismo. 
-            Tu deseo no está en un "mañana" lejano esperando ser alcanzado; está aquí, en una frecuencia paralela que aún no has 
-            sintonizado. Al igual que una radio no crea la música, tú no "creas" tu realidad desde la nada, simplemente sintonizas 
-            la versión de ti mismo que ya la está viviendo. La realidad física es solo el residuo de tus frecuencias pasadas.
-
-            Si sigues observando lo que te falta, estás perpetuando la escasez. La realidad es arcilla fresca en manos de tu consciencia. 
-            No puedes moldear una nueva figura si sigues aferrado a la forma antigua. Pregúntate: ¿Qué sentiría si mi deseo ya fuera un hecho? 
-            El universo no entiende de súplicas, entiende de resonancia. Si vibras en "necesidad", atraerás más necesidad. 
-            Si vibras en "gratitud", atraerás motivos infinitos para agradecer.
-
-            Así pues, la maestría no reside en manipular el mundo externo, sino en conquistar tu diálogo interno. Se trata de 
-            habitar el estado del deseo cumplido con tanta convicción que la evidencia física se vuelva irrelevante. Camina con 
-            la certeza absoluta de quien ya posee el tesoro. Cuando esa paz inquebrantable se instala en tu pecho, el mundo físico 
-            no tiene otra opción que ceder y moldearse a tu nueva frecuencia... Inevitablemente, te convertirás en lo que sientes que eres.
-        """
-
-    audio_data, sample_rate = engine.process_narration(
-        voice_key="CAMILA",
-        raw_text=LONG_CHAPTER_2
-    )
-
-    if audio_data is not None:
-        output_path = "output_camila_optimized.wav"
-        sf.write(output_path, audio_data, sample_rate, subtype="PCM_16")
-        logger.success(f"🏆 Audio generated successfully: {output_path}")
+        # 4. Guardar el resultado
+        if audio is not None:
+            output_name = "camila_trained_simple_test.wav"
+            sf.write(output_name, audio, sr)
+            logger.success(f"🏆 ¡Listo! Audio generado en: {output_name}")
     else:
-        logger.error("❌ Audio generation failed.")
+        logger.error("No se pudo aplicar el entrenamiento, revisa la ruta del .ckpt")
+
+
