@@ -33,7 +33,6 @@ class FishTrainer:
             print(f"{Fore.RED}❌ Base model weights NOT found.")
             sys.exit(1)
 
-
     def train(self):
         import torch
         import os
@@ -47,7 +46,7 @@ class FishTrainer:
         torch.cuda.empty_cache()
 
         # 1. Matamos cualquier proceso previo para limpiar la 4090
-        # os.system("pkill -9 python")
+        os.system("pkill -9 python")
 
         # DEBUG: Verificamos dónde estamos y persistencia
         print(f"🚀 Iniciando entrenamiento directo...")
@@ -83,18 +82,19 @@ class FishTrainer:
             "++trainer.precision=bf16-mixed",
             "++trainer.max_steps=5000",
 
-            # --- GUARDADO CORREGIDO ---
-            # 1. Directorio EXPLÍCITO persistente
+            # --- GUARDADO CORREGIDO (SINTAXIS HYDRA VÁLIDA) ---
             f"trainer.default_root_dir={project_path}",
 
-            # 2. Callback SIMPLIFICADO que SIEMPRE guarda (sin monitor problemático)
+            # Callback que SIEMPRE guarda (sin monitor problemático)
             "++callbacks.model_checkpoint.every_n_train_steps=250",
-            "++callbacks.model_checkpoint.save_top_k=-1",  # Guarda TODOS cada 250 steps
-            "++callbacks.model_checkpoint.filename='{epoch}-{step}-{train_loss:.2f}'",
+            "++callbacks.model_checkpoint.save_top_k=-1",
+            "++callbacks.model_checkpoint.filename=epoch={epoch}-step={step}-loss={train_loss:.2f}",
+
+            # Val check
             "++trainer.val_check_interval=250",
 
-            # 3. Logs explícitos también en el mismo directorio
-            f"++logger[0].save_dir={project_path}",
+            # Logs también en el mismo directorio (SIN corchetes)
+            f"logger[0].save_dir={project_path}",
         ]
 
         env = os.environ.copy()
