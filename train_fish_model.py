@@ -40,7 +40,6 @@ class FishTrainer:
         import sys
 
         # Limpieza agresiva de procesos fantasma
-        os.system("pkill -9 python")
         torch.cuda.empty_cache()
 
         print(f"🚀 VOLVIENDO A LA VELOCIDAD DE CRUCERO: 1.15 it/s")
