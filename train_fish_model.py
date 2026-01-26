@@ -35,15 +35,14 @@ class FishTrainer:
 
     def train(self):
         import torch, os, subprocess, sys
+
         torch.cuda.empty_cache()
 
         abs_root = "/workspace/fish-speech/results/camila_voice_v1_stable"
         ckpt_dir = f"{abs_root}/checkpoints"
-        os.makedirs(abs_root, exist_ok=True)
         os.makedirs(ckpt_dir, exist_ok=True)
 
-        print("🚀 MODO 'BALA': 1.15 it/s + Saltando validación")
-        print(f"📁 Guardando checkpoints en: {ckpt_dir}")
+        print("🚀 MODO CORREGIDO: 1.15 it/s | Guardado cada 10 steps (≈160 batches)")
 
         cmd = [
             sys.executable, str(self.train_script),
@@ -54,30 +53,25 @@ class FishTrainer:
             f"pretrained_ckpt_path={str(self.base_model_path)}",
             "+lora@model.model.lora_config=r_8_alpha_16",
 
-            # PARÁMETROS DE VELOCIDAD
+            # --- VELOCIDAD ---
             "data.batch_size=1",
             "trainer.devices=1",
-            "++trainer.strategy=auto",
             "++trainer.accumulate_grad_batches=16",
             "++trainer.precision=bf16-mixed",
             "++trainer.max_steps=5000",
 
-            # SIN VALIDACIÓN
+            # --- SIN VALIDACIÓN ---
             "++trainer.val_check_interval=1000",
             "++trainer.limit_val_batches=0",
             "++trainer.num_sanity_val_steps=0",
 
-            # ROOT
+            # --- CHECKPOINTS (GARANTIZADOS) ---
             f"trainer.default_root_dir={abs_root}",
-
-            # ✅ CHECKPOINTS "A PRUEBA DE BALAS"
-            "++trainer.enable_checkpointing=true",
-            f"++callbacks.model_checkpoint.dirpath={ckpt_dir}",
-            "++callbacks.model_checkpoint.filename=step_%09d",
-            "++callbacks.model_checkpoint.monitor=null",
             "++callbacks.model_checkpoint.save_last=true",
             "++callbacks.model_checkpoint.save_top_k=-1",
-            "++callbacks.model_checkpoint.every_n_train_steps=250",
+            "++callbacks.model_checkpoint.every_n_train_steps=10",
+            f"++callbacks.model_checkpoint.dirpath={ckpt_dir}",
+            "++callbacks.model_checkpoint.filename=step_{step:09d}",
             "++callbacks.model_checkpoint.auto_insert_metric_name=false",
         ]
 
@@ -87,17 +81,9 @@ class FishTrainer:
 
         try:
             subprocess.check_call(cmd, cwd=str(self.root), env=env)
-
-            print("\n✅ VERIFICANDO CHECKPOINTS:")
-            os.system(f"ls -lah {ckpt_dir}")
-            os.system(f"find {abs_root} -maxdepth 5 -name '*.ckpt' -print")
-
-            # (Opcional) también muestra logs de lightning si existen
-            if os.path.isdir(f"{abs_root}/lightning_logs"):
-                os.system(f"ls -la {abs_root}/lightning_logs/")
-
         except Exception as e:
             print(f"\n❌ Error: {e}")
+
 
 if __name__ == "__main__":
     PROJECT_ROOT = Path("/workspace/fish-speech")
