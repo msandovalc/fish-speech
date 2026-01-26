@@ -37,33 +37,32 @@ class FishTrainer:
         import torch, os, subprocess, sys
         torch.cuda.empty_cache()
 
-        # Definimos la ruta de resultados exacta que SÍ vimos que funciona para los logs
         abs_root = "/workspace/fish-speech/results/camila_voice_v1_stable"
 
-        print(f"🚀 MODO SUPERVIVENCIA: Sin validación, solo entrenamiento y guardado.")
+        print(f"🚀 MODO 'BALA': 1.15 it/s + Saltando validación (Legalmente)")
 
         cmd = [
             sys.executable, str(self.train_script),
             "--config-name", "text2semantic_finetune",
             f"project={self.project_name}",
             f"train_dataset.proto_files=['{str(self.data_protos)}']",
-            f"val_dataset.proto_files=['{str(self.data_protos)}']",  # Se queda por estructura, pero no se usará
+            f"val_dataset.proto_files=['{str(self.data_protos)}']",
             f"pretrained_ckpt_path={str(self.base_model_path)}",
             "+lora@model.model.lora_config=r_8_alpha_16",
 
-            # --- PARÁMETROS DE VELOCIDAD ---
+            # --- PARÁMETROS DE VELOCIDAD ÓPTIMA ---
             "data.batch_size=1",
             "trainer.devices=1",
             "++trainer.accumulate_grad_batches=16",
             "++trainer.precision=bf16-mixed",
             "++trainer.max_steps=5000",
 
-            # --- ELIMINAMOS LA VALIDACIÓN QUE BLOQUEA EL GUARDADO ---
-            "++trainer.val_check_interval=0",  # Desactiva validación por intervalo
-            "++trainer.check_val_every_n_epoch=null",  # Desactiva validación por época
-            "++trainer.num_sanity_val_steps=0",  # Salta el test inicial
+            # --- EL FIX PARA EL ERROR DE DIVISIÓN POR CERO ---
+            "++trainer.val_check_interval=1000",  # Ponemos un número alto para que no moleste
+            "++trainer.limit_val_batches=0",  # <--- ESTA ES LA MAGIA: 0 datos para validar
+            "++trainer.num_sanity_val_steps=0",
 
-            # --- FORZAMOS EL GUARDADO POR PASOS PUROS ---
+            # --- GUARDADO FORZADO CADA 250 PASOS ---
             f"++trainer.default_root_dir={abs_root}",
             "++callbacks.model_checkpoint.every_n_train_steps=250",
             "++callbacks.model_checkpoint.save_top_k=-1",
@@ -76,7 +75,8 @@ class FishTrainer:
         try:
             subprocess.check_call(cmd, cwd=str(self.root), env=env)
         except Exception as e:
-            print(f"\n❌ Fallo en el motor: {e}")
+            print(f"\n❌ Error: {e}")
+
 
 if __name__ == "__main__":
     PROJECT_ROOT = Path("/workspace/fish-speech")
