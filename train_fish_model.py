@@ -38,42 +38,31 @@ class FishTrainer:
         import os
         import subprocess
         import sys
-        import gc
-        from omegaconf.listconfig import ListConfig
-        from omegaconf.dictconfig import DictConfig
 
-        # 1. Autorización y limpieza de la RTX 4090
-        torch.serialization.add_safe_globals([ListConfig, DictConfig])
-        # os.system("pkill -9 python")
+        # Limpieza necesaria para la 4090
         torch.cuda.empty_cache()
-        gc.collect()
 
-        print(f"🚀 Iniciando entrenamiento directo...")
-        print(f"📍 Ruta de raíz: /workspace/fish-speech/results/camila_voice_v1_stable")
+        print(f"🚀 Volviendo a la configuración original (Modo Estable)...")
 
         cmd = [
             sys.executable, str(self.train_script),
             "--config-name", "text2semantic_finetune",
-            "project=camila_voice_v1_stable",
+            f"project={self.project_name}",
             f"train_dataset.proto_files=['{str(self.data_protos)}']",
             f"val_dataset.proto_files=['{str(self.data_protos)}']",
             f"pretrained_ckpt_path={str(self.base_model_path)}",
 
-            # LoRA Config
+            # LoRA es necesario
             "+lora@model.model.lora_config=r_8_alpha_16",
 
-            # Ajustes de rendimiento (Batch 1 para evitar OOM)
+            # Solo ajustes de hardware y tiempo total
             "data.batch_size=1",
             "trainer.devices=1",
             "++trainer.accumulate_grad_batches=16",
             "++trainer.precision=bf16-mixed",
-            "++trainer.max_steps=5000",
 
-            # --- LAS LÍNEAS QUE ASEGURAN EL GUARDADO ---
-            "trainer.default_root_dir=/workspace/fish-speech/results/camila_voice_v1_stable",
-            "++callbacks.model_checkpoint.save_top_k=-1",
-            "++callbacks.model_checkpoint.every_n_train_steps=250",
-            "++callbacks.model_checkpoint.monitor=null",
+            # Objetivo de pasos
+            "++trainer.max_steps=5000",
             "++trainer.val_check_interval=250",
         ]
 
@@ -81,6 +70,7 @@ class FishTrainer:
         env["PYTHONPATH"] = f"{str(self.root)}{os.pathsep}{env.get('PYTHONPATH', '')}"
 
         try:
+            # Ejecutamos desde la raíz del proyecto para que las rutas relativas funcionen
             subprocess.check_call(cmd, cwd=str(self.root), env=env)
         except Exception as e:
             print(f"\n❌ Error: {e}")
