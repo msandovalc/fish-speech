@@ -34,21 +34,18 @@ class FishTrainer:
             sys.exit(1)
 
     def train(self):
-        # --- FIX PARA PYTORCH 2.6 (Seguridad de carga) ---
         import torch
         from omegaconf.listconfig import ListConfig
         from omegaconf.dictconfig import DictConfig
         torch.serialization.add_safe_globals([ListConfig, DictConfig])
-        # --------------------------------------------------
 
         torch.cuda.empty_cache()
 
-        # Definimos la ruta absoluta para los checkpoints
-        abs_ckpt_dir = f"{self.root}/results/{self.project_name}/checkpoints"
+        # --- RUTA DE HIERRO ---
+        abs_ckpt_dir = "/workspace/camila_entrenamiento_final"
 
-        print(f"{Fore.MAGENTA}🔥 Starting Stable LoRA (Batch 2 - RTX 4090)...")
-        print(f"{Fore.MAGENTA}🔥 Configuración de Experto: Objetivo 5000 Pasos...")
-        print(f"{Fore.CYAN}📍 Checkpoints se guardarán en: {abs_ckpt_dir}")
+        print(f"🔥 MODO RESCATE ACTIVADO")
+        print(f"📍 Forzando guardado en: {abs_ckpt_dir}")
 
         cmd = [
             sys.executable, str(self.train_script),
@@ -59,43 +56,32 @@ class FishTrainer:
             f"pretrained_ckpt_path={str(self.base_model_path)}",
             f"trainer.default_root_dir={self.root}/results/{self.project_name}",
 
-            # --- LORA ---
             "+lora@model.model.lora_config=r_8_alpha_16",
-
-            # --- AJUSTES DE PODER ---
             "data.batch_size=2",
             "trainer.devices=1",
             "++trainer.accumulate_grad_batches=8",
             "++trainer.precision=bf16-mixed",
-
-            # --- CONTROL DE TIEMPO ---
             "++trainer.max_steps=5000",
             "++trainer.limit_train_batches=500",
             "++trainer.max_epochs=-1",
 
-            # --- FIX CRÍTICO DE GUARDADO (Checkpoints cada 250 pasos) ---
+            # --- SOBREESCRITURA TOTAL: CERO CONDICIONES ---
             f"++callbacks.model_checkpoint.dirpath={abs_ckpt_dir}",
             "++callbacks.model_checkpoint.every_n_train_steps=250",
-            "++callbacks.model_checkpoint.monitor=train/loss",
-            "++callbacks.model_checkpoint.mode=min",
-            "++callbacks.model_checkpoint.save_top_k=5",
-            "++callbacks.model_checkpoint.auto_insert_metric_name=False",
-
-            # Validación
+            "++callbacks.model_checkpoint.save_top_k=-1",  # Guarda todos los archivos
+            "++callbacks.model_checkpoint.monitor=null",  # Desactivamos el monitor que falla
+            "++callbacks.model_checkpoint.save_last=True",
             "++trainer.val_check_interval=250",
-            "++trainer.limit_val_batches=1",
         ]
 
         env = os.environ.copy()
         env["PYTHONPATH"] = f"{str(self.root)}{os.pathsep}{env.get('PYTHONPATH', '')}"
-        env["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
 
         try:
             subprocess.check_call(cmd, cwd=str(self.root), env=env)
             print(f"\n{Fore.GREEN}✨ ENTRENAMIENTO EXITOSO!")
         except Exception as e:
-            print(f"\n{Fore.RED}❌ El proceso se detuvo o falló. Revisa los logs arriba.")
-
+            print(f"\n{Fore.RED}❌ Error: {e}")
 
 if __name__ == "__main__":
     PROJECT_ROOT = Path("/workspace/fish-speech")
