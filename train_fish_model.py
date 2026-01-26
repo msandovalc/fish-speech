@@ -73,7 +73,7 @@ class FishTrainer:
             # ✅ CHECKPOINTS "A PRUEBA DE BALAS"
             "++trainer.enable_checkpointing=true",
             f"++callbacks.model_checkpoint.dirpath={ckpt_dir}",
-            "++callbacks.model_checkpoint.filename=step_{step:09d}",
+            "++callbacks.model_checkpoint.filename=step_%09d",
             "++callbacks.model_checkpoint.monitor=null",
             "++callbacks.model_checkpoint.save_last=true",
             "++callbacks.model_checkpoint.save_top_k=-1",
