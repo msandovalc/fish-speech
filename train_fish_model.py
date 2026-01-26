@@ -44,7 +44,7 @@ class FishTrainer:
 
         # 1. Autorización de seguridad y limpieza profunda
         torch.serialization.add_safe_globals([ListConfig, DictConfig])
-        os.system("pkill -9 python")  # Limpieza total de procesos fantasma
+        # os.system("pkill -9 python")  # Limpieza total de procesos fantasma
         torch.cuda.empty_cache()
         gc.collect()
 
