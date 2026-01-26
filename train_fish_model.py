@@ -46,23 +46,10 @@ class FishTrainer:
         torch.cuda.empty_cache()
 
         # 1. Matamos cualquier proceso previo para limpiar la 4090
-        # os.system("pkill -9 python")
+        os.system("pkill -9 python")
 
-        # DEBUG: Verificamos dónde estamos y persistencia
         print(f"🚀 Iniciando entrenamiento directo...")
-        print(f"📍 CWD actual: {os.getcwd()}")
-        print(f"📍 self.root: {str(self.root)}")
-        print(f"📍 self.project_name: {self.project_name}")
-
-        # Configuramos directorio de resultados EXPLÍCITO en /workspace (persistente)
-        results_dir = "/workspace/fish-speech/results"
-        os.makedirs(results_dir, exist_ok=True)
-        project_path = os.path.join(results_dir, self.project_name)
-        os.makedirs(project_path, exist_ok=True)
-
-        print(f"📍 Resultados se guardarán en: {project_path}/checkpoints/")
-        print(f"📍 Verificando persistencia...")
-        print(f"📍 df -h: {os.popen('df -h /workspace').read()}")
+        print(f"📍 Los archivos aparecerán en: fish-speech/results/camila_voice_v1_stable/checkpoints/")
 
         cmd = [
             sys.executable, str(self.train_script),
@@ -82,35 +69,22 @@ class FishTrainer:
             "++trainer.precision=bf16-mixed",
             "++trainer.max_steps=5000",
 
-            # --- GUARDADO CORREGIDO (SINTAXIS HYDRA VÁLIDA) ---
-            f"trainer.default_root_dir={project_path}",
-
-            # Callback que SIEMPRE guarda (sin monitor problemático)
+            # --- EL GUARDADO SEGÚN EL LOG ---
+            # Usamos 'train/loss' porque ya vimos en tu pantalla que el sistema la reporta.
             "++callbacks.model_checkpoint.every_n_train_steps=250",
-            "++callbacks.model_checkpoint.save_top_k=-1",
-            "++callbacks.model_checkpoint.filename=epoch={epoch}-step={step}-loss={train_loss:.2f}",
-
-            # Val check
+            "++callbacks.model_checkpoint.monitor=train/loss",
+            "++callbacks.model_checkpoint.mode=min",
+            "++callbacks.model_checkpoint.save_top_k=10",
             "++trainer.val_check_interval=250",
-
-            # Logs también en el mismo directorio (SIN corchetes)
-            f"logger[0].save_dir={project_path}",
         ]
 
         env = os.environ.copy()
         env["PYTHONPATH"] = f"{str(self.root)}{os.pathsep}{env.get('PYTHONPATH', '')}"
 
         try:
-            print("🔥 Ejecutando comando:", " ".join(cmd))
             subprocess.check_call(cmd, cwd=str(self.root), env=env)
-            print("✅ Entrenamiento completado. Revisa:")
-            print(f"   ls -la {project_path}/checkpoints/")
-            os.system(f"ls -la {project_path}/checkpoints/")
         except Exception as e:
             print(f"\n❌ Error: {e}")
-            import traceback
-            traceback.print_exc()
-
 
 if __name__ == "__main__":
     PROJECT_ROOT = Path("/workspace/fish-speech")
