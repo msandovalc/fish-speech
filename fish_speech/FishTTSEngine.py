@@ -283,18 +283,27 @@ class FishTTSEngine:
                     if attempt > 0:
                         set_seed(seed_base + i + attempt * 100)
 
+                    # req = ServeTTSRequest(
+                    #     text=processed_text,
+                    #     references=[ServeReferenceAudio(audio=audio_bytes, text=params["prompt"])],
+                    #     use_memory_cache="on",
+                    #     chunk_length=params['chunk'],  # Use chunk size from preset (e.g., 300)
+                    #     max_new_tokens=1024,  # Large buffer to prevent cuts
+                    #     top_p=params['top_p'],
+                    #     temperature=params['temp'],
+                    #     repetition_penalty=params['penalty'],
+                    #     format="wav",
+                    #     prompt_text=[hist_text] if hist_text is not None else None,
+                    #     prompt_tokens=[hist_tokens] if hist_tokens is not None else None,
+                    # )
+
                     req = ServeTTSRequest(
                         text=processed_text,
-                        references=[ServeReferenceAudio(audio=audio_bytes, text=params["prompt"])],
+                        references=[ServeReferenceAudio(
+                            audio=audio_bytes,
+                            text=params["prompt"]
+                        )],
                         use_memory_cache="on",
-                        chunk_length=params['chunk'],  # Use chunk size from preset (e.g., 300)
-                        max_new_tokens=1024,  # Large buffer to prevent cuts
-                        top_p=params['top_p'],
-                        temperature=params['temp'],
-                        repetition_penalty=params['penalty'],
-                        format="wav",
-                        prompt_text=[hist_text] if hist_text is not None else None,
-                        prompt_tokens=[hist_tokens] if hist_tokens is not None else None,
                     )
 
                     final_res = None
@@ -463,87 +472,87 @@ class FishTTSEngine:
 if __name__ == "__main__":
     engine = FishTTSEngine()
 
-    # # TEXTO DE PRUEBA
-    # LONG_CHAPTER = """
-    #         Todos venimos de un mismo campo fuente, de una misma gran energía, de un mismo Dios, de un mismo
-    #         universo, como le quieras llamar. Todos somos parte de eso. Nacemos y nos convertimos en esto por un ratito,
-    #         muy chiquito, muy chiquitito, que creemos que es muy largo y se nos olvida que vamos a regresar a ese lugar
-    #         de donde venimos.
-    #
-    #         Escucha bien esto. No eres una gota en el océano, eres el océano entero en una gota. Tu imaginación no es un estado
-    #         de fantasía o ilusión, es la verdadera realidad esperando ser reconocida. Cuando cierras los ojos y asumes el
-    #         sentimiento de tu deseo cumplido, no estás "fingiendo", estás accediendo a la cuarta dimensión, al mundo de las
-    #         causas, donde todo ya existe. Lo que ves afuera, en tu mundo físico, es simplemente una pantalla retrasada, un
-    #         eco de lo que fuiste ayer, de lo que pensaste ayer.
-    #
-    #         Si tu realidad actual no te gusta, deja de pelear con la pantalla. No puedes peinar tu reflejo en el espejo,
-    #         tienes que peinarte tú. Debes cambiar la concepción que tienes de ti mismo. Pregúntate: ¿Quién soy yo ahora?
-    #         Si la respuesta no es "Soy próspero", "Soy amado", "Soy saludable", entonces estás usando tu poder divino en tu
-    #         contra. El universo no te juzga, simplemente te dice "SÍ". Si dices "estoy arruinado", el universo dice "SÍ, lo estás".
-    #         Si dices "Soy abundante", el universo dice "SÍ, lo eres".
-    #
-    #         Por lo tanto, el secreto no es el esfuerzo físico ni la lucha externa. El secreto es el cambio interno de estado.
-    #         Moverte, en tu mente, del estado de carencia al estado de posesión. Sentir la textura de la realidad que deseas
-    #         hasta que sea tan natural que ya no la busques, porque sabes que ya la tienes. Y cuando esa certeza interna hace
-    #         clic, el mundo exterior no tiene más remedio que reorganizarse para reflejar tu nueva verdad. E inevitablemente,
-    #         vas a regresar a tu poder.
-    #     """
-    #
-    # LONG_CHAPTER_2 = """
-    #         Imagina por un momento que no eres simplemente un cuerpo físico luchando en el espacio, sino una frecuencia vibratoria,
-    #         una extensión directa de la inteligencia infinita... Nunca has estado separado de la totalidad... Esa sensación de soledad
-    #         es solo una ilusión óptica de la mente, un olvido temporal de tu verdadera naturaleza ilimitada y eterna que siempre
-    #         está conectada a la fuente.
-    #
-    #         Entiende bien esto. El tiempo no es una línea recta hacia el futuro, es un vasto océano de posibilidades ocurriendo ahora mismo.
-    #         Tu deseo no está en un "mañana" lejano esperando ser alcanzado; está aquí, en una frecuencia paralela que aún no has
-    #         sintonizado. Al igual que una radio no crea la música, tú no "creas" tu realidad desde la nada, simplemente sintonizas
-    #         la versión de ti mismo que ya la está viviendo. La realidad física es solo el residuo de tus frecuencias pasadas.
-    #
-    #         Si sigues observando lo que te falta, estás perpetuando la escasez. La realidad es arcilla fresca en manos de tu consciencia.
-    #         No puedes moldear una nueva figura si sigues aferrado a la forma antigua. Pregúntate: ¿Qué sentiría si mi deseo ya fuera un hecho?
-    #         El universo no entiende de súplicas, entiende de resonancia. Si vibras en "necesidad", atraerás más necesidad.
-    #         Si vibras en "gratitud", atraerás motivos infinitos para agradecer.
-    #
-    #         Así pues, la maestría no reside en manipular el mundo externo, sino en conquistar tu diálogo interno. Se trata de
-    #         habitar el estado del deseo cumplido con tanta convicción que la evidencia física se vuelva irrelevante. Camina con
-    #         la certeza absoluta de quien ya posee el tesoro. Cuando esa paz inquebrantable se instala en tu pecho, el mundo físico
-    #         no tiene otra opción que ceder y moldearse a tu nueva frecuencia... Inevitablemente, te convertirás en lo que sientes que eres.
-    #     """
-    #
-    # audio_data, sample_rate = engine.process_narration(
-    #     voice_key="CAMILA",
-    #     raw_text=LONG_CHAPTER_2
-    # )
-    #
-    # if audio_data is not None:
-    #     output_path = "output_camila_optimized.wav"
-    #     sf.write(output_path, audio_data, sample_rate, subtype="PCM_16")
-    #     logger.success(f"🏆 Audio generated successfully: {output_path}")
-    # else:
-    #     logger.error("❌ Audio generation failed.")
+    # TEXTO DE PRUEBA
+    LONG_CHAPTER = """
+            Todos venimos de un mismo campo fuente, de una misma gran energía, de un mismo Dios, de un mismo
+            universo, como le quieras llamar. Todos somos parte de eso. Nacemos y nos convertimos en esto por un ratito,
+            muy chiquito, muy chiquitito, que creemos que es muy largo y se nos olvida que vamos a regresar a ese lugar
+            de donde venimos.
 
-    # 2. CARGAR TU ENTRENAMIENTO (El archivo .ckpt que bajaste)
-    # Reemplaza con la ruta real de tu archivo
-    checkpoint_camila = "/workspace/fish-speech/results/camila_voice_v1_stable/checkpoints/step_000000500.ckpt"
+            Escucha bien esto. No eres una gota en el océano, eres el océano entero en una gota. Tu imaginación no es un estado
+            de fantasía o ilusión, es la verdadera realidad esperando ser reconocida. Cuando cierras los ojos y asumes el
+            sentimiento de tu deseo cumplido, no estás "fingiendo", estás accediendo a la cuarta dimensión, al mundo de las
+            causas, donde todo ya existe. Lo que ves afuera, en tu mundo físico, es simplemente una pantalla retrasada, un
+            eco de lo que fuiste ayer, de lo que pensaste ayer.
 
-    if engine.apply_lora(checkpoint_camila):
+            Si tu realidad actual no te gusta, deja de pelear con la pantalla. No puedes peinar tu reflejo en el espejo,
+            tienes que peinarte tú. Debes cambiar la concepción que tienes de ti mismo. Pregúntate: ¿Quién soy yo ahora?
+            Si la respuesta no es "Soy próspero", "Soy amado", "Soy saludable", entonces estás usando tu poder divino en tu
+            contra. El universo no te juzga, simplemente te dice "SÍ". Si dices "estoy arruinado", el universo dice "SÍ, lo estás".
+            Si dices "Soy abundante", el universo dice "SÍ, lo eres".
 
-        # 3. GENERACIÓN SIMPLIFICADA (Solo pasas el texto)
-        texto_a_decir = """
-                Hola, soy Camila. Esta es una prueba usando mi entrenamiento personalizado.
-                Como puedes ver, ahora el código es mucho más limpio. Solo me pasas el texto
-                y yo me encargo de sonar exactamente como tú esperas.
-            """
+            Por lo tanto, el secreto no es el esfuerzo físico ni la lucha externa. El secreto es el cambio interno de estado.
+            Moverte, en tu mente, del estado de carencia al estado de posesión. Sentir la textura de la realidad que deseas
+            hasta que sea tan natural que ya no la busques, porque sabes que ya la tienes. Y cuando esa certeza interna hace
+            clic, el mundo exterior no tiene más remedio que reorganizarse para reflejar tu nueva verdad. E inevitablemente,
+            vas a regresar a tu poder.
+        """
 
-        audio, sr = engine.speak_camila(texto_a_decir)
+    LONG_CHAPTER_2 = """
+            Imagina por un momento que no eres simplemente un cuerpo físico luchando en el espacio, sino una frecuencia vibratoria,
+            una extensión directa de la inteligencia infinita... Nunca has estado separado de la totalidad... Esa sensación de soledad
+            es solo una ilusión óptica de la mente, un olvido temporal de tu verdadera naturaleza ilimitada y eterna que siempre
+            está conectada a la fuente.
 
-        # 4. Guardar el resultado
-        if audio is not None:
-            output_name = "camila_trained_simple_test.wav"
-            sf.write(output_name, audio, sr)
-            logger.success(f"🏆 ¡Listo! Audio generado en: {output_name}")
+            Entiende bien esto. El tiempo no es una línea recta hacia el futuro, es un vasto océano de posibilidades ocurriendo ahora mismo.
+            Tu deseo no está en un "mañana" lejano esperando ser alcanzado; está aquí, en una frecuencia paralela que aún no has
+            sintonizado. Al igual que una radio no crea la música, tú no "creas" tu realidad desde la nada, simplemente sintonizas
+            la versión de ti mismo que ya la está viviendo. La realidad física es solo el residuo de tus frecuencias pasadas.
+
+            Si sigues observando lo que te falta, estás perpetuando la escasez. La realidad es arcilla fresca en manos de tu consciencia.
+            No puedes moldear una nueva figura si sigues aferrado a la forma antigua. Pregúntate: ¿Qué sentiría si mi deseo ya fuera un hecho?
+            El universo no entiende de súplicas, entiende de resonancia. Si vibras en "necesidad", atraerás más necesidad.
+            Si vibras en "gratitud", atraerás motivos infinitos para agradecer.
+
+            Así pues, la maestría no reside en manipular el mundo externo, sino en conquistar tu diálogo interno. Se trata de
+            habitar el estado del deseo cumplido con tanta convicción que la evidencia física se vuelva irrelevante. Camina con
+            la certeza absoluta de quien ya posee el tesoro. Cuando esa paz inquebrantable se instala en tu pecho, el mundo físico
+            no tiene otra opción que ceder y moldearse a tu nueva frecuencia... Inevitablemente, te convertirás en lo que sientes que eres.
+        """
+
+    audio_data, sample_rate = engine.process_narration(
+        voice_key="CAMILA",
+        raw_text=LONG_CHAPTER_2
+    )
+
+    if audio_data is not None:
+        output_path = "output_camila_optimized.wav"
+        sf.write(output_path, audio_data, sample_rate, subtype="PCM_16")
+        logger.success(f"🏆 Audio generated successfully: {output_path}")
     else:
-        logger.error("No se pudo aplicar el entrenamiento, revisa la ruta del .ckpt")
+        logger.error("❌ Audio generation failed.")
+
+    # # 2. CARGAR TU ENTRENAMIENTO (El archivo .ckpt que bajaste)
+    # # Reemplaza con la ruta real de tu archivo
+    # checkpoint_camila = "/workspace/fish-speech/results/camila_voice_v1_stable/checkpoints/step_000000500.ckpt"
+    #
+    # if engine.apply_lora(checkpoint_camila):
+    #
+    #     # 3. GENERACIÓN SIMPLIFICADA (Solo pasas el texto)
+    #     texto_a_decir = """
+    #             Hola, soy Camila. Esta es una prueba usando mi entrenamiento personalizado.
+    #             Como puedes ver, ahora el código es mucho más limpio. Solo me pasas el texto
+    #             y yo me encargo de sonar exactamente como tú esperas.
+    #         """
+    #
+    #     audio, sr = engine.speak_camila(texto_a_decir)
+    #
+    #     # 4. Guardar el resultado
+    #     if audio is not None:
+    #         output_name = "camila_trained_simple_test.wav"
+    #         sf.write(output_name, audio, sr)
+    #         logger.success(f"🏆 ¡Listo! Audio generado en: {output_name}")
+    # else:
+    #     logger.error("No se pudo aplicar el entrenamiento, revisa la ruta del .ckpt")
 
 
