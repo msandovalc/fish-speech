@@ -376,8 +376,8 @@ class FishTotalLab:
                 # --- Strategy: Initial Tag Injection Only ---
                 # Inject tags only on the first chunk to set the tone, then rely on context.
                 # If you prefer constant injection, remove the 'if i == 0 else chunk_text' logic.
-                #processed_text = f"{current_tags} {chunk_text}" if (i == 0 and current_tags) else chunk_text
-                processed_text = f"{chunk_text}"
+                processed_text = f"{current_tags} {chunk_text}" if (i == 0 and current_tags) else chunk_text
+                # processed_text = f"{chunk_text}"
 
                 # --- Auto-Retry Mechanism (The Judge) ---
                 max_retries = 3
