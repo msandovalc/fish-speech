@@ -94,7 +94,7 @@ VOICE_PRESETS = {
         es la verdad; pero, si tuviera la base de la realidad para razonar, de que el sol, centro del sistema solar, 
         no se mueve en ese sentido, sino que es la tierra la que se mueve, aunque la apariencia sea de que es el sol 
         el que se mueve, entonces el niño sabría que el mencionado movimiento del sol es una ilusión. """,
-        "style_tags": "(calm) (narrator) (deep voice)" #(deep voice)
+        "style_tags": "(calm)(narrator)(deep voice)" #(deep voice)
     }
     # "ROSA": {
     #     "temp": 0.65,
@@ -391,37 +391,37 @@ class FishTotalLab:
                     if attempt > 0:
                         set_seed(seed_base + i + attempt * 100)
 
-                    # req = ServeTTSRequest(
-                    #     text=processed_text,
-                    #     references=[ServeReferenceAudio(audio=audio_bytes,
-                    #                                     text=params["prompt"]
-                    #                                     )],
-                    #     use_memory_cache="on",
-                    #     chunk_length=params['chunk'],  # Use chunk size from preset (e.g., 300)
-                    #     max_new_tokens=1024,  # Large buffer to prevent cuts
-                    #     top_p=params['top_p'],
-                    #     temperature=params['temp'],
-                    #     repetition_penalty=params['penalty'],
-                    #     format="wav",
-                    #     prompt_text=[hist_text] if hist_text is not None else None,
-                    #     prompt_tokens=[hist_tokens] if hist_tokens is not None else None
-                    # )
-
                     req = ServeTTSRequest(
                         text=processed_text,
-                        references=[ServeReferenceAudio(
-                            audio=audio_bytes,
-                            text=params["prompt"]
-                        )],
-                        # Opcional: Si quieres que recuerde cachés anteriores para ir más rápido, déjalo "on".
-                        # El default es "off", pero "on" no afecta la calidad, solo la velocidad.
+                        references=[ServeReferenceAudio(audio=audio_bytes,
+                                                        text=params["prompt"]
+                                                        )],
                         use_memory_cache="on",
-
-                        # IMPORTANTE: Si estás pasando historial (contexto previo), déjalo.
-                        # Si quieres una prueba 100% limpia desde cero, borra estas dos líneas también.
-                        # prompt_text=[hist_text] if hist_text is not None else None,
-                        # prompt_tokens=[hist_tokens] if hist_tokens is not None else None
+                        chunk_length=params['chunk'],  # Use chunk size from preset (e.g., 300)
+                        max_new_tokens=1024,  # Large buffer to prevent cuts
+                        top_p=params['top_p'],
+                        temperature=params['temp'],
+                        repetition_penalty=params['penalty'],
+                        format="wav",
+                        prompt_text=[hist_text] if hist_text is not None else None,
+                        prompt_tokens=[hist_tokens] if hist_tokens is not None else None
                     )
+
+                    # req = ServeTTSRequest(
+                    #     text=processed_text,
+                    #     references=[ServeReferenceAudio(
+                    #         audio=audio_bytes,
+                    #         text=params["prompt"]
+                    #     )],
+                    #     # Opcional: Si quieres que recuerde cachés anteriores para ir más rápido, déjalo "on".
+                    #     # El default es "off", pero "on" no afecta la calidad, solo la velocidad.
+                    #     use_memory_cache="on",
+                    #
+                    #     # IMPORTANTE: Si estás pasando historial (contexto previo), déjalo.
+                    #     # Si quieres una prueba 100% limpia desde cero, borra estas dos líneas también.
+                    #     # prompt_text=[hist_text] if hist_text is not None else None,
+                    #     # prompt_tokens=[hist_tokens] if hist_tokens is not None else None
+                    # )
 
                     final_res = None
                     for res in self.engine.inference(req):
