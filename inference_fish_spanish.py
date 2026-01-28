@@ -379,8 +379,8 @@ class FishTotalLab:
                 # --- Strategy: Initial Tag Injection Only ---
                 # Inject tags only on the first chunk to set the tone, then rely on context.
                 # If you prefer constant injection, remove the 'if i == 0 else chunk_text' logic.
-                processed_text = f"{current_tags} {chunk_text}" if (i == 0 and current_tags) else chunk_text
-                #processed_text = f"{chunk_text}"
+                #processed_text = f"{current_tags} {chunk_text}" if (i == 0 and current_tags) else chunk_text
+                processed_text = f"{chunk_text}"
 
                 # --- Auto-Retry Mechanism (The Judge) ---
                 max_retries = 3
@@ -391,37 +391,30 @@ class FishTotalLab:
                     if attempt > 0:
                         set_seed(seed_base + i + attempt * 100)
 
-                    req = ServeTTSRequest(
-                        text=processed_text,
-                        references=[ServeReferenceAudio(audio=audio_bytes,
-                                                        text=params["prompt"]
-                                                        )],
-                        use_memory_cache="on",
-                        chunk_length=params['chunk'],  # Use chunk size from preset (e.g., 300)
-                        max_new_tokens=1024,  # Large buffer to prevent cuts
-                        top_p=params['top_p'],
-                        temperature=params['temp'],
-                        repetition_penalty=params['penalty'],
-                        format="wav",
-                        prompt_text=[hist_text] if hist_text is not None else None,
-                        prompt_tokens=[hist_tokens] if hist_tokens is not None else None
-                    )
-
                     # req = ServeTTSRequest(
                     #     text=processed_text,
-                    #     references=[ServeReferenceAudio(
-                    #         audio=audio_bytes,
-                    #         text=params["prompt"]
-                    #     )],
-                    #     # Opcional: Si quieres que recuerde cachés anteriores para ir más rápido, déjalo "on".
-                    #     # El default es "off", pero "on" no afecta la calidad, solo la velocidad.
+                    #     references=[ServeReferenceAudio(audio=audio_bytes,
+                    #                                     text=params["prompt"]
+                    #                                     )],
                     #     use_memory_cache="on",
-                    #
-                    #     # IMPORTANTE: Si estás pasando historial (contexto previo), déjalo.
-                    #     # Si quieres una prueba 100% limpia desde cero, borra estas dos líneas también.
-                    #     # prompt_text=[hist_text] if hist_text is not None else None,
-                    #     # prompt_tokens=[hist_tokens] if hist_tokens is not None else None
+                    #     chunk_length=params['chunk'],  # Use chunk size from preset (e.g., 300)
+                    #     max_new_tokens=1024,  # Large buffer to prevent cuts
+                    #     top_p=params['top_p'],
+                    #     temperature=params['temp'],
+                    #     repetition_penalty=params['penalty'],
+                    #     format="wav",
+                    #     prompt_text=[hist_text] if hist_text is not None else None,
+                    #     prompt_tokens=[hist_tokens] if hist_tokens is not None else None
                     # )
+
+                    req = ServeTTSRequest(
+                        text=processed_text,
+                        references=[ServeReferenceAudio(
+                            audio=audio_bytes,
+                            text=params["prompt"]
+                        )],
+                        use_memory_cache="on",
+                    )
 
                     final_res = None
                     for res in self.engine.inference(req):
@@ -652,4 +645,4 @@ if __name__ == "__main__":
             no tiene otra opción que ceder y moldearse a tu nueva frecuencia... Inevitablemente, te convertirás en lo que sientes que eres.
         """
 
-    lab.run_hyper_search(LONG_CHAPTER_2, num_tests=1)
+    lab.run_hyper_search(LONG_CHAPTER, num_tests=1)
