@@ -94,7 +94,7 @@ VOICE_PRESETS = {
         es la verdad; pero, si tuviera la base de la realidad para razonar, de que el sol, centro del sistema solar, 
         no se mueve en ese sentido, sino que es la tierra la que se mueve, aunque la apariencia sea de que es el sol 
         el que se mueve, entonces el niño sabría que el mencionado movimiento del sol es una ilusión. """,
-        "style_tags": "(calm)(narrator)(deep voice)" #(deep voice)
+        "style_tags": "(calm)(narrator)" #(deep voice)
     }
     # "ROSA": {
     #     "temp": 0.65,
