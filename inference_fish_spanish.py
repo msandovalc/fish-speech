@@ -86,11 +86,14 @@ VOICE_PRESETS = {
         "top_p": 0.70,
         "chunk": 300,
         "penalty": 1.035, #1.035
-        "ref_path": str(PROJECT_ROOT / "voices" / "Camila_Sodi.mp3"),
-        "prompt": """Todos venimos de un mismo campo fuente, de una misma gran energía, de un mismo Dios, de un mismo 
-        universo, como le quieras llamar. Todos somos parte de eso. Nacemos y nos convertimos en esto por un ratito 
-        muy chiquito, muy chiquitito, que creemos que es muy largo y se nos olvida que vamos a regresar a ese lugar 
-        de donde venimos, que es lo que tú creas, adonde tú creas, pero inevitablemente vas a regresar.""",
+        "ref_path": str(PROJECT_ROOT / "voices" / "cami_sodi_50_secs.mp3"),
+        "prompt": """Así  el  niño  se  engaña  fácilmente,  toma  mentiras  o  falsedades  como verdades, 
+        solo porque las ve u oye, se engaña como un niño. El niño, por ejemplo, ve que el sol sale por el oriente, 
+        asciende en el firmamento; está en el centro o cenit al mediodía y continuará su camino hacia el poniente, 
+        donde se pone u oculta, así, el sol realiza dicho recorrido todos los días, y para el niño que ve eso, 
+        es la verdad; pero, si tuviera la base de la realidad para razonar, de que el sol, centro del sistema solar, 
+        no se mueve en ese sentido, sino que es la tierra la que se mueve, aunque la apariencia sea de que es el sol 
+        el que se mueve, entonces el niño sabría que el mencionado movimiento del sol es una ilusión. """,
         "style_tags": "(calm) (narrator) (deep voice)" #(deep voice)
     }
     # "ROSA": {
@@ -376,7 +379,8 @@ class FishTotalLab:
                 # --- Strategy: Initial Tag Injection Only ---
                 # Inject tags only on the first chunk to set the tone, then rely on context.
                 # If you prefer constant injection, remove the 'if i == 0 else chunk_text' logic.
-                processed_text = f"{current_tags} {chunk_text}" if (i == 0 and current_tags) else chunk_text
+                # processed_text = f"{current_tags} {chunk_text}" if (i == 0 and current_tags) else chunk_text
+                processed_text = f"{chunk_text}"
 
                 # --- Auto-Retry Mechanism (The Judge) ---
                 max_retries = 3
@@ -387,18 +391,36 @@ class FishTotalLab:
                     if attempt > 0:
                         set_seed(seed_base + i + attempt * 100)
 
+                    # req = ServeTTSRequest(
+                    #     text=processed_text,
+                    #     references=[ServeReferenceAudio(audio=audio_bytes,
+                    #                                     text=params["prompt"]
+                    #                                     )],
+                    #     use_memory_cache="on",
+                    #     chunk_length=params['chunk'],  # Use chunk size from preset (e.g., 300)
+                    #     max_new_tokens=1024,  # Large buffer to prevent cuts
+                    #     top_p=params['top_p'],
+                    #     temperature=params['temp'],
+                    #     repetition_penalty=params['penalty'],
+                    #     format="wav",
+                    #     prompt_text=[hist_text] if hist_text is not None else None,
+                    #     prompt_tokens=[hist_tokens] if hist_tokens is not None else None
+                    # )
+
                     req = ServeTTSRequest(
                         text=processed_text,
-                        references=[ServeReferenceAudio(audio=audio_bytes, text=params["prompt"])],
+                        references=[ServeReferenceAudio(
+                            audio=audio_bytes,
+                            text=params["prompt"]
+                        )],
+                        # Opcional: Si quieres que recuerde cachés anteriores para ir más rápido, déjalo "on".
+                        # El default es "off", pero "on" no afecta la calidad, solo la velocidad.
                         use_memory_cache="on",
-                        chunk_length=params['chunk'],  # Use chunk size from preset (e.g., 300)
-                        max_new_tokens=1024,  # Large buffer to prevent cuts
-                        top_p=params['top_p'],
-                        temperature=params['temp'],
-                        repetition_penalty=params['penalty'],
-                        format="wav",
-                        prompt_text=[hist_text] if hist_text is not None else None,
-                        prompt_tokens=[hist_tokens] if hist_tokens is not None else None,
+
+                        # IMPORTANTE: Si estás pasando historial (contexto previo), déjalo.
+                        # Si quieres una prueba 100% limpia desde cero, borra estas dos líneas también.
+                        # prompt_text=[hist_text] if hist_text is not None else None,
+                        # prompt_tokens=[hist_tokens] if hist_tokens is not None else None
                     )
 
                     final_res = None
@@ -476,107 +498,107 @@ class FishTotalLab:
             traceback.print_exc()
             return None, None
 
-    # def run_hyper_search(self, text, num_tests=5):
-    #     logger.info(f"🧪 Starting Hyper-Search for {len(VOICE_PRESETS)} voices.")
-    #     timestamp = datetime.now().strftime("%H%M%S")
-    #
-    #     for voice_name, base_params in VOICE_PRESETS.items():
-    #         voice_folder = PROJECT_ROOT / f"LAB_{voice_name}_{timestamp}"
-    #         voice_folder.mkdir(parents=True, exist_ok=True)
-    #         logger.info(f"🔬 Testing Voice: {voice_name}")
-    #
-    #         for i in range(num_tests):
-    #             curr_temp = base_params['temp']
-    #             curr_pen = base_params['penalty']
-    #             curr_chunk = base_params['chunk']
-    #
-    #             logger.trace(f"🌀 Test {i + 1}: Chunk Size={curr_chunk} | (T={curr_temp}, P={curr_pen})")
-    #
-    #             result_tuple = self.generate_audio_for_params(
-    #                 voice_name,
-    #                 text,
-    #                 temp=curr_temp,
-    #                 top_p=base_params['top_p'],
-    #                 penalty=curr_pen,
-    #                 chunk_size=curr_chunk,
-    #                 style_tags=base_params.get("style_tags", "")
-    #             )
-    #
-    #             if result_tuple is not None and result_tuple[0] is not None:
-    #                 audio, sample_rate = result_tuple
-    #                 filename = f"{voice_name}_FinalFixed_{timestamp}.wav"
-    #                 sf.write(str(voice_folder / filename), audio, sample_rate, subtype="PCM_16")
-    #                 logger.success(f"📦 Audio Successful Generated: {filename}")
-    #
-    #         shutil.make_archive(str(PROJECT_ROOT / f"RESULTS_{voice_name}_{timestamp}"), 'zip', voice_folder)
-    #         logger.success(f"📦 Test pack created for {voice_name}")
-
-    def run_hyper_search(self, text, num_tests=1):
-        """
-        LABORATORIO MATRICIAL:
-        Itera sobre Rango de Temperaturas x Variaciones de Tags.
-        """
+    def run_hyper_search(self, text, num_tests=5):
         logger.info(f"🧪 Starting Hyper-Search for {len(VOICE_PRESETS)} voices.")
         timestamp = datetime.now().strftime("%H%M%S")
 
-        # --- 🎛️ CONFIGURACIÓN DEL LABORATORIO ---
-        # 1. Barrido de Temperaturas (Estabilidad vs Creatividad)
-        test_temps = [0.65, 0.66, 0.67, 0.68, 0.69, 0.70]
-
-        # 2. Parámetros Fijos (Ganadores)
-        fixed_top_p = 0.70
-        fixed_penalty = 1.035
-
-        # 3. Variaciones de Tags a probar por cada temperatura
-        tag_variations = [
-            "(calm)",
-            "(calm) (narrator)",
-            "(narrator)",
-            "(calm) (narrator) (deep voice)"
-        ]
-        # ------------------------------------------
-
         for voice_name, base_params in VOICE_PRESETS.items():
-            if voice_name != "CAMILA": continue
-
             voice_folder = PROJECT_ROOT / f"LAB_{voice_name}_{timestamp}"
             voice_folder.mkdir(parents=True, exist_ok=True)
             logger.info(f"🔬 Testing Voice: {voice_name}")
 
-            # Bucle 1: Temperaturas
-            for curr_temp in test_temps:
+            for i in range(num_tests):
+                curr_temp = base_params['temp']
+                curr_pen = base_params['penalty']
+                curr_chunk = base_params['chunk']
 
-                # Bucle 2: Variaciones de Tags
-                for i, current_tags in enumerate(tag_variations):
-                    curr_chunk = base_params['chunk']
+                logger.trace(f"🌀 Test {i + 1}: Chunk Size={curr_chunk} | (T={curr_temp}, P={curr_pen})")
 
-                    # Crear nombre limpio para el archivo (ej: calm_narrator)
-                    tag_suffix = current_tags.replace("(", "").replace(")", "").replace(" ", "_").strip("_")
+                result_tuple = self.generate_audio_for_params(
+                    voice_name,
+                    text,
+                    temp=curr_temp,
+                    top_p=base_params['top_p'],
+                    penalty=curr_pen,
+                    chunk_size=curr_chunk,
+                    style_tags=base_params.get("style_tags", "")
+                )
 
-                    logger.trace(f"🌀 Test T={curr_temp} | Tags='{current_tags}'")
-
-                    result_tuple = self.generate_audio_for_params(
-                        voice_name,
-                        text,
-                        temp=curr_temp,
-                        top_p=fixed_top_p,
-                        penalty=fixed_penalty,
-                        chunk_size=curr_chunk,
-                        style_tags=current_tags,
-                        seed_base=1234 + i  # Variar semilla ligeramente por cada tag
-                    )
-
-                    if result_tuple is not None and result_tuple[0] is not None:
-                        audio, sample_rate = result_tuple
-
-                        # Nombre descriptivo: CAMILA_T0.65_calm_narrator.wav
-                        filename = f"{voice_name}_T{curr_temp}_{tag_suffix}_{timestamp}.wav"
-
-                        sf.write(str(voice_folder / filename), audio, sample_rate, subtype="PCM_16")
-                        logger.success(f"📦 Generated: {filename}")
+                if result_tuple is not None and result_tuple[0] is not None:
+                    audio, sample_rate = result_tuple
+                    filename = f"{voice_name}_FinalFixed_{timestamp}.wav"
+                    sf.write(str(voice_folder / filename), audio, sample_rate, subtype="PCM_16")
+                    logger.success(f"📦 Audio Successful Generated: {filename}")
 
             shutil.make_archive(str(PROJECT_ROOT / f"RESULTS_{voice_name}_{timestamp}"), 'zip', voice_folder)
-            logger.success(f"📦 ZIP ready for {voice_name}")
+            logger.success(f"📦 Test pack created for {voice_name}")
+
+    # def run_hyper_search(self, text, num_tests=1):
+    #     """
+    #     LABORATORIO MATRICIAL:
+    #     Itera sobre Rango de Temperaturas x Variaciones de Tags.
+    #     """
+    #     logger.info(f"🧪 Starting Hyper-Search for {len(VOICE_PRESETS)} voices.")
+    #     timestamp = datetime.now().strftime("%H%M%S")
+    #
+    #     # --- 🎛️ CONFIGURACIÓN DEL LABORATORIO ---
+    #     # 1. Barrido de Temperaturas (Estabilidad vs Creatividad)
+    #     test_temps = [0.65, 0.66, 0.67, 0.68, 0.69, 0.70]
+    #
+    #     # 2. Parámetros Fijos (Ganadores)
+    #     fixed_top_p = 0.70
+    #     fixed_penalty = 1.035
+    #
+    #     # 3. Variaciones de Tags a probar por cada temperatura
+    #     tag_variations = [
+    #         "(calm)",
+    #         "(calm) (narrator)",
+    #         "(narrator)",
+    #         "(calm) (narrator) (deep voice)"
+    #     ]
+    #     # ------------------------------------------
+    #
+    #     for voice_name, base_params in VOICE_PRESETS.items():
+    #         if voice_name != "CAMILA": continue
+    #
+    #         voice_folder = PROJECT_ROOT / f"LAB_{voice_name}_{timestamp}"
+    #         voice_folder.mkdir(parents=True, exist_ok=True)
+    #         logger.info(f"🔬 Testing Voice: {voice_name}")
+    #
+    #         # Bucle 1: Temperaturas
+    #         for curr_temp in test_temps:
+    #
+    #             # Bucle 2: Variaciones de Tags
+    #             for i, current_tags in enumerate(tag_variations):
+    #                 curr_chunk = base_params['chunk']
+    #
+    #                 # Crear nombre limpio para el archivo (ej: calm_narrator)
+    #                 tag_suffix = current_tags.replace("(", "").replace(")", "").replace(" ", "_").strip("_")
+    #
+    #                 logger.trace(f"🌀 Test T={curr_temp} | Tags='{current_tags}'")
+    #
+    #                 result_tuple = self.generate_audio_for_params(
+    #                     voice_name,
+    #                     text,
+    #                     temp=curr_temp,
+    #                     top_p=fixed_top_p,
+    #                     penalty=fixed_penalty,
+    #                     chunk_size=curr_chunk,
+    #                     style_tags=current_tags,
+    #                     seed_base=1234 + i  # Variar semilla ligeramente por cada tag
+    #                 )
+    #
+    #                 if result_tuple is not None and result_tuple[0] is not None:
+    #                     audio, sample_rate = result_tuple
+    #
+    #                     # Nombre descriptivo: CAMILA_T0.65_calm_narrator.wav
+    #                     filename = f"{voice_name}_T{curr_temp}_{tag_suffix}_{timestamp}.wav"
+    #
+    #                     sf.write(str(voice_folder / filename), audio, sample_rate, subtype="PCM_16")
+    #                     logger.success(f"📦 Generated: {filename}")
+    #
+    #         shutil.make_archive(str(PROJECT_ROOT / f"RESULTS_{voice_name}_{timestamp}"), 'zip', voice_folder)
+    #         logger.success(f"📦 ZIP ready for {voice_name}")
 
 
 if __name__ == "__main__":
