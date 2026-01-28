@@ -379,8 +379,8 @@ class FishTotalLab:
                 # --- Strategy: Initial Tag Injection Only ---
                 # Inject tags only on the first chunk to set the tone, then rely on context.
                 # If you prefer constant injection, remove the 'if i == 0 else chunk_text' logic.
-                # processed_text = f"{current_tags} {chunk_text}" if (i == 0 and current_tags) else chunk_text
-                processed_text = f"{chunk_text}"
+                processed_text = f"{current_tags} {chunk_text}" if (i == 0 and current_tags) else chunk_text
+                #processed_text = f"{chunk_text}"
 
                 # --- Auto-Retry Mechanism (The Judge) ---
                 max_retries = 3
@@ -631,8 +631,8 @@ if __name__ == "__main__":
         """
 
     LONG_CHAPTER_2 = """
-            Imagina por un momento que no eres simplemente un cuerpo físico luchando en el espacio, sino una frecuencia vibratoría, 
-            una extensión directa de la inteligencia infinita... Nunca has estado separado de la totalidad... Esa sensación de soledad 
+            Imagina por un momento que no eres simplemente un cuerpo físico luchando en el espacio, sino una frecuencia vibratoria, 
+            una extensión directa de la inteligencia infinita. Nunca has estado separado de la totalidad. Esa sensación de soledad 
             es solo una ilusión óptica de la mente, un olvido temporal de tu verdadera naturaleza ilimitada y eterna que siempre 
             está conectada a la fuente.
 
