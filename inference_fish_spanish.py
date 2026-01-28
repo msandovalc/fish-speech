@@ -82,18 +82,15 @@ VOICE_PRESETS = {
     #     "style_tags": "(calm) (narrator)"
     # },
     "CAMILA": {
-        "temp": 0.65,
+        "temp": 0.70,
         "top_p": 0.70,
         "chunk": 300,
         "penalty": 1.035, #1.035
-        "ref_path": str(PROJECT_ROOT / "voices" / "cami_sodi_50_secs.mp3"),
-        "prompt": """Así  el  niño  se  engaña  fácilmente,  toma  mentiras  o  falsedades  como verdades, 
-        solo porque las ve u oye, se engaña como un niño. El niño, por ejemplo, ve que el sol sale por el oriente, 
-        asciende en el firmamento; está en el centro o cenit al mediodía y continuará su camino hacia el poniente, 
-        donde se pone u oculta, así, el sol realiza dicho recorrido todos los días, y para el niño que ve eso, 
-        es la verdad; pero, si tuviera la base de la realidad para razonar, de que el sol, centro del sistema solar, 
-        no se mueve en ese sentido, sino que es la tierra la que se mueve, aunque la apariencia sea de que es el sol 
-        el que se mueve, entonces el niño sabría que el mencionado movimiento del sol es una ilusión. """,
+        "ref_path": str(PROJECT_ROOT / "voices" / "Camila_Sodi.mp3"),
+        "prompt": """Todos venimos de un mismo campo fuente, de una misma gran energía, de un mismo Dios, de un mismo 
+        universo, como le quieras llamar. Todos somos parte de eso. Nacemos y nos convertimos en esto por un ratito 
+        muy chiquito, muy chiquitito, que creemos que es muy largo y se nos olvida que vamos a regresar a ese lugar 
+        de donde venimos, que es lo que tú creas, adonde tú creas, pero inevitablemente vas a regresar.""",
         "style_tags": "(calm)(narrator)" #(deep voice)
     }
     # "ROSA": {
