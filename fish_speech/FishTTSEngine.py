@@ -71,6 +71,21 @@ VOICE_PRESETS = {
         de donde venimos, que es lo que tú creas, adonde tú creas, pero inevitablemente vas a regresar.""",
         "style_tags": "(calm)(narrator)" #(deep voice)
     },
+    "CRISTY": {
+        "temp": 0.70,  # FIXED: Lowered from 0.88 to prevent "shrill" voice
+        "top_p": 0.70,  # Tighter control to avoid robotic drifting
+        "chunk": 300,  # Safe size for Quadro T1000
+        "penalty": 1.035,  # Increased to prevent loop/stuttering
+        "ref_path": str(PROJECT_ROOT / "voices" / "cristy_de_la_torre.wav"),
+        "prompt": """Todo es mente, el universo es mental y Jesús lo dijo sin rodeos, Jesús decía si tuvieras fe como 
+        un grano de mostaza, le dirías a la montaña, muévete y la montaña se movería. Esto no es metáfora poética, 
+        esto es ingeniería de conciencia, la fe no es creer algo bonito, la fe es alinear tu mente con la mente 
+        divina, con la mente universal, por eso Jesús buscaba la soledad, porque los milagros no se dan en el ruido, 
+        se dan en el silencio, la preocupación es caos mental, la fe es coherencia. Pregúntate esto sin huir, 
+        ¿qué pienso todos los días? ¿qué mundo está creando mi mente? Jesús y Hermes lo sabían, el mundo responde a 
+        la calidad de tu atención, por eso donde pones tu atención pones tu energía.""" ,
+        "style_tags": "(calm)(narrator)"  # (deep voice)
+    },
     "ADAM": {
         "temp": 0.70,
         "top_p": 0.70,
@@ -522,7 +537,7 @@ if __name__ == "__main__":
         """
 
     audio_data, sample_rate = engine.process_narration(
-        voice_key="CAMILA",
+        voice_key="CRISTY",
         raw_text=LONG_CHAPTER_2
     )
 
