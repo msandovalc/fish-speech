@@ -107,23 +107,23 @@ VOICE_PRESETS = {
             ¿qué pienso todos los días? ¿qué mundo está creando mi mente? Jesús y Hermes lo sabían, el mundo responde a 
             la calidad de tu atención, por eso donde pones tu atención pones tu energía.""",
         "style_tags": "(calm)(narrator)"  # (deep voice)
-    },
-    "ADAM": {
-        "temp": 0.70,
-        "top_p": 0.70,
-        "chunk": 300,
-        "penalty": 1.15,
-        "ref_path": str(PROJECT_ROOT / "voices" / "adam_spanish.wav"),
-        "prompt": """La noche ya no es un tiempo perdido para la energía. Aunque el Sol se oculte, la ciencia ha 
-            demostrado que todavía es posible obtener significativas cantidades de electricidad cuando todo parece 
-            apagado. Parte de este avance consiste en aprovechar la luz de la Luna, que es luz solar muy débil, 
-            pero suficiente para alimentar sensores y dispositivos de bajo consumo. No sirve para grandes sistemas, 
-            pero sí para mantener una energía mínima activa durante la noche. Las esferas, como la de la imagen, 
-            están hechas de cristal industrial de 45 mm de espesor y pueden instalarse solas o en conjuntos. Además, 
-            pueden integrarse en sistemas de seguimiento automático de fuentes de luz, como el Sol o la Luna, incluso en 
-            condiciones de baja iluminación.""",
-        "style_tags": "(calm) (narrator)"
     }
+    # "ADAM": {
+    #     "temp": 0.70,
+    #     "top_p": 0.70,
+    #     "chunk": 300,
+    #     "penalty": 1.15,
+    #     "ref_path": str(PROJECT_ROOT / "voices" / "adam_spanish.wav"),
+    #     "prompt": """La noche ya no es un tiempo perdido para la energía. Aunque el Sol se oculte, la ciencia ha
+    #         demostrado que todavía es posible obtener significativas cantidades de electricidad cuando todo parece
+    #         apagado. Parte de este avance consiste en aprovechar la luz de la Luna, que es luz solar muy débil,
+    #         pero suficiente para alimentar sensores y dispositivos de bajo consumo. No sirve para grandes sistemas,
+    #         pero sí para mantener una energía mínima activa durante la noche. Las esferas, como la de la imagen,
+    #         están hechas de cristal industrial de 45 mm de espesor y pueden instalarse solas o en conjuntos. Además,
+    #         pueden integrarse en sistemas de seguimiento automático de fuentes de luz, como el Sol o la Luna, incluso en
+    #         condiciones de baja iluminación.""",
+    #     "style_tags": "(calm) (narrator)"
+    # }
     # "ROSA": {
     #     "temp": 0.65,
     #     "top_p": 0.70,
