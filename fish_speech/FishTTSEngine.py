@@ -84,7 +84,17 @@ VOICE_PRESETS = {
         se dan en el silencio, la preocupación es caos mental, la fe es coherencia. Pregúntate esto sin huir, 
         ¿qué pienso todos los días? ¿qué mundo está creando mi mente? Jesús y Hermes lo sabían, el mundo responde a 
         la calidad de tu atención, por eso donde pones tu atención pones tu energía.""" ,
-        "style_tags": "(calm)(narrator)"  # (deep voice)
+        # S1-mini tag strategy for Spanish:
+        # Only (soft tone) — single tone marker, most stable in S1-mini Spanish.
+        # (narrator) caused volume spikes and occasional vocalization — removed.
+        # (soft tone) alone keeps the voice grounded without triggering artifacts.
+        "style_tags": "(soft tone)",
+        "paragraph_tags": [
+            "(soft tone)",   # P1 Hook
+            "(soft tone)",   # P2 Truth
+            "(soft tone)",   # P3 Resolution
+            "(soft tone)",   # P4 CTA
+        ]
     },
     "ADAM": {
         "temp": 0.70,
@@ -166,37 +176,58 @@ class FishTTSEngine:
 
     def split_text(self, text, max_chars=200):
         """
-        HYBRID SPLIT STRATEGY (PARAGRAPHS + FATIGUE CONTROL):
+        HYBRID SPLIT STRATEGY v2 — PARAGRAPH-FIRST + FATIGUE CONTROL:
 
-        1. Primary Logic: Split by visual paragraphs (double newlines).
-        2. Secondary Logic (Fatigue Check): If a paragraph is longer than 'max_chars'
-           (e.g., 400), it forces an internal split by sentences.
+        Priority order:
+        1. Split by double newlines (\\n\\n) — paragraph boundaries = natural pauses.
+           This MUST happen BEFORE clean_text, which strips all newlines.
+        2. If a paragraph exceeds max_chars, split internally by sentence.
 
-        Why?
-        Long text blocks cause 'Style Drift' (loss of tone) and hallucinations
-        at the end. By forcing a split on long paragraphs, we refresh the
-        style tags "(calm) (deep voice)" more frequently, keeping the voice stable.
+        Why paragraph-first matters:
+        The script from the LLM arrives with 4 paragraphs (Hook / Truth / Resolution / CTA).
+        Each paragraph has its own emotional weight and pacing.
+        Flattening them into 1 chunk loses all natural pause structure.
+        Preserving \\n\\n as chunk boundaries = natural pause between paragraphs.
 
         Args:
-            text (str): Input text.
-            max_chars (int): The safety limit. If a paragraph exceeds this,
-                             it gets chopped. Recommended: 400-450.
+            text (str): Input text. May contain \\n\\n paragraph breaks.
+            max_chars (int): Safety limit per chunk. If a paragraph exceeds this,
+                             it gets split by sentence. Recommended: 200-300.
         """
-        # Clean up input text
-        text = self.clean_text(text)
-        sentences = re.split(r'(?<=[.!?…])\s+', text)
+        if not text:
+            return []
+
         chunks = []
-        current_chunk = ""
-        for sentence in sentences:
-            if not sentence.strip(): continue
-            if len(current_chunk) + len(sentence) < max_chars:
-                current_chunk += sentence + " "
+
+        # Step 1: Split by paragraph breaks FIRST (before clean_text strips them)
+        # \n\s*\n matches blank lines even when they contain spaces/tabs (e.g. indented test strings)
+        paragraphs = re.split(r'\n\s*\n', text.strip())
+
+        for paragraph in paragraphs:
+            # Clean each paragraph individually (preserves cross-paragraph boundaries)
+            clean_para = self.clean_text(paragraph)
+            if not clean_para:
+                continue
+
+            if len(clean_para) <= max_chars:
+                # Paragraph fits in one chunk — keep it whole
+                chunks.append(clean_para)
             else:
+                # Paragraph too long — split by sentence (fatigue control)
+                sentences = re.split(r'(?<=[.!?…])\s+', clean_para)
+                current_chunk = ""
+                for sentence in sentences:
+                    if not sentence.strip():
+                        continue
+                    if len(current_chunk) + len(sentence) < max_chars:
+                        current_chunk += sentence + " "
+                    else:
+                        if current_chunk:
+                            chunks.append(current_chunk.strip())
+                        current_chunk = sentence + " "
                 if current_chunk:
                     chunks.append(current_chunk.strip())
-                current_chunk = sentence + " "
-        if current_chunk:
-            chunks.append(current_chunk.strip())
+
         return chunks
 
     def _crossfade_chunks(self, audio_list, crossfade_ms=30, sample_rate=44100):
@@ -276,7 +307,7 @@ class FishTTSEngine:
 
         # Determine tags
         current_tags = params.get("style_tags", "")
-
+        paragraph_tags = params.get("paragraph_tags", [])
 
         try:
             for i, chunk_text in enumerate(text_chunks):
@@ -285,10 +316,29 @@ class FishTTSEngine:
 
                 logger.debug(f"⏳ Processing chunk {i + 1}/{len(text_chunks)}")
 
-                # --- Strategy: Initial Tag Injection Only ---
-                # Inject tags only on the first chunk to set the tone, then rely on context.
-                # If you prefer constant injection, remove the 'if i == 0 else chunk_text' logic.
-                processed_text = f"{current_tags} {chunk_text}" if (i == 0 and current_tags) else chunk_text
+                # --- Tag Injection Strategy ---
+                # Official docs: emotion tags MUST go at the beginning of sentences.
+                #
+                # CRITICAL: If the chunk already starts with a marker pattern like
+                # "(concerned)", "(empathetic)", etc. — the text was pre-tagged by the
+                # LLM or the test script. Do NOT inject paragraph_tags on top.
+                # Injecting twice causes the model to read the tag aloud as text.
+                #
+                # Detection: a chunk is pre-tagged if it starts with "(<word>)"
+                _already_tagged = bool(re.match(r'^\([a-z\s\-]+\)', chunk_text.strip()))
+
+                if _already_tagged:
+                    # Text has its own markers — pass through untouched
+                    processed_text = chunk_text
+                elif paragraph_tags:
+                    # Engine injects per-paragraph tags (cyclically P1→P2→P3→P4)
+                    tag = paragraph_tags[i % len(paragraph_tags)]
+                    processed_text = f"{tag} {chunk_text}"
+                elif current_tags:
+                    # Inject same style_tags on every chunk (prevents robotic drift)
+                    processed_text = f"{current_tags} {chunk_text}"
+                else:
+                    processed_text = chunk_text
 
                 # --- Auto-Retry Mechanism (The Judge) ---
                 max_retries = 3
@@ -299,27 +349,20 @@ class FishTTSEngine:
                     if attempt > 0:
                         set_seed(seed_base + i + attempt * 100)
 
-                    # req = ServeTTSRequest(
-                    #     text=processed_text,
-                    #     references=[ServeReferenceAudio(audio=audio_bytes, text=params["prompt"])],
-                    #     use_memory_cache="on",
-                    #     chunk_length=params['chunk'],  # Use chunk size from preset (e.g., 300)
-                    #     max_new_tokens=1024,  # Large buffer to prevent cuts
-                    #     top_p=params['top_p'],
-                    #     temperature=params['temp'],
-                    #     repetition_penalty=params['penalty'],
-                    #     format="wav",
-                    #     prompt_text=[hist_text] if hist_text is not None else None,
-                    #     prompt_tokens=[hist_tokens] if hist_tokens is not None else None,
-                    # )
-
+                    # Full ServeTTSRequest with all parameters
+                    # (previously commented out — re-enabled for quality control)
                     req = ServeTTSRequest(
                         text=processed_text,
-                        references=[ServeReferenceAudio(
-                            audio=audio_bytes,
-                            text=params["prompt"]
-                        )],
+                        references=[ServeReferenceAudio(audio=audio_bytes, text=params["prompt"])],
                         use_memory_cache="on",
+                        chunk_length=params['chunk'],        # Chunk size from preset (300)
+                        max_new_tokens=1024,                 # Large buffer to prevent cuts
+                        top_p=params['top_p'],               # Sampling control
+                        temperature=params['temp'],          # Voice variability
+                        repetition_penalty=params['penalty'],# Prevents loops/stuttering
+                        format="wav",
+                        prompt_text=[hist_text] if hist_text is not None else None,
+                        prompt_tokens=[hist_tokens] if hist_tokens is not None else None,
                     )
 
                     final_res = None
@@ -360,14 +403,16 @@ class FishTTSEngine:
                 raw_audio_segments.append(audio_padded)
 
                 # --- Context Update (Short Memory) ---
-                # Keep only 50 tokens to maintain flow but prevent artifact accumulation (robotic voice)
+                # Keep only 50 tokens to maintain flow but prevent artifact accumulation.
+                # Store processed_text (WITH tags) so the next chunk's context
+                # includes the emotional instruction, not just the bare text.
                 if best_attempt.codes is not None:
                     codes = torch.from_numpy(best_attempt.codes).to(torch.int)
                     keep = 50
                     if codes.shape[1] > keep:
                         codes = codes[:, -keep:]
                     hist_tokens = codes
-                    hist_text = chunk_text
+                    hist_text = processed_text  # WITH tags — preserves emotional context
 
                 # Clean VRAM
                 torch.cuda.empty_cache()
@@ -411,7 +456,7 @@ class FishTTSEngine:
 
         try:
             # Re-lanzamos la cola de inferencia apuntando al archivo .ckpt
-            # Fish Speech cargará el modelo base y le aplicará el parche LoRA automáticamente.
+            # Fish Speech loads the base model and applies the LoRA patch automatically.
             new_llama_queue = launch_thread_safe_queue(
                 checkpoint_path=lora_path,
                 device=self.device,
@@ -439,7 +484,7 @@ class FishTTSEngine:
             logger.error("❌ No existe la carpeta de checkpoints de Camila.")
             return False
 
-        # Buscamos todos los archivos .ckpt y elegimos el de fecha de modificación más reciente
+        # Find all .ckpt files and pick the most recently modified one
         list_of_files = list(checkpoints_path.glob("*.ckpt"))
         if not list_of_files:
             logger.warning("⚠️ No se encontraron archivos .ckpt todavía.")
@@ -480,7 +525,7 @@ class FishTTSEngine:
         LoRA que esté cargado en el motor.
         """
         logger.info(f"🎙️ Generando voz entrenada de Camila...")
-        # Simplemente reutilizamos la lógica de narración pero fijando el preset
+        # Reuse the narration logic but lock the preset to CAMILA
         return self.process_narration(voice_key="CAMILA", raw_text=text, seed_base=seed)
 
 
@@ -536,15 +581,56 @@ if __name__ == "__main__":
             no tiene otra opción que ceder y moldearse a tu nueva frecuencia... Inevitablemente, te convertirás en lo que sientes que eres.
         """
 
+
+    # ===========================================================================
+    # TEST A — Dark Stoic script with per-paragraph emotion markers
+    # Structure: 4 paragraphs separated by \n\n
+    # Engine processes each paragraph as an independent chunk with its own tag
+    # Markers per Fish Audio S1 official docs:
+    #   (concerned)   → P1 Hook: names the symptom with care
+    #   (empathetic)  → P2 Uncomfortable truth: understands from lived experience
+    #   (comforting)  → P3 Resolution: grounded, not preachy
+    #   (sincere)     → P4 CTA: direct invitation
+    # Paralanguage (fine-grained control, V1.6):
+    #   (break)       → short pause between ideas
+    #   (breath)      → natural breath before a hard truth
+    #   (sigh)        → natural sigh at emotional weight moments
+    # ===========================================================================
+    DARK_STOIC_TEST = """Llevas años sintiéndote exhausta. Y ya ni recuerdas cuándo no fue así. Eso que sientes al despertar no es tu edad. Es tu cuerpo diciéndote que algo no está bien.
+
+No es el trabajo. Es que llevas años cargando lo que no te corresponde. Tu sistema nervioso aprendió que descansar era peligroso, que si parabas, algo se rompía. Y así llevas, sosteniéndolo todo, para todos, menos para ti.
+
+Eso puede soltarse. No de golpe, pero puede. No tienes que seguir cargando lo que no te pidieron que cargaras. Hay una salida que no implica seguir aguantando.
+
+Comenta la palabra CALMA y te mando el protocolo."""
+
+    # ===========================================================================
+    # TEST B — Short text to quickly validate the pipeline
+    # ===========================================================================
+    QUICK_TEST = """Tu cansancio no es normal.
+
+Llevas años siendo suficiente para todos menos para ti.
+
+Comenta CALMA si esto te llegó."""
+
+    # Switch between DARK_STOIC_TEST (full) and QUICK_TEST (fast validation)
+    TEST_TEXT = DARK_STOIC_TEST
+
+    logger.info(f"🧪 Test text chunks preview:")
+    preview_chunks = engine.split_text(TEST_TEXT, max_chars=200)
+    for idx, chunk in enumerate(preview_chunks):
+        logger.info(f"  Chunk {idx + 1}: {chunk[:80]}...")
+
     audio_data, sample_rate = engine.process_narration(
         voice_key="CRISTY",
-        raw_text=LONG_CHAPTER_2
+        raw_text=TEST_TEXT
     )
 
     if audio_data is not None:
-        output_path = "output_camila_optimized.wav"
+        output_path = "output_dark_stoic_test.wav"
         sf.write(output_path, audio_data, sample_rate, subtype="PCM_16")
-        logger.success(f"🏆 Audio generated successfully: {output_path}")
+        logger.success(f"🏆 Audio generated: {output_path}")
+        logger.info(f"⏱️  Duration: {len(audio_data) / sample_rate:.2f}s")
     else:
         logger.error("❌ Audio generation failed.")
 
@@ -570,5 +656,3 @@ if __name__ == "__main__":
     #         logger.success(f"🏆 ¡Listo! Audio generado en: {output_name}")
     # else:
     #     logger.error("No se pudo aplicar el entrenamiento, revisa la ruta del .ckpt")
-
-
