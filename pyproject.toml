@@ -4,7 +4,7 @@
 [tool.poetry]
 name = "fish-speech"
 version = "0.1.0"
-description = "Fish Speech - TTS Multilingüe con soporte nativo para Español"
+description = "Fish Speech - Multilingual TTS with native support for Spanish"
 authors = ["Lengyue <lengyue@lengyue.me>"]
 readme = "README.md"
 license = "Apache-2.0"
@@ -15,7 +15,7 @@ packages = [{include = "fish_speech"}, {include = "tools"}]
 # SECCIÓN 2: DEPENDENCIAS DEL SISTEMA (CORE)
 # ==========================================
 [tool.poetry.dependencies]
-python = ">=3.10,<3.12" # Recomendado 3.11 para estabilidad
+python = ">=3.10,<3.13"
 numpy = "<=1.26.4"
 transformers = ">=4.45.2"
 datasets = "2.18.0"
@@ -51,16 +51,15 @@ cachetools = "*"
 protobuf = ">=3.20.2"
 
 # ==========================================
-# SECCIÓN 3: PYTORCH Y SOPORTE CUDA (> 12.1)
+# SECTION 3: PYTORCH & CUDA SUPPORT (> 12.1)
 # ==========================================
-# Usamos CUDA 12.4 (cu124) para cumplir el requisito de > 12.1
+# Using CUDA 12.4 (cu124) to meet the > 12.1 requirement for modern GPUs
 torch = {version = "2.6.0+cu124", source = "pytorch-gpu"}
 torchvision = {version = "0.21.0+cu124", source = "pytorch-gpu"}
 torchaudio = {version = "2.6.0+cu124", source = "pytorch-gpu"}
 
-
 # ==========================================
-# SECCIÓN 4: HERRAMIENTAS DE DESARROLLO
+# SECTION 4: DEVELOPMENT TOOLS
 # ==========================================
 huggingface-hub = {extras = ["hf-xet"], version = "^1.2.3"}
 tqdm = "^4.67.1"
@@ -68,7 +67,7 @@ tqdm = "^4.67.1"
 pytest = "^7.0"
 
 # ==========================================
-# SECCIÓN 5: FUENTES DE REPOSITORIOS
+# SECTION 5: REPOSITORY SOURCES
 # ==========================================
 [[tool.poetry.source]]
 name = "pytorch-gpu"
@@ -76,7 +75,7 @@ url = "https://download.pytorch.org/whl/cu124" # FIX: Actualizado a cu124
 priority = "explicit"
 
 # ==========================================
-# SECCIÓN 6: SISTEMA DE CONSTRUCCIÓN
+# SECTION 6: BUILD SYSTEM
 # ==========================================
 [build-system]
 requires = ["poetry-core>=1.0.0"]
