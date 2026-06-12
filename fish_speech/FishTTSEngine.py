@@ -1,13 +1,23 @@
-import io
 import os
-import re
+import platform
 import sys
-import torch
+
+# --- ENVIRONMENT AGNOSTIC ARCHITECTURE ---
+# Detect platform before loading heavy ML libraries
+IS_WINDOWS = platform.system() == "Windows"
+
+if IS_WINDOWS:
+    # Performance optimization strictly for Windows 4GB VRAM.
+    # CRITICAL: MUST be set before importing torch.
+    os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True,max_split_size_mb:128"
+
+import io
+import re
 import gc
 import shutil
 import numpy as np
 import soundfile as sf
-import platform
+import torch
 from pathlib import Path
 from loguru import logger
 from datetime import datetime
@@ -17,9 +27,6 @@ from datetime import datetime
 logger.remove()
 logger.add(sys.stdout, colorize=True, level="TRACE",
            format="<green>{time:HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{message}</cyan>")
-
-# Performance optimization for Windows/Linux
-os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True,max_split_size_mb:128"
 
 # --- Constants for Directory Paths ---
 # Auto-detect project root
@@ -114,11 +121,8 @@ VOICE_PRESETS = {
     }
 }
 
-# Platform detection
-is_windows = platform.system() == "Windows"
-should_compile = False if is_windows else True
-
 class FishTTSEngine:
+
     def __init__(self, checkpoint_path=None):
         """
         Initializes the S1-Mini engine with memory safeguards.
@@ -129,8 +133,8 @@ class FishTTSEngine:
         # Default path to the S1-Mini model (~3.36 GB)
         self.checkpoint_dir = checkpoint_path or (PROJECT_ROOT / "checkpoints" / "openaudio-s1-mini")
 
-        # Use half precision (FP16) for speed and memory efficiency
-        self.precision = torch.half
+        # Use half precision (FP16) universally for speed and memory efficiency
+        self.precision = torch.float16
 
         # Compile only on Linux (Kaggle), disable on Windows to avoid errors
         self.should_compile = False if platform.system() == "Windows" else True
@@ -294,7 +298,10 @@ class FishTTSEngine:
         if cache_key in self.vocal_dna_cache:
             audio_bytes = self.vocal_dna_cache[cache_key]
         else:
-            audio_bytes = self._load_and_trim_audio(params["ref_path"], max_duration=60)
+            # ENVIRONMENT AGNOSTIC MAGIC:
+            # 12 seconds for constrained Windows laptops, 60 seconds for Cloud GPUs
+            safe_duration = 12 if IS_WINDOWS else 60
+            audio_bytes = self._load_and_trim_audio(params["ref_path"], max_duration=safe_duration)
             self.vocal_dna_cache[cache_key] = audio_bytes
 
         # --- 2. Text Preparation ---
@@ -408,9 +415,9 @@ class FishTTSEngine:
                 # includes the emotional instruction, not just the bare text.
                 if best_attempt.codes is not None:
                     codes = torch.from_numpy(best_attempt.codes).to(torch.int)
-                    keep = 50
-                    if codes.shape[1] > keep:
-                        codes = codes[:, -keep:]
+                    # keep = 50
+                    # if codes.shape[1] > keep:
+                    #     codes = codes[:, -keep:]
                     hist_tokens = codes
                     hist_text = processed_text  # WITH tags — preserves emotional context
 
@@ -598,20 +605,22 @@ if __name__ == "__main__":
     # ===========================================================================
     DARK_STOIC_TEST = """Llevas años sintiéndote exhausta. Y ya ni recuerdas cuándo no fue así. Eso que sientes al despertar no es tu edad. Es tu cuerpo diciéndote que algo no está bien.
 
-No es el trabajo. Es que llevas años cargando lo que no te corresponde. Tu sistema nervioso aprendió que descansar era peligroso, que si parabas, algo se rompía. Y así llevas, sosteniéndolo todo, para todos, menos para ti.
-
-Eso puede soltarse. No de golpe, pero puede. No tienes que seguir cargando lo que no te pidieron que cargaras. Hay una salida que no implica seguir aguantando.
-
-Comenta la palabra CALMA y te mando el protocolo."""
+        No es el trabajo. Es que llevas años cargando lo que no te corresponde. Tu sistema nervioso aprendió que descansar era peligroso, que si parabas, algo se rompía. Y así llevas, sosteniéndolo todo, para todos, menos para ti.
+        
+        Eso puede soltarse. No de golpe, pero puede. No tienes que seguir cargando lo que no te pidieron que cargaras. Hay una salida que no implica seguir aguantando.
+        
+        Comenta la palabra CALMA y te mando el protocolo.
+    """
 
     # ===========================================================================
     # TEST B — Short text to quickly validate the pipeline
     # ===========================================================================
     QUICK_TEST = """Tu cansancio no es normal.
 
-Llevas años siendo suficiente para todos menos para ti.
-
-Comenta CALMA si esto te llegó."""
+        Llevas años siendo suficiente para todos menos para ti.
+        
+        Comenta CALMA si esto te llegó.
+    """
 
     # Switch between DARK_STOIC_TEST (full) and QUICK_TEST (fast validation)
     TEST_TEXT = DARK_STOIC_TEST
